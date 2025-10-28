@@ -8,10 +8,10 @@ WORKDIR /app
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 
-# ⚠️ FIX: cấp quyền thực thi cho mvnw
+# Cấp quyền thực thi cho mvnw
 RUN chmod +x mvnw
 
-# Tải dependency trước (cache build)
+# Download dependencies
 RUN ./mvnw dependency:go-offline
 
 # Copy source code
@@ -23,5 +23,6 @@ RUN ./mvnw package -DskipTests
 # Expose port 8080
 EXPOSE 8080
 
-# Run app
-ENTRYPOINT ["java", "-jar", "target/ecommerce-0.0.1-SNAPSHOT.jar"]
+# Run app - wildcard cho chắc cú
+ENTRYPOINT ["sh", "-c", "java -jar target/*.jar"]
+
