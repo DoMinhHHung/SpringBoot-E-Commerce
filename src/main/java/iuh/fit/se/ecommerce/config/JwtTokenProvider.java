@@ -14,10 +14,10 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    @Value("${jwt.expirationMs}")
+    @Value("${jwt.expiration}")
     private long jwtExpirationMs;
 
-    @Value("${jwt.refreshExpirationMs}")
+    @Value("${jwt.refresh-token.expiration}")
     private long refreshExpirationMs;
 
     private Key getSigningKey() {
