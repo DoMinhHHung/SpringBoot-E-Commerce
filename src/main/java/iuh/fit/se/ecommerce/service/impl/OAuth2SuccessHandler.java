@@ -35,12 +35,15 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
                 String accessToken = jwtTokenProvider.generateAccessToken(authentication);
                 String refreshToken = jwtTokenProvider.generateRefreshToken(email);
-                response.setContentType("application/json");
 
-                response.getWriter().write(new ObjectMapper().writeValueAsString(Map.of(
-                                "accessToken", accessToken,
-                                "refreshToken", refreshToken,
-                                "tokenType", "Bearer")));
-                response.sendRedirect("/profile");
+                System.out.println("accessToken: " + accessToken);
+                System.out.println("refreshToken: " + refreshToken);
+                // Redirect to callback page with tokens (URL encoded)
+                String redirectUrl = "/oauth2/callback?accessToken=" + 
+                                    java.net.URLEncoder.encode(accessToken, java.nio.charset.StandardCharsets.UTF_8) + 
+                                    "&refreshToken=" + 
+                                    java.net.URLEncoder.encode(refreshToken, java.nio.charset.StandardCharsets.UTF_8) + 
+                                    "&tokenType=Bearer";
+                response.sendRedirect(redirectUrl);
         }
 }
