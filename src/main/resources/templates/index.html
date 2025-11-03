@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce - PC Gaming, Laptop chính hãng</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <div id="header-container"></div>
+
+    <!-- Main Content -->
+    <main class="container my-5">
+        <!-- Banner Section -->
+        <section class="banner-section">
+            <div id="carouselBanner" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner">
+                    <div class="carousel-item active">
+                        <img src="https://cdn-imgix.headout.com/media/images/c9db3cea62133b6a6bb70597326b4a34-388-dubai-img-worlds-of-adventure-tickets-01.jpg?auto=format&w=1222.3999999999999&h=687.6&q=90&ar=16%3A9&crop=faces&fit=crop" class="d-block h-500 w-100" alt="Banner 1">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://cdn-imgix.headout.com/media/images/c9db3cea62133b6a6bb70597326b4a34-388-dubai-img-worlds-of-adventure-tickets-01.jpg?auto=format&w=1222.3999999999999&h=687.6&q=90&ar=16%3A9&crop=faces&fit=crop" class="d-block h-500 w-100" alt="Banner 2">
+                    </div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#carouselBanner" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#carouselBanner" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Products Section -->
+        <section class="products-section">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Sản phẩm nổi bật</h2>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-secondary active" onclick="filterProducts('ALL')">Tất cả</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('PC')">PC</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('LAPTOP')">Laptop</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('KEYBOARD')">Bàn phím</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('MOUSE')">Chuột</button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div id="loading-spinner" class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="products-container" class="row g-4">
+                <!-- Products will be loaded here dynamically -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="text-center py-5 d-none">
+                <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="mt-3 text-muted">Không có sản phẩm nào</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Common JS -->
+    <script src="/js/common.js"></script>
+    <!-- API Client -->
+    <script src="/js/api.js"></script>
+    <!-- Page Script -->
+    <script>
+        let allProducts = [];
+        let currentFilter = 'ALL';
+
+        // Load products on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            const search = urlParams.get('search');
+
+            if (type) {
+                currentFilter = type.toUpperCase();
+                loadProductsByType(type);
+            } else if (search) {
+                loadAllProducts(search);
+            } else {
+                loadAllProducts();
+            }
+
+            updateActiveFilter();
+        });
+
+        async function loadAllProducts(searchTerm = '') {
+            document.getElementById('loading-spinner').classList.add('active');
+            document.getElementById('products-container').innerHTML = '';
+            document.getElementById('empty-state').classList.add('d-none');
+
+            try {
+                allProducts = await apiClient.getAllProducts();
+                
+                if (searchTerm) {
+                    const searchLower = searchTerm.toLowerCase();
+                    allProducts = allProducts.filter(product => 
+                        product.name.toLowerCase().includes(searchLower)
+                    );
+                }
+
+                displayProducts(allProducts);
+            } catch (error) {
+                showAlert('Không thể tải sản phẩm: ' + error.message, 'error');
+            } finally {
+                document.getElementById('loading-spinner').classList.remove('active');
+            }
+        }
+
+        async function loadProductsByType(type) {
+            document.getElementById('loading-spinner').classList.add('active');
+            document.getElementById('products-container').innerHTML = '';
+            document.getElementById('empty-state').classList.add('d-none');
+
+            try {
+                allProducts = await apiClient.getProductsByType(type);
+                displayProducts(allProducts);
+            } catch (error) {
+                showAlert('Không thể tải sản phẩm: ' + error.message, 'error');
+            } finally {
+                document.getElementById('loading-spinner').classList.remove('active');
+            }
+        }
+
+        function displayProducts(products) {
+            const container = document.getElementById('products-container');
+            
+            if (products.length === 0) {
+                document.getElementById('empty-state').classList.remove('d-none');
+                return;
+            }
+
+            container.innerHTML = products.map(product => `
+                <div class="col-md-4 col-lg-3">
+                    <div class="product-card">
+                        ${product.priceAfterDiscount && product.priceAfterDiscount < product.price ? 
+                            `<span class="product-discount">-${Math.round((1 - product.priceAfterDiscount / product.price) * 100)}%</span>` : ''}
+                        <a href="/product-detail.html?id=${product.id}">
+                            <img src="${product.mainImage || 'https://via.placeholder.com/300x250'}" 
+                                 alt="${product.name}" 
+                                 onerror="this.src='https://via.placeholder.com/300x250'">
+                        </a>
+                        <div class="product-card-body">
+                            <h5 class="product-title">${product.name}</h5>
+                            <div class="product-price">
+                                ${product.priceAfterDiscount && product.priceAfterDiscount < product.price ? 
+                                    `<span class="price-old">${formatPrice(product.price)}</span>
+                                     <span class="price-new">${formatPrice(product.priceAfterDiscount)}</span>` :
+                                    `<span class="price-new">${formatPrice(product.price)}</span>`
+                                }
+                            </div>
+                            <button class="btn btn-primary-custom w-100 mt-3" onclick="addToCart(${product.id})">
+                                <i class="bi bi-cart-plus"></i> Thêm vào giỏ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterProducts(type) {
+            currentFilter = type;
+            updateActiveFilter();
+            
+            if (type === 'ALL') {
+                loadAllProducts();
+            } else {
+                loadProductsByType(type);
+            }
+        }
+
+        function updateActiveFilter() {
+            document.querySelectorAll('.btn-group button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const filterMap = {
+                'ALL': 0,
+                'PC': 1,
+                'LAPTOP': 2,
+                'KEYBOARD': 3,
+                'MOUSE': 4
+            };
+            
+            const buttons = document.querySelectorAll('.btn-group button');
+            if (buttons[filterMap[currentFilter]]) {
+                buttons[filterMap[currentFilter]].classList.add('active');
+            }
+        }
+
+        function addToCart(productId) {
+            if (!apiClient.isAuthenticated()) {
+                showAlert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'warning');
+                setTimeout(() => showLoginModal(), 1000);
+                return;
+            }
+            showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
+            // TODO: Implement cart functionality
+        }
+    </script>
+</body>
+</html>

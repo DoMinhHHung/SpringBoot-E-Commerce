@@ -1,0 +1,204 @@
+<!-- Login Modal Popup -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 8px;">
+            <!-- Modal Header -->
+            <div class="modal-header border-0 pb-2">
+                <h5 class="modal-title fw-bold text-uppercase" id="loginModalLabel">ĐĂNG NHẬP HOẶC TẠO TÀI KHOẢN</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body px-4 pb-4">
+                <div class="d-flex justify-content-end mb-2">
+                    <a href="#" class="text-decoration-none small text-muted" onclick="switchToPhoneLogin(); return false;">
+                        Đăng nhập bằng số điện thoại
+                    </a>
+                </div>
+                
+                <form id="modal-login-form">
+                    <div class="mb-3">
+                        <input type="email" class="form-control form-control-lg" id="modal-email" 
+                               placeholder="Email" required>
+                    </div>
+                    
+                    <div class="mb-3 position-relative">
+                        <input type="password" class="form-control form-control-lg" id="modal-password" 
+                               placeholder="Mật khẩu" required>
+                        <span class="position-absolute end-0 top-50 translate-middle-y me-3" 
+                              style="cursor: pointer;" onclick="togglePasswordVisibility('modal-password')">
+                            <i class="bi bi-eye" id="toggle-password-icon"></i>
+                        </span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mb-3">
+                        <a href="#" class="text-decoration-none small text-muted" onclick="showForgotPassword(); return false;">
+                            Quên mật khẩu email?
+                        </a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger w-100 py-2 fw-bold text-uppercase">
+                        ĐĂNG NHẬP
+                    </button>
+                </form>
+
+                <!-- Phone Login Form (Hidden) -->
+                <div id="phone-login-section" style="display: none;">
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="#" class="text-decoration-none small text-muted" onclick="switchToEmailLogin(); return false;">
+                            Đăng nhập bằng email
+                        </a>
+                    </div>
+                    <form id="modal-phone-login-form">
+                        <div class="mb-3">
+                            <input type="tel" class="form-control form-control-lg" id="modal-phone" 
+                                   placeholder="Số điện thoại" required>
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100 py-2 fw-bold text-uppercase">
+                            Tiếp tục
+                        </button>
+                    </form>
+                    <p class="text-center text-muted small mt-3">Tính năng đang phát triển</p>
+                </div>
+
+                <!-- Separator -->
+                <div class="position-relative my-4">
+                    <hr>
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">
+                        hoặc đăng nhập bằng
+                    </span>
+                </div>
+
+                <!-- Social Login Buttons -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <a href="/oauth2/authorization/google" class="btn btn-outline-danger w-100 py-2">
+                            <i class="bi bi-google"></i> Google
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-primary w-100 py-2" onclick="showFacebookLogin()">
+                            <i class="bi bi-facebook"></i> Facebook
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Switch to Register -->
+                <div class="text-center">
+                    <span class="text-muted">Bạn chưa có tài khoản? </span>
+                    <a href="#" class="text-primary text-decoration-underline fw-bold" onclick="switchToRegisterModal(); return false;">
+                        Đăng ký ngay!
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Register Modal Popup -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 8px;">
+            <!-- Modal Header -->
+            <div class="modal-header border-0 pb-2">
+                <h5 class="modal-title fw-bold text-uppercase" id="registerModalLabel">ĐĂNG KÝ TÀI KHOẢN</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body px-4 pb-4">
+                <form id="modal-register-form">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <input type="text" class="form-control form-control-lg" id="modal-register-fullname" 
+                                   placeholder="Họ và tên" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <input type="tel" class="form-control form-control-lg" id="modal-register-phone" 
+                                   placeholder="Số điện thoại" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <input type="email" class="form-control form-control-lg" id="modal-register-email" 
+                               placeholder="Email" required>
+                        <div class="form-text small">Chúng tôi sẽ gửi email xác thực đến địa chỉ này</div>
+                    </div>
+                    
+                    <div class="mb-3 position-relative">
+                        <input type="password" class="form-control form-control-lg" id="modal-register-password" 
+                               placeholder="Mật khẩu" required minlength="6">
+                        <span class="position-absolute end-0 top-50 translate-middle-y me-3" 
+                              style="cursor: pointer;" onclick="togglePasswordVisibility('modal-register-password')">
+                            <i class="bi bi-eye" id="toggle-register-password-icon"></i>
+                        </span>
+                        <div class="form-text small">Mật khẩu tối thiểu 6 ký tự</div>
+                    </div>
+                    
+                    <div class="mb-3 position-relative">
+                        <input type="password" class="form-control form-control-lg" id="modal-register-confirm-password" 
+                               placeholder="Xác nhận mật khẩu" required>
+                        <span class="position-absolute end-0 top-50 translate-middle-y me-3" 
+                              style="cursor: pointer;" onclick="togglePasswordVisibility('modal-register-confirm-password')">
+                            <i class="bi bi-eye" id="toggle-confirm-password-icon"></i>
+                        </span>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <select class="form-select form-control-lg" id="modal-register-gender">
+                                <option value="">Chọn giới tính</option>
+                                <option value="MALE">Nam</option>
+                                <option value="FEMALE">Nữ</option>
+                                <option value="OTHER">Khác</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <input type="date" class="form-control form-control-lg" id="modal-register-dob" 
+                                   placeholder="Ngày sinh">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="modal-register-agree-terms" required>
+                        <label class="form-check-label small" for="modal-register-agree-terms">
+                            Tôi đồng ý với <a href="#" class="text-primary">điều khoản sử dụng</a>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger w-100 py-2 fw-bold text-uppercase">
+                        ĐĂNG KÝ
+                    </button>
+                </form>
+
+                <!-- Separator -->
+                <div class="position-relative my-4">
+                    <hr>
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 small text-muted">
+                        hoặc đăng ký bằng
+                    </span>
+                </div>
+
+                <!-- Social Login Buttons -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <a href="/oauth2/authorization/google" class="btn btn-outline-danger w-100 py-2">
+                            <i class="bi bi-google"></i> Google
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <button type="button" class="btn btn-primary w-100 py-2" onclick="showFacebookLogin()">
+                            <i class="bi bi-facebook"></i> Facebook
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Switch to Login -->
+                <div class="text-center">
+                    <span class="text-muted">Bạn đã có tài khoản? </span>
+                    <a href="#" class="text-primary text-decoration-underline fw-bold" onclick="switchToLoginModal(); return false;">
+                        Đăng nhập ngay!
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

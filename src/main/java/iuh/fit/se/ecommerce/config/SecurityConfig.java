@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/oauth2/**",
+                                "/oauth2/callback",
                                 "/login/**",
                                 "/register/**",
                                 "/error",
@@ -42,7 +43,15 @@ public class SecurityConfig {
                                 "/reset/**",
                                 "/css/**",
                                 "/js/**",
+                                "/fragments/**",
                                 "/",
+                                "/index.html",
+                                "/login.html",
+                                "/register.html",
+                                "/product-detail.html",
+                                "/profile.html",
+                                "/promotions.html",
+                                "/forgot-password.html",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
@@ -63,9 +72,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/promotions/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated())
-                .formLogin(form -> form
-                        .permitAll())
+                .formLogin(AbstractHttpConfigurer::disable)
                 .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login.html")
+                        .failureUrl("/login.html?error=true")
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler))
