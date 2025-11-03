@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đang xử lý đăng nhập...</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Đang xử lý đăng nhập...</p>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- API Client -->
+    <script src="/js/api.js"></script>
+    
+    <script>
+        // Get tokens from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('accessToken');
+        const refreshToken = urlParams.get('refreshToken');
+        const tokenType = urlParams.get('tokenType');
+
+        if (accessToken && refreshToken) {
+            // Store tokens
+            apiClient.setAuthToken(accessToken);
+            apiClient.setRefreshToken(refreshToken);
+
+            // Get user profile
+            apiClient.getProfile().then(user => {
+                apiClient.setUser(user);
+                
+                // Redirect to home page
+                window.location.href = '/index.html';
+            }).catch(error => {
+                console.error('Error getting profile:', error);
+                alert('Đăng nhập thành công nhưng không thể lấy thông tin người dùng. Vui lòng thử lại.');
+                window.location.href = '/login.html';
+            });
+        } else {
+            alert('Đăng nhập thất bại. Vui lòng thử lại.');
+            window.location.href = '/login.html';
+        }
+    </script>
+</body>
+</html>
+
