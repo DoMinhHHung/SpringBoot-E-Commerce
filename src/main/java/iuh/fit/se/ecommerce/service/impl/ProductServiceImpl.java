@@ -84,6 +84,18 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ProductResponse> findByQuery(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return List.of();
+        }
+        return productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(query, query)
+                .stream()
+                .limit(3)
+                .map(ProductMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+
     public void mapCreateRequestToProduct(Product product, ProductRequest request){
         product.setName(request.getName());
         product.setBrand(request.getBrand());
