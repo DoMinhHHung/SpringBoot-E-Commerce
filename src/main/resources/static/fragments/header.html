@@ -1,0 +1,109 @@
+<!-- Header Top -->
+<div class="header-top">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <a href="tel:19005301"><i class="bi bi-telephone"></i> Hotline: 1900.5301</a>
+                <a href="/"><i class="bi bi-shop"></i> Hệ thống Showroom</a>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="#" onclick="showLoginModal(); return false;" id="login-link">Đăng nhập</a>
+                <span class="mx-2">|</span>
+                <a href="#" onclick="showRegisterModal(); return false;" id="register-link">Đăng ký</a>
+                <span id="user-menu" class="d-none">
+                    <a href="/profile.html" id="profile-link"></a>
+                    <span class="mx-2">|</span>
+                    <a href="#" onclick="logout()">Đăng xuất</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navbar Main -->
+<nav class="navbar navbar-expand-lg navbar-main">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/index.html">E-COMMERCE</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html">Trang chủ</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Sản phẩm
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/index.html?type=PC">PC Gaming</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=LAPTOP">Laptop</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=KEYBOARD">Bàn phím</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=MOUSE">Chuột</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=MONITOR">Màn hình</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=HEADPHONE">Tai nghe</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=ACCESSORY">Phụ kiện</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/promotions.html">Khuyến mãi</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/profile.html">Tài khoản</a>
+                </li>
+                <!-- Admin Menu (hidden by default; shown via JS when role === 'ADMIN') -->
+                <li id="admin-menu" class="nav-item dropdown d-none">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Admin
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/admin/dashboard.html">Dashboard</a></li>
+                        <li><a class="dropdown-item" href="/admin/products.html">Quản lý sản phẩm</a></li>
+                        <li><a class="dropdown-item" href="/admin/promotions.html">Quản lý khuyến mãi</a></li>
+                        <li><a class="dropdown-item" href="/admin/users.html">Quản lý người dùng</a></li>
+                        <li><a class="dropdown-item" href="/admin/orders.html">Quản lý đơn hàng</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="search-box me-3">
+                <input type="text" class="form-control" id="search-input" placeholder="Tìm kiếm sản phẩm...">
+                <button type="button" onclick="handleSearch()"><i class="bi bi-search"></i></button>
+            </div>
+            <a href="#" class="cart-icon" onclick="showCart()">
+                <i class="bi bi-cart3"></i>
+                <span class="badge" id="cart-badge">0</span>
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- Category Navigation -->
+<nav class="category-nav">
+    <div class="container">
+        <ul class="nav">
+            <li class="nav-item">
+                <a class="nav-link active" href="/index.html">Tất cả</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html?type=PC">PC Gaming</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html?type=LAPTOP">Laptop</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html?type=KEYBOARD">Bàn phím</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html?type=MOUSE">Chuột</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html?type=MONITOR">Màn hình</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/index.html?type=HEADPHONE">Tai nghe</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
