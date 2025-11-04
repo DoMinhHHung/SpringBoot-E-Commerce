@@ -86,17 +86,6 @@ INSERT INTO product (name, brand, description, price, stock, main_image, product
 -- Alternative: Update products via API or set images as JSON in description temporarily
 
 -- Option 1: If table exists with columns (product_id, images):
-INSERT INTO product_images (product_id, images) VALUES
-(1, 'https://cdn2.cellphones.com.vn/x/media/catalog/product/a/s/asusus_2.png?_gl=1*1t5ypde*_gcl_aw*R0NMLjE3NjIxODU4MzUuQ2p3S0NBaUF3cUhJQmhBRUVpd0F4OWNUZWExcXZVV2o5Z2txODNSam9rRGZEWHl6dHpTLTZCbjRuSGxFRzZhNG1NVWZBNTlEODEyOER4b0M1RkVRQXZEX0J3RQ..*_gcl_au*NTQxMDUzNzkuMTc2MjE4NTgzNQ..*_ga*NDIzNDkxMjk3LjE3NjIxODU4MzU.*_ga_QLK8WFHNK9*czE3NjIxODU4MzQkbzEkZzAkdDE3NjIxODU4MzYkajU4JGwwJGgyMDU4MDE1OTk0'),
-(1, 'https://cdn2.fptshop.com.vn/unsafe/1920x0/filters:format(webp):quality(75)/rog_strix_g16_2025_g615_1_b1f1f2f1bb.png'),
-(1, 'https://down-vn.img.susercontent.com/file/60d48c8ffc8504ef2455d7488efb1e35@resize_w900_nl.webp'),
-(2, 'https://cdn2.cellphones.com.vn/x/media/catalog/product/t/e/text_ng_n_10__5_210.png?_gl=1*numkec*_gcl_aw*R0NMLjE3NjIxODU5NzYuQ2p3S0NBaUF3cUhJQmhBRUVpd0F4OWNUZWNTdU9GbnJvR083R3JFVGFLQkgydmx5bTZTbXRzWkdwNERsN0xSdGF5OU5aaEY2b1FaWXFob0MzSGtRQXZEX0J3RQ..*_gcl_au*NTQxMDUzNzkuMTc2MjE4NTgzNQ..*_ga*NDIzNDkxMjk3LjE3NjIxODU4MzU.*_ga_QLK8WFHNK9*czE3NjIxODU4MzQkbzEkZzEkdDE3NjIxODU5NzgkajU4JGwwJGgyMDU4MDE1OTk0'),
-(2, 'https://newtechshop.vn/wp-content/uploads/2025/10/9350-4.webp'),
-(5, 'https://product.hstatic.net/200000722513/product/pc_gvn_rx6600_-_3_762ba90a94904a50809a93355cd819a7_master.png'),
-(5, 'https://product.hstatic.net/200000722513/product/pc_gvn_rx6600_-_4_b0f0beb2642a42399c305f3638d2c364_master.png'),
-(5, 'https://product.hstatic.net/200000722513/product/pc_gvn_rx6600_-_2_9577b2a53e584c10b3f50521079dd5cf_master.png'),
-(5, 'https://via.placeholder.com/600x400?text=PC+Gaming+4https://product.hstatic.net/200000722513/product/pc_gvn_rx6600_-_5_b2d8837656c5443fac89ab0c84f93ba0_master.png');
-
 -- Option 2: Update via API using ProductService after inserting products
 -- OR manually update product table if images are stored differently
 
@@ -239,4 +228,3 @@ INSERT INTO specification (spec_name, spec_value, product_id) VALUES
 
 -- Check product images:
 -- SELECT * FROM product_images;
-

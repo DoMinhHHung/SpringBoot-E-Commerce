@@ -170,6 +170,35 @@ class ApiClient {
         });
     }
 
+    // Admin/Product modification APIs (use FormData because backend expects @ModelAttribute with files)
+    async adminCreateProduct(formData) {
+        const url = `${this.baseURL}/products`;
+        const token = this.getAuthToken();
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: formData
+        });
+        return this.handleResponse(response);
+    }
+
+    async adminUpdateProduct(id, formData) {
+        const url = `${this.baseURL}/products/${id}`;
+        const token = this.getAuthToken();
+        const headers = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(url, {
+            method: 'PUT',
+            headers: headers,
+            body: formData
+        });
+        return this.handleResponse(response);
+    }
+
     // Promotion APIs
     async getActivePromotions() {
         return this.request('/promotions/active', {
@@ -182,6 +211,27 @@ class ApiClient {
         return this.request('/promotions', {
             method: 'GET',
             skipAuth: true
+        });
+    }
+
+    // Admin Promotion APIs
+    async adminCreatePromotion(payload) {
+        return this.request('/promotions', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+    }
+
+    async adminUpdatePromotion(id, payload) {
+        return this.request(`/promotions/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+    }
+
+    async adminDeletePromotion(id) {
+        return this.request(`/promotions/${id}`, {
+            method: 'DELETE'
         });
     }
 

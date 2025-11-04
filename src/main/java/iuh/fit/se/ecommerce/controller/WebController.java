@@ -45,4 +45,30 @@ public class WebController {
     public String oauth2Callback() {
         return "auth/oauth2-callback";
     }
+
+    // Admin pages
+    @GetMapping("/admin/dashboard.html")
+    public String adminDashboard() {
+        return "admin/dashboard";
+    }
+
+    @GetMapping("/admin/products.html")
+    public String adminProducts() {
+        return "admin/products";
+    }
+
+    @GetMapping("/admin/promotions.html")
+    public String adminPromotions() {
+        return "admin/promotions";
+    }
+
+    @GetMapping("/admin/users.html")
+    public String adminUsers() {
+        return "admin/users";
+    }
+
+    @GetMapping("/admin/orders.html")
+    public String adminOrders() {
+        return "admin/orders";
+    }
 }

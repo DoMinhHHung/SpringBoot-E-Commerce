@@ -60,6 +60,10 @@ public class SecurityConfig {
                                 "/webjars/**")
                         .permitAll()
 
+
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
+
                         // Products: allow GET to public, restrict modifications to ADMIN
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
