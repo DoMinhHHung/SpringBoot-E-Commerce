@@ -8,7 +8,14 @@ class ChatWidget {
     }
 
     generateSessionId() {
-        return 'session-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now();
+        // Use crypto.randomUUID() if available, otherwise fall back to timestamp-based ID
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return 'session-' + crypto.randomUUID();
+        }
+        // Fallback for older browsers: use timestamp and random values from crypto.getRandomValues
+        const array = new Uint32Array(2);
+        crypto.getRandomValues(array);
+        return 'session-' + array[0].toString(36) + array[1].toString(36) + '-' + Date.now();
     }
 
     init(productId) {
