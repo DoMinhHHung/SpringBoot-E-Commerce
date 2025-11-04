@@ -13,9 +13,13 @@ class ChatWidget {
             return 'session-' + crypto.randomUUID();
         }
         // Fallback for older browsers: use timestamp and random values from crypto.getRandomValues
-        const array = new Uint32Array(2);
-        crypto.getRandomValues(array);
-        return 'session-' + array[0].toString(36) + array[1].toString(36) + '-' + Date.now();
+        if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+            const array = new Uint32Array(2);
+            crypto.getRandomValues(array);
+            return 'session-' + array[0].toString(36) + array[1].toString(36) + '-' + Date.now();
+        }
+        // Final fallback for very old browsers: use timestamp only (not secure but functional)
+        return 'session-' + Date.now() + '-' + performance.now().toString(36).replace('.', '');
     }
 
     init(productId) {
