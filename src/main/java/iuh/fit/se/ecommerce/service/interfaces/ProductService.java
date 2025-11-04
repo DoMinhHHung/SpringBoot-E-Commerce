@@ -13,4 +13,5 @@ public interface ProductService {
     ProductDetailResponse getProductById(Long id);
     List<ProductResponse> getAllProducts();
     List<ProductResponse> getProductsByType(String type);
+    List<ProductResponse> findByQuery(String query);
 }
