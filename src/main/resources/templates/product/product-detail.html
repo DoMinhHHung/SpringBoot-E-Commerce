@@ -11,6 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="/css/style.css" rel="stylesheet">
+    <!-- Chat Widget CSS -->
+    <link href="/css/chat-widget.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header -->
@@ -120,10 +122,15 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SockJS and STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <!-- Common JS -->
     <script src="/js/common.js"></script>
     <!-- API Client -->
     <script src="/js/api.js"></script>
+    <!-- Chat Widget -->
+    <script src="/js/chat-widget.js"></script>
     <!-- Page Script -->
     <script>
         let product = null;
@@ -150,6 +157,9 @@
                 
                 // Load related products
                 loadRelatedProducts(product.productType);
+                
+                // Initialize chat widget with product ID
+                initChatWidget(id);
             } catch (error) {
                 showAlert('Không thể tải chi tiết sản phẩm: ' + error.message, 'error');
                 showError();
