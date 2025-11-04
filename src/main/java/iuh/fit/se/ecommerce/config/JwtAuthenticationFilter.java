@@ -34,13 +34,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String header = request.getHeader("Authorization");
             log.info("Incoming request {} {} - Authorization header present: {}", request.getMethod(), request.getRequestURI(), header != null);
 
-            if (header == null || !header.startsWith("Bearer ")) {
+            String token = null;
+            if (header != null && header.startsWith("Bearer ")) {
+                token = header.substring(7);
+            } else {
+                // Try reading from cookie named access_token
+                if (request.getCookies() != null) {
+                    for (var c : request.getCookies()) {
+                        if ("access_token".equals(c.getName())) {
+                            token = c.getValue();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (token == null) {
                 filterChain.doFilter(request, response);
                 return;
             }
-            String token = header.substring(7);
 
-            log.info("Received JWT token (len={}): {}...", token.length(), token.substring(0, Math.min(8, token.length())));
+            log.info("Received JWT token (len={})", token.length());
 
             if (jwtTokenProvider.validateToken(token)
                     && SecurityContextHolder.getContext().getAuthentication() == null) {

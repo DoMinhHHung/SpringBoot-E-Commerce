@@ -194,11 +194,23 @@ function updateUserMenu() {
         const registerLink = document.getElementById('register-link');
         const userMenu = document.getElementById('user-menu');
         const profileLink = document.getElementById('profile-link');
+        const adminMenu = document.getElementById('admin-menu');
         
         if (loginLink) loginLink.classList.add('d-none');
         if (registerLink) registerLink.classList.add('d-none');
         if (userMenu) userMenu.classList.remove('d-none');
         if (profileLink) profileLink.textContent = user.fullName || user.email;
+
+        // Show admin menu if role === 'ADMIN'
+        if (adminMenu) {
+            // user.role might be an array or string depending on backend; normalize
+            const roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
+            if (roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1) {
+                adminMenu.classList.remove('d-none');
+            } else {
+                adminMenu.classList.add('d-none');
+            }
+        }
     }).catch(() => {
         if (apiClient) apiClient.clearAuth();
     });

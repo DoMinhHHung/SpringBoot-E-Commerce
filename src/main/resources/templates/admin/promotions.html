@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Khuyến mãi - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <div id="header-container"></div>
+
+    <main class="container my-5">
+        <h1>Quản lý Khuyến mãi</h1>
+        <div class="mb-3 d-flex justify-content-between align-items-center">
+            <div>
+                <button id="btn-new-promotion" class="btn btn-primary">Thêm khuyến mãi mới</button>
+                <button id="btn-refresh-promotions" class="btn btn-secondary ms-2">Tải lại</button>
+            </div>
+            <div>
+                <input id="promotion-search" class="form-control" style="width:300px; display:inline-block;" placeholder="Tìm theo tên...">
+            </div>
+        </div>
+
+        <div id="promotions-table" class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên</th>
+                        <th>Giảm (%)</th>
+                        <th>Thời gian</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="promotions-tbody">
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <div id="footer-container"></div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (!apiClient || !apiClient.isAuthenticated()) {
+                window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+                return;
+            }
+            const user = await apiClient.getProfile();
+            if (!user) { window.location.href = '/login.html'; return; }
+            if (Array.isArray(user.role) ? user.role.indexOf('ADMIN') === -1 && user.role.indexOf('ROLE_ADMIN') === -1 : user.role !== 'ADMIN' && user.role !== 'ROLE_ADMIN') { alert('Không có quyền'); window.location.href = '/index.html'; return; }
+
+            const promoModalEl = document.getElementById('promoModal');
+            // create modal element dynamically when needed
+
+            document.getElementById('btn-new-promotion').addEventListener('click', openNewPromotionModal);
+            document.getElementById('btn-refresh-promotions').addEventListener('click', loadPromotions);
+            document.getElementById('promotion-search').addEventListener('input', (e) => renderFiltered(e.target.value));
+
+            let promotionsCache = [];
+
+            async function loadPromotions() {
+                try {
+                    const promotions = await apiClient.getAllPromotions();
+                    promotionsCache = promotions || [];
+                    renderPromotions(promotionsCache);
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Lỗi tải khuyến mãi: ' + (err.message || err), 'error');
+                }
+            }
+
+            function renderPromotions(list) {
+                const tbody = document.getElementById('promotions-tbody');
+                tbody.innerHTML = '';
+                if (!list || list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Không có khuyến mãi</td></tr>';
+                    return;
+                }
+                list.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const timeRange = (p.startDate ? p.startDate : '') + ' - ' + (p.endDate ? p.endDate : '');
+                    tr.innerHTML = `
+                        <td>${p.id}</td>
+                        <td>${p.name}</td>
+                        <td>${p.discountPercent != null ? p.discountPercent + '%' : '-'}</td>
+                        <td>${timeRange}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-1" data-id="${p.id}" data-action="edit">Sửa</button>
+                            <button class="btn btn-sm btn-danger me-1" data-id="${p.id}" data-action="delete">Xóa</button>
+                            <button class="btn btn-sm btn-info" data-id="${p.id}" data-action="view">Sản phẩm</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                tbody.querySelectorAll('button[data-action="edit"]').forEach(btn => btn.addEventListener('click', (e) => openEditPromotionModal(e.target.getAttribute('data-id'))));
+                tbody.querySelectorAll('button[data-action="delete"]').forEach(btn => btn.addEventListener('click', (e) => deletePromotion(e.target.getAttribute('data-id'))));
+                tbody.querySelectorAll('button[data-action="view"]').forEach(btn => btn.addEventListener('click', (e) => viewPromotionProducts(e.target.getAttribute('data-id'))));
+            }
+
+            function renderFiltered(term) {
+                const q = (term || '').toLowerCase().trim();
+                if (!q) return renderPromotions(promotionsCache);
+                const filtered = promotionsCache.filter(p => (p.name || '').toLowerCase().includes(q));
+                renderPromotions(filtered);
+            }
+
+            function openNewPromotionModal() {
+                showPromotionModal({});
+            }
+
+            async function openEditPromotionModal(id) {
+                try {
+                    const promo = await apiClient.request(`/promotions/${id}`, { method: 'GET', skipAuth: true });
+                    showPromotionModal(promo);
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Lỗi tải khuyến mãi', 'error');
+                }
+            }
+
+            function showPromotionModal(promo) {
+                // Build modal HTML if not exists
+                let modalEl = document.getElementById('promoModal');
+                if (!modalEl) {
+                    document.body.insertAdjacentHTML('beforeend', `
+                    <div class="modal fade" id="promoModal" tabindex="-1" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title" id="promoModalTitle">Khuyến mãi</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <form id="promo-form">
+                              <input type="hidden" id="promo-id">
+                              <div class="mb-3"><label class="form-label">Tên</label><input id="promo-name" class="form-control" required></div>
+                              <div class="mb-3"><label class="form-label">Mô tả</label><textarea id="promo-desc" class="form-control" rows="3"></textarea></div>
+                              <div class="row">
+                                <div class="col-md-4 mb-3"><label class="form-label">Giảm (%)</label><input id="promo-discount" type="number" class="form-control"></div>
+                                <div class="col-md-4 mb-3"><label class="form-label">Bắt đầu</label><input id="promo-start" type="date" class="form-control"></div>
+                                <div class="col-md-4 mb-3"><label class="form-label">Kết thúc</label><input id="promo-end" type="date" class="form-control"></div>
+                              </div>
+                            </form>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button id="promo-save-btn" type="button" class="btn btn-primary">Lưu</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    `);
+                    modalEl = document.getElementById('promoModal');
+                    const modal = new bootstrap.Modal(modalEl);
+                    document.getElementById('promo-save-btn').addEventListener('click', async () => {
+                        await submitPromotionForm(modal);
+                    });
+                }
+
+                // populate
+                document.getElementById('promo-id').value = promo.id || '';
+                document.getElementById('promo-name').value = promo.name || '';
+                document.getElementById('promo-desc').value = promo.description || '';
+                document.getElementById('promo-discount').value = promo.discountPercent != null ? promo.discountPercent : '';
+                document.getElementById('promo-start').value = promo.startDate || '';
+                document.getElementById('promo-end').value = promo.endDate || '';
+
+                const bsModal = new bootstrap.Modal(document.getElementById('promoModal'));
+                bsModal.show();
+            }
+
+            async function submitPromotionForm(modal) {
+                const id = document.getElementById('promo-id').value;
+                const payload = {
+                    name: document.getElementById('promo-name').value,
+                    description: document.getElementById('promo-desc').value,
+                    discountPercent: Number(document.getElementById('promo-discount').value) || 0,
+                    startDate: document.getElementById('promo-start').value || null,
+                    endDate: document.getElementById('promo-end').value || null
+                };
+
+                try {
+                    document.getElementById('promo-save-btn').disabled = true;
+                    if (id) {
+                        await apiClient.adminUpdatePromotion(id, payload);
+                        showAlert('Cập nhật khuyến mãi thành công', 'success');
+                    } else {
+                        await apiClient.adminCreatePromotion(payload);
+                        showAlert('Tạo khuyến mãi thành công', 'success');
+                    }
+                    // close modal
+                    const bs = bootstrap.Modal.getInstance(document.getElementById('promoModal'));
+                    if (bs) bs.hide();
+                    await loadPromotions();
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Lỗi lưu khuyến mãi: ' + (err.message || err), 'error');
+                } finally {
+                    document.getElementById('promo-save-btn').disabled = false;
+                }
+            }
+
+            async function deletePromotion(id) {
+                if (!confirm('Bạn có chắc muốn xóa khuyến mãi #' + id + '?')) return;
+                try {
+                    await apiClient.adminDeletePromotion(id);
+                    showAlert('Xóa khuyến mãi thành công', 'success');
+                    await loadPromotions();
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Lỗi xóa khuyến mãi: ' + (err.message || err), 'error');
+                }
+            }
+
+            async function viewPromotionProducts(id) {
+                try {
+                    const products = await apiClient.getProductsByPromotion(id);
+                    // show quick modal list
+                    let html = '<ul class="list-group">';
+                    products.forEach(p => {
+                        html += `<li class="list-group-item">${p.name} - ${p.price ? formatPrice(p.price) : ''}</li>`;
+                    });
+                    html += '</ul>';
+                    showAlert(html, 'info');
+                } catch (err) {
+                    console.error(err);
+                    showAlert('Lỗi tải sản phẩm khuyến mãi', 'error');
+                }
+            }
+
+            // initial load
+            await loadPromotions();
+        });
+    </script>
+</body>
+</html>
