@@ -10,6 +10,8 @@ import iuh.fit.se.ecommerce.dto.response.UserResponse;
 import iuh.fit.se.ecommerce.service.interfaces.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,12 +44,54 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    LoginResponse loginResponse = authService.login(request);
+
+    ResponseCookie accessCookie = ResponseCookie.from("access_token", loginResponse.getAccessToken())
+        .httpOnly(true)
+        .secure(false)
+        .path("/")
+        .maxAge(60 * 60)
+        .sameSite("Lax")
+        .build();
+
+    ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", loginResponse.getRefreshToken())
+        .httpOnly(true)
+        .secure(false)
+        .path("/api/auth")
+        .maxAge(7 * 24 * 60 * 60)
+        .sameSite("Lax")
+        .build();
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+        .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+        .body(loginResponse);
     }
 
     @PostMapping("/refresh-token")
     public ResponseEntity<LoginResponse> refreshToken(@RequestParam String token) {
-        return ResponseEntity.ok(authService.refreshToken(token));
+    LoginResponse loginResponse = authService.refreshToken(token);
+
+    ResponseCookie accessCookie = ResponseCookie.from("access_token", loginResponse.getAccessToken())
+        .httpOnly(true)
+        .secure(false)
+        .path("/")
+        .maxAge(60 * 60)
+        .sameSite("Lax")
+        .build();
+
+    ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", loginResponse.getRefreshToken())
+        .httpOnly(true)
+        .secure(false)
+        .path("/api/auth")
+        .maxAge(7 * 24 * 60 * 60)
+        .sameSite("Lax")
+        .build();
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+        .header(HttpHeaders.SET_COOKIE, refreshCookie.toString())
+        .body(loginResponse);
     }
 
     @PostMapping("/forgot-password")
