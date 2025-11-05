@@ -18,7 +18,6 @@ class ChatWidget {
             crypto.getRandomValues(array);
             return 'session-' + array[0].toString(36) + array[1].toString(36) + '-' + Date.now();
         }
-        // Final fallback for very old browsers: use timestamp only (not secure but functional)
         return 'session-' + Date.now() + '-' + performance.now().toString(36).replace('.', '');
     }
 
@@ -44,6 +43,13 @@ class ChatWidget {
                         <button id="chat-widget-close" class="chat-widget-close">
                             <i class="bi bi-x"></i>
                         </button>
+                    </div>
+                    <div id="chat-active-filters" class="chat-active-filters" style="display:none;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e9ecef;">
+                        <!-- Active filters will appear here -->
+                    </div>
+                    <div id="chat-search-spinner" class="chat-search-spinner" style="display:none;padding:8px 12px;border-bottom:1px solid #e9ecef;color:#6c757d;">
+                        <i class="bi bi-arrow-repeat" style="margin-right:6px;" aria-hidden="true"></i>
+                        Đang tìm...
                     </div>
                     <div id="chat-widget-messages" class="chat-widget-messages">
                         <div class="chat-message bot-message">
@@ -108,7 +114,7 @@ class ChatWidget {
         this.stompClient.debug = null;
 
         this.stompClient.connect({}, 
-            (frame) => {
+            () => {
                 console.log('Connected to WebSocket');
                 this.connected = true;
                 this.updateConnectionStatus(true);
@@ -122,6 +128,15 @@ class ChatWidget {
                 // Enable input after connection
                 document.getElementById('chat-input').disabled = false;
                 document.getElementById('chat-send').disabled = false;
+
+                try {
+                    this.stompClient.send('/app/chat', {}, JSON.stringify({
+                        sessionId: this.sessionId,
+                        text: ''
+                    }));
+                } catch (err) {
+                    console.warn('Failed to request initial greeting:', err);
+                }
             },
             (error) => {
                 console.error('WebSocket connection error:', error);
@@ -156,6 +171,10 @@ class ChatWidget {
         // Display user message
         this.displayUserMessage(text);
         
+        // Show spinner and active filters
+        this.showSearchSpinner(true);
+        this.setActiveFiltersFromQuery(text);
+
         // Send message via STOMP
         const chatMessage = {
             sessionId: this.sessionId,
@@ -167,6 +186,18 @@ class ChatWidget {
         
         // Clear input
         input.value = '';
+    }
+
+    // send suggestion text as if the user typed it
+    sendSuggestion(text) {
+        if (!this.connected) return;
+        this.displayUserMessage(text);
+        const chatMessage = {
+            sessionId: this.sessionId,
+            text: text,
+            productId: this.productId
+        };
+        this.stompClient.send('/app/chat', {}, JSON.stringify(chatMessage));
     }
 
     displayUserMessage(text) {
@@ -181,6 +212,7 @@ class ChatWidget {
     }
 
     displayBotMessage(response) {
+        this.showSearchSpinner(false);
         const messagesDiv = document.getElementById('chat-widget-messages');
         
         let productsHTML = '';
@@ -206,19 +238,76 @@ class ChatWidget {
             productsHTML += '</div>';
         }
 
+        // render suggestions as clickable buttons
+        let suggestionsHTML = '';
+        if (response.suggestions && response.suggestions.length > 0) {
+            suggestionsHTML = '<div class="chat-suggestions">';
+            response.suggestions.forEach(s => {
+                // Support both legacy string suggestions and new {label, query} objects
+                let label = '';
+                let query = '';
+                if (s && typeof s === 'object' && s.label !== undefined) {
+                    label = s.label;
+                    query = s.query || '';
+                } else {
+                    label = String(s);
+                    query = String(s);
+                }
+                const safeLabel = this.escapeHtml(label);
+                const safeQuery = this.escapeHtml(query);
+                suggestionsHTML += `<button class="suggestion-btn" data-query="${safeQuery}" data-label="${safeLabel}">${safeLabel}</button>`;
+            });
+            suggestionsHTML += '</div>';
+        }
+
         const messageHTML = `
             <div class="chat-message bot-message">
                 <div class="message-content">
                     ${this.escapeHtml(response.text)}
                     ${productsHTML}
+                    ${suggestionsHTML}
                 </div>
             </div>
         `;
         messagesDiv.insertAdjacentHTML('beforeend', messageHTML);
+
+        // Attach click handlers to suggestion buttons inside the newly inserted message
+        const lastMsg = messagesDiv.lastElementChild;
+        if (lastMsg) {
+            const buttons = lastMsg.querySelectorAll('.suggestion-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const query = e.currentTarget.dataset.query;
+                    const label = e.currentTarget.dataset.label;
+                    // If query is empty, prefill input with the label so user can edit and send
+                    if (!query || query.trim() === '') {
+                        const input = document.getElementById('chat-input');
+                        input.value = label || '';
+                        input.focus();
+                    } else {
+                        // Display a friendly user message using the label (or query if no label)
+                        this.displayUserMessage(label || query);
+                        // Send the structured query to server
+                        const chatMessage = {
+                            sessionId: this.sessionId,
+                            text: query,
+                            productId: this.productId
+                        };
+                        this.stompClient.send('/app/chat', {}, JSON.stringify(chatMessage));
+                    }
+                    // Show spinner and set active filters based on the query
+                    this.showSearchSpinner(true);
+                    this.setActiveFiltersFromQuery(query);
+                });
+            });
+        }
+
         this.scrollToBottom();
     }
 
     displayErrorMessage(text) {
++        // hide spinner on error
++        this.showSearchSpinner(false);
         const messagesDiv = document.getElementById('chat-widget-messages');
         const messageHTML = `
             <div class="chat-message bot-message error-message">
@@ -252,7 +341,7 @@ class ChatWidget {
             '"': '&quot;',
             "'": '&#039;'
         };
-        return text.replace(/[&<>"']/g, m => map[m]);
+        return String(text).replace(/[&<>"']/g, m => map[m]);
     }
 
     disconnect() {
@@ -261,6 +350,81 @@ class ChatWidget {
         }
         this.connected = false;
         console.log('Disconnected from WebSocket');
+    }
+
+// add helper to render active filters
+    setActiveFiltersFromQuery(query) {
+        try {
+            if (!query) {
+                this.clearActiveFilters();
+                return;
+            }
+            const el = document.getElementById('chat-active-filters');
+            const parts = [];
+            const q = String(query).trim();
+            const lower = q.toLowerCase();
+            if (q.startsWith('brand:')) {
+                parts.push('Hãng: ' + q.substring('brand:'.length));
+            } else if (q.startsWith('type:')) {
+                parts.push('Loại: ' + q.substring('type:'.length));
+            } else if (q.startsWith('price:')) {
+                const r = q.substring('price:'.length);
+                parts.push('Tầm giá: ' + r);
+            } else if (q.startsWith('spec:')) {
+                parts.push('Thông số: ' + q.substring('spec:'.length));
+            } else {
+                // try to parse common pieces
+                // brand words
+                const brands = ['dell','hp','asus','acer','lenovo','apple','msi','lg'];
+                for (const b of brands) {
+                    if (lower.includes(b)) {
+                        parts.push('Hãng: ' + b);
+                        break;
+                    }
+                }
+                if (lower.includes('gaming')) parts.push('Loại: Gaming');
+                if (lower.includes('ultrabook')) parts.push('Loại: Ultrabook');
+                // price patterns
+                const mRange = lower.match(/(\d+[\.,]?\d*)\s*-\s*(\d+[\.,]?\d*)/);
+                if (mRange) parts.push('Tầm giá: ' + mRange[1] + '-' + mRange[2]);
+                const mSingle = lower.match(/(\d+[\.,]?\d*)\s*(triệu|m|vnđ|vnd)/);
+                if (mSingle) parts.push('Tầm giá: ' + mSingle[1] + ' ' + (mSingle[2] || ''));
+                // specs
+                if (lower.includes('ram')) parts.push('Spec: RAM');
+                if (lower.match(/\d+\s*gb/)) parts.push('Spec: ' + lower.match(/\d+\s*gb/)[0]);
+            }
+
+            if (parts.length === 0) {
+                this.clearActiveFilters();
+                return;
+            }
+
+            el.innerHTML = parts.map(p => `<span class="badge bg-secondary me-2">${this.escapeHtml(p)}</span>`).join('') + '<button id="clear-filters" class="btn btn-sm btn-link">Xóa</button>';
+            el.style.display = 'block';
+            const clearBtn = document.getElementById('clear-filters');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => this.clearActiveFilters());
+            }
+        } catch (err) {
+            console.warn('setActiveFiltersFromQuery error', err);
+        }
+    }
+
+    clearActiveFilters() {
+        const el = document.getElementById('chat-active-filters');
+        if (el) {
+            el.style.display = 'none';
+            el.innerHTML = '';
+        }
+    }
+
+    showSearchSpinner(show) {
+        const sp = document.getElementById('chat-search-spinner');
+        const input = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('chat-send');
+        if (sp) sp.style.display = show ? 'block' : 'none';
+        if (input) input.disabled = !!show ? true : false;
+        if (sendBtn) sendBtn.disabled = !!show ? true : false;
     }
 }
 

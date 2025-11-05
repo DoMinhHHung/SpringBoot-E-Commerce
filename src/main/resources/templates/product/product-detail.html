@@ -220,13 +220,37 @@
             
             // Specifications
             const specsTable = document.getElementById('specifications-table');
+            specsTable.innerHTML = '';
             if (product.specifications && product.specifications.length > 0) {
-                specsTable.innerHTML = product.specifications.map(spec => `
-                    <tr>
-                        <td style="width: 30%;"><strong>${spec.specName}</strong></td>
-                        <td>${spec.specValue}</td>
-                    </tr>
-                `).join('');
+                product.specifications.forEach(spec => {
+                    let name = '';
+                    let value = '';
+
+                    if (spec && (spec.specName !== undefined || spec.specValue !== undefined)) {
+                        name = spec.specName || '';
+                        value = spec.specValue || '';
+                    } else if (spec && typeof spec === 'object') {
+                        const entries = Object.entries(spec);
+                        if (entries.length > 0) {
+                            name = entries[0][0];
+                            value = entries[0][1];
+                        }
+                    }
+
+                    const tr = document.createElement('tr');
+                    const tdName = document.createElement('td');
+                    tdName.style.width = '30%';
+                    const strong = document.createElement('strong');
+                    strong.textContent = name;
+                    tdName.appendChild(strong);
+
+                    const tdValue = document.createElement('td');
+                    tdValue.textContent = value;
+
+                    tr.appendChild(tdName);
+                    tr.appendChild(tdValue);
+                    specsTable.appendChild(tr);
+                });
             } else {
                 specsTable.innerHTML = '<tr><td colspan="2" class="text-muted">Không có thông số kỹ thuật</td></tr>';
             }
@@ -321,4 +345,3 @@
     </script>
 </body>
 </html>
-
