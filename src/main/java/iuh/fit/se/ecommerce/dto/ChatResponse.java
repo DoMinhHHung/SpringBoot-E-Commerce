@@ -13,6 +13,14 @@ import java.util.List;
 public class ChatResponse {
     private String text;
     private List<SimpleProduct> products;
+    private List<Suggestion> suggestions; // changed to Suggestion objects
+
+    // keep a convenient 2-arg constructor
+    public ChatResponse(String text, List<SimpleProduct> products) {
+        this.text = text;
+        this.products = products;
+        this.suggestions = List.of();
+    }
 
     @Data
     @NoArgsConstructor
@@ -22,5 +30,13 @@ public class ChatResponse {
         private String name;
         private String imageUrl;
         private BigDecimal price;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Suggestion {
+        private String label; // what to show on the button
+        private String query; // actionable query sent back when clicked
     }
 }
