@@ -1,4 +1,4 @@
-package iuh.fit.se.ecommerce.dto;
+package iuh.fit.se.ecommerce.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
