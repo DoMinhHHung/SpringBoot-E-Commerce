@@ -5,14 +5,14 @@ class ChatWidget {
         this.sessionId = this.generateSessionId();
         this.connected = false;
         this.productId = null;
+        this._retries = 0;
+        this._maxRetries = 10;
     }
 
     generateSessionId() {
-        // Use crypto.randomUUID() if available, otherwise fall back to timestamp-based ID
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
             return 'session-' + crypto.randomUUID();
         }
-        // Fallback for older browsers: use timestamp and random values from crypto.getRandomValues
         if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
             const array = new Uint32Array(2);
             crypto.getRandomValues(array);
@@ -118,6 +118,7 @@ class ChatWidget {
                 console.log('Connected to WebSocket');
                 this.connected = true;
                 this.updateConnectionStatus(true);
+                this._retries = 0;
                 
                 // Subscribe to replies for this session
                 this.stompClient.subscribe('/topic/replies.' + this.sessionId, (message) => {
@@ -142,9 +143,29 @@ class ChatWidget {
                 console.error('WebSocket connection error:', error);
                 this.connected = false;
                 this.updateConnectionStatus(false);
-                this.displayErrorMessage('Không thể kết nối. Vui lòng thử lại sau.');
+                this.scheduleReconnect();
             }
         );
+
+        // also handle unexpected close
+        if (this.stompClient && this.stompClient.ws) {
+            this.stompClient.ws.onclose = () => {
+                if (this.connected) return; // already handled
+                this.updateConnectionStatus(false);
+                this.scheduleReconnect();
+            };
+        }
+    }
+
+    scheduleReconnect() {
+        const attempt = Math.min(this._retries + 1, this._maxRetries);
+        this._retries = attempt;
+        const delay = Math.min(30000, 1000 * Math.pow(2, attempt - 1)); // 1s,2s,4s.. up to 30s
+        const statusText = document.querySelector('.status-text');
+        if (statusText) statusText.textContent = 'Mất kết nối - Đang thử kết nối lại...';
+        setTimeout(() => {
+            this.connect();
+        }, delay);
     }
 
     updateConnectionStatus(connected) {
@@ -285,6 +306,14 @@ class ChatWidget {
                         input.value = label || '';
                         input.focus();
                     } else {
+                        if (query === 'CONNECT_AGENT') {
+                            this.displayUserMessage(label || 'Kết nối tư vấn viên');
+                            const chatMessage = { sessionId: this.sessionId, text: 'CONNECT_AGENT', productId: this.productId };
+                            this.stompClient.send('/app/chat', {}, JSON.stringify(chatMessage));
+                            this.showSearchSpinner(true);
+                            this.renderWaitingForAgent();
+                            return;
+                        }
                         // Display a friendly user message using the label (or query if no label)
                         this.displayUserMessage(label || query);
                         // Send the structured query to server
@@ -302,6 +331,19 @@ class ChatWidget {
             });
         }
 
+        this.scrollToBottom();
+    }
+
+    renderWaitingForAgent() {
+        const messagesDiv = document.getElementById('chat-widget-messages');
+        const messageHTML = `
+            <div class="chat-message bot-message">
+                <div class="message-content">
+                    Đang kết nối đến tư vấn viên. Vui lòng đợi trong giây lát...
+                </div>
+            </div>
+        `;
+        messagesDiv.insertAdjacentHTML('beforeend', messageHTML);
         this.scrollToBottom();
     }
 
