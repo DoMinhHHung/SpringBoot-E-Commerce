@@ -1,6 +1,8 @@
 package iuh.fit.se.ecommerce.controller;
 
 
+import iuh.fit.se.ecommerce.dto.request.AddItemRequest;
+import iuh.fit.se.ecommerce.dto.request.RemoveItemRequest;
 import iuh.fit.se.ecommerce.dto.response.CartResponse;
 import iuh.fit.se.ecommerce.service.interfaces.CartService;
 import org.springframework.web.bind.annotation.*;
@@ -17,25 +19,20 @@ public class CartController {
 
     //Thêm product vào cart với id user, id product, số lượng
     @PostMapping("/add")
-    public CartResponse addItem(@RequestParam Long userId,
-                                @RequestParam Long productId,
-                                @RequestParam int quantity) {
-        return cartService.addItem(userId, productId, quantity);
+    public CartResponse addItem(@RequestBody AddItemRequest request) {
+        return cartService.addItem(request.getUserId(), request.getProductId(), request.getQuantity());
     }
 
     //Chỉnh sửa số lượng sp trong cart
     @PutMapping("/update")
-    public CartResponse updateQuantity(@RequestParam Long userId,
-                                       @RequestParam Long productId,
-                                       @RequestParam int quantity) {
-        return cartService.updateQuantity(userId, productId, quantity);
+    public CartResponse updateQuantity(@RequestBody AddItemRequest request) {
+        return cartService.updateQuantity(request.getUserId(), request.getProductId(), request.getQuantity());
     }
 
     //Xoá sp trong cart
     @DeleteMapping("/remove")
-    public void removeItem(@RequestParam Long userId,
-                           @RequestParam Long productId) {
-        cartService.removeItem(userId, productId);
+    public void removeItem(@RequestBody RemoveItemRequest request) {
+        cartService.removeItem(request.getUserId(), request.getProductId());
     }
 
     //hiển thị giỏ hàng theo id user

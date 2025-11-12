@@ -102,7 +102,7 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
     }
 
-    // DTO Trả về id người dùng, sản phẩm, tổng tiền
+    // DTO Trả về id người dùng, sản phẩm, sluong
     private CartResponse mapToResponse(Cart cart) {
         List<CartItemResponse> itemResponses = cart.getItems().stream()
                 .map(item -> new CartItemResponse(
@@ -115,10 +115,10 @@ public class CartServiceImpl implements CartService {
                 ))
                 .toList();
 
-        BigDecimal total = itemResponses.stream()
-                .map(CartItemResponse::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int totalQuantity = itemResponses.stream()
+                .mapToInt(CartItemResponse::getQuantity)
+                .sum();
 
-        return new CartResponse(cart.getUser().getId(), itemResponses, total);
+        return new CartResponse(cart.getUser().getId(), itemResponses, totalQuantity);
     }
 }
