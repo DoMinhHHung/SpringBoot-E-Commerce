@@ -111,14 +111,14 @@ public class CartServiceImpl implements CartService {
                         item.getQuantity(),
                         item.getProduct().getPrice(),
                         item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity()))
-
                 ))
                 .toList();
 
-        int totalQuantity = itemResponses.stream()
-                .mapToInt(CartItemResponse::getQuantity)
-                .sum();
+        // Tính tổng tiền giỏ hàng
+        BigDecimal totalPrice = itemResponses.stream()
+                .map(CartItemResponse::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        return new CartResponse(cart.getUser().getId(), itemResponses, totalQuantity);
+        return new CartResponse(cart.getUser().getId(), itemResponses, totalPrice);
     }
 }

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce - PC Gaming, Laptop chính hãng</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+<!-- Header -->
+<div id="header-container"></div>
+
+<!-- Main Content -->
+<main class="container my-5">
+
+    <!-- Products Section -->
+    <section class="products-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold">Sản phẩm nổi bật</h2>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-secondary active" onclick="filterProducts('ALL')">Tất cả
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('PC')">PC</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('LAPTOP')">Laptop
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('KEYBOARD')">Bàn phím
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('MOUSE')">Chuột</button>
+            </div>
+        </div>
+        <main class="container my-5">
+            <h2 class="mb-4">Giỏ hàng của bạn</h2>
+            <div id="cart-container" class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th>Đơn giá</th>
+                        <th>Số lượng</th>
+                        <th>Tổng</th>
+                        <th>Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody id="cart-items">
+                    <!-- Items sẽ được load từ JS -->
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th colspan="2">Tổng số lượng:</th>
+                        <td id="total-quantity">0</td>
+                        <th id="total-price">0₫</th>
+                        <td></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </main>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+            const userId = 1; // TODO: Thay bằng userId đang đăng nhập
+            const cartItemsEl = document.getElementById('cart-items');
+            const totalQuantityEl = document.getElementById('total-quantity');
+            const totalPriceEl = document.getElementById('total-price');
+
+            // Lấy giỏ hàng từ backend
+            async function fetchCart() {
+                try {
+                    const res = await fetch(`http://localhost:8080/api/cart/${userId}`);
+                    if (!res.ok) throw new Error('Lỗi khi tải giỏ hàng');
+                    const cart = await res.json();
+                    renderCart(cart);
+                } catch (error) {
+                    cartItemsEl.innerHTML = `<tr><td colspan="5" class="text-center text-danger">${error.message}</td></tr>`;
+                }
+            }
+
+            // Render giỏ hàng
+            function renderCart(cart) {
+                cartItemsEl.innerHTML = '';
+                let totalQuantity = 0;
+
+                cart.items.forEach(item => {
+                    totalQuantity += item.quantity;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                <td>${item.productName}</td>
+                <td>${Number(item.unitPrice).toLocaleString()}₫</td>
+                <td>
+                    <input type="number" min="1" value="${item.quantity}"
+                           style="width: 60px;"
+                           onchange="updateQuantity(${cart.userId}, ${item.productId}, this.value)">
+                </td>
+                <td>${Number(item.totalPrice).toLocaleString()}₫</td>
+                <td>
+                    <button class="btn btn-danger btn-sm" onclick="removeItem(${cart.userId}, ${item.productId})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+                    cartItemsEl.appendChild(tr);
+                });
+
+                totalQuantityEl.textContent = totalQuantity;
+                totalPriceEl.textContent = Number(cart.totalPrice).toLocaleString() + '₫';
+            }
+
+            // Xóa sản phẩm
+            async function removeItem(userId, productId) {
+                if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
+
+                try {
+                    const res = await fetch(`http://localhost:8080/api/cart/remove?userId=${userId}&productId=${productId}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!res.ok) {
+                        const error = await res.json().catch(() => ({}));
+                        throw new Error(error.message || 'Xóa sản phẩm thất bại');
+                    }
+
+                    alert('Xóa sản phẩm thành công!');
+                    fetchCart(); // Reload giỏ hàng
+                } catch (error) {
+                    alert(error.message);
+                }
+            }
+
+
+            // Cập nhật số lượng
+            async function updateQuantity(userId, productId, quantity) {
+                quantity = parseInt(quantity);
+                if (quantity < 1) {
+                    alert('Số lượng phải lớn hơn 0');
+                    fetchCart();
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`http://localhost:8080/api/cart/update`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({userId, productId, quantity})
+                    });
+                    if (!res.ok) throw new Error('Cập nhật số lượng thất bại');
+                    fetchCart();
+                } catch (error) {
+                    alert(error.message);
+                }
+            }
+
+            // Load giỏ hàng khi mở trang
+            fetchCart();
+        </script>
+    </section>
+</main>
+
+</body>
+</html>
