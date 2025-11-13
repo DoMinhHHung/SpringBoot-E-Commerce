@@ -24,9 +24,15 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
+
+        String password = user.getPassword();
+        if (password == null) {
+            password = "";
+        }
+
         return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getEmail())
-                .password(user.getPassword())
+                .password(password)
                 .authorities(authorities)
                 .disabled(!user.isEnabled())
                 .accountExpired(false)
@@ -35,4 +41,3 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .build();
     }
 }
-
