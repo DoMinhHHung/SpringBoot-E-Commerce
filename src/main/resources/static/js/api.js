@@ -4,7 +4,6 @@ const AUTH_TOKEN_KEY = 'auth_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'user_info';
 
-// API Helper Functions
 class ApiClient {
     constructor() {
         this.baseURL = API_BASE_URL;
@@ -39,6 +38,7 @@ class ApiClient {
         localStorage.removeItem(AUTH_TOKEN_KEY);
         localStorage.removeItem(REFRESH_TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
+        console.warn('apiClient.clearAuth() called - auth tokens removed from localStorage');
     }
 
     getHeaders(includeAuth = true) {
@@ -58,16 +58,34 @@ class ApiClient {
 
     async handleResponse(response) {
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ message: 'An error occurred' }));
-            throw new Error(error.message || `HTTP error! status: ${response.status}`);
+            let errorObj = { message: response.statusText || 'An error occurred' };
+            try {
+                const text = await response.text();
+                if (text) {
+                    try { errorObj = JSON.parse(text); } catch (e) { errorObj.message = text; }
+                }
+            } catch (e) {
+            }
+            const err = new Error(errorObj.message || `HTTP error! status: ${response.status}`);
+            err.status = response.status;
+            throw err;
         }
-        return response.json();
+
+        if (response.status === 204) return null;
+        const txt = await response.text();
+        if (!txt) return null;
+        try {
+            return JSON.parse(txt);
+        } catch (e) {
+            return txt;
+        }
     }
 
     async request(endpoint, options = {}) {
         const url = `${this.baseURL}${endpoint}`;
         const config = {
             headers: this.getHeaders(!options.skipAuth),
+            credentials: 'same-origin',
             ...options
         };
 
@@ -75,39 +93,42 @@ class ApiClient {
             const response = await fetch(url, config);
             return await this.handleResponse(response);
         } catch (error) {
-            if (error.message.includes('401')) {
-                // Try to refresh token
-                const refreshToken = this.getRefreshToken();
-                if (refreshToken) {
-                    try {
-                        const refreshResponse = await fetch(`${this.baseURL}/auth/refresh-token?token=${refreshToken}`, {
-                            method: 'POST',
-                            headers: this.getHeaders(false)
-                        });
-                        const data = await this.handleResponse(refreshResponse);
-                        this.setAuthToken(data.accessToken);
-                        this.setRefreshToken(data.refreshToken);
-                        
-                        // Retry original request
+            if (error && error.status === 401 && options && options.noAuthRedirect) {
+                console.warn('apiClient.request: received 401 for', url, 'noAuthRedirect=true');
+                throw error;
+            }
+
+            if (error && error.status === 401) {
+                console.warn('apiClient.request: received 401 for', url, 'attempting refresh if possible');
+                 // Try to refresh token
+                 const refreshToken = this.getRefreshToken();
+                 if (refreshToken) {
+                     try {
+                         const refreshResponse = await fetch(`${this.baseURL}/auth/refresh-token?token=${refreshToken}`, {
+                             method: 'POST',
+                             headers: this.getHeaders(false)
+                         });
+                         const data = await this.handleResponse(refreshResponse);
+                         this.setAuthToken(data.accessToken);
+                         this.setRefreshToken(data.refreshToken);
+
                         config.headers = this.getHeaders(true);
                         const retryResponse = await fetch(url, config);
                         return await this.handleResponse(retryResponse);
-                    } catch (refreshError) {
+                     } catch (refreshError) {
                         this.clearAuth();
-                        window.location.href = '/login.html';
                         throw refreshError;
-                    }
-                } else {
+                     }
+                 } else {
                     this.clearAuth();
-                    window.location.href = '/login.html';
                     throw error;
-                }
-            }
-            throw error;
-        }
-    }
+                 }
+             }
+             console.warn('apiClient.request: throwing error for', url, error);
+             throw error;
+         }
+     }
 
-    // Auth APIs
     async login(email, password) {
         const response = await this.request('/auth/login', {
             method: 'POST',
@@ -187,6 +208,7 @@ class ApiClient {
         const response = await fetch(url, {
             method: 'POST',
             headers: headers,
+            credentials: 'same-origin',
             body: formData
         });
         return this.handleResponse(response);
@@ -201,6 +223,7 @@ class ApiClient {
         const response = await fetch(url, {
             method: 'PUT',
             headers: headers,
+            credentials: 'same-origin',
             body: formData
         });
         return this.handleResponse(response);
@@ -252,7 +275,8 @@ class ApiClient {
     // User APIs
     async getProfile() {
         return this.request('/users/profile', {
-            method: 'GET'
+            method: 'GET',
+            noAuthRedirect: true
         });
     }
 
@@ -344,4 +368,3 @@ function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN');
 }
-

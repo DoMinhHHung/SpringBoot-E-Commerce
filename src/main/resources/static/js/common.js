@@ -6,13 +6,11 @@ function loadHeader() {
             const headerContainer = document.getElementById('header-container');
             if (headerContainer) {
                 headerContainer.innerHTML = html;
-                // Initialize header scripts after loading
                 initializeHeader();
             }
         })
         .catch(error => {
             console.error('Error loading header:', error);
-            // Fallback: create simple header
             createSimpleHeader();
         });
 }
@@ -233,7 +231,8 @@ function initializeHeader() {
 function updateUserMenu() {
     if (!apiClient) return;
     
-    apiClient.getProfile().then(user => {
+    // Use request directly with noAuthRedirect to avoid automatic redirect to login when token invalid
+    apiClient.request('/users/profile', { method: 'GET', noAuthRedirect: true }).then(user => {
         const loginLink = document.getElementById('login-link');
         const registerLink = document.getElementById('register-link');
         const userAvatarDropdown = document.getElementById('user-avatar-dropdown');
@@ -316,8 +315,30 @@ function logout() {
     }
 }
 
-function showCart() {
-    alert('Tính năng giỏ hàng đang được phát triển');
+async function showCart() {
+    try {
+        if (!apiClient || !apiClient.isAuthenticated()) {
+            showAlert('Vui lòng đăng nhập để xem giỏ hàng', 'warning');
+            showLoginModal();
+            return;
+        }
+
+        try {
+            const profile = await apiClient.getProfile();
+            if (!profile || !profile.id) {
+                showLoginModal();
+                return;
+            }
+            // token OK -> go to cart
+            window.location.href = '/cart.html';
+        } catch (err) {
+            console.warn('showCart: profile check failed', err);
+            showLoginModal();
+        }
+    } catch (e) {
+        console.error('showCart error', e);
+        window.location.href = '/cart.html';
+    }
 }
 
 function showOrders() {
@@ -339,10 +360,28 @@ function showLoginModal() {
     if (modal) {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
-    } else {
-        // Fallback if modal not loaded yet
-        window.location.href = '/login.html';
+        return;
     }
+
+    // If modal not present, try to load it and wait for it to be added to DOM.
+    // This avoids redirecting the user away when the modal fragment is still loading.
+    loadAuthModal();
+
+    const maxRetries = 200; // ~20 seconds (200 * 100ms) to allow modal fragment to load on slow connections
+    let attempts = 0;
+    const interval = setInterval(() => {
+        const m = document.getElementById('loginModal');
+        attempts++;
+        if (m) {
+            clearInterval(interval);
+            const bsModal = new bootstrap.Modal(m);
+            bsModal.show();
+        } else if (attempts >= maxRetries) {
+            clearInterval(interval);
+            // Modal couldn't be loaded in time; show a helpful in-page alert and let user click Login in header
+            showAlert('Không thể mở modal đăng nhập ngay bây giờ. Vui lòng bấm "Đăng nhập" ở góc trên để mở trang đăng nhập.', 'warning');
+         }
+    }, 100);
 }
 
 function showRegisterModal() {
@@ -351,14 +390,12 @@ function showRegisterModal() {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
     } else {
-        // Fallback if modal not loaded yet
         window.location.href = '/register.html';
     }
 }
 
 // Modal Functions
 function switchToRegisterModal() {
-    // Close login modal
     const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
     if (loginModal) {
         loginModal.hide();
@@ -1171,4 +1208,3 @@ document.addEventListener('DOMContentLoaded', function() {
         initCategoryMenuHover();
     }, 500);
 });
-
