@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 public class ProductResponse {
     private Long id;
     private String name;
+    private String brand;
     private BigDecimal price;
     private BigDecimal priceAfterDiscount;
     private String mainImage;
