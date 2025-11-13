@@ -224,9 +224,44 @@
                 setTimeout(() => showLoginModal(), 1000);
                 return;
             }
-            showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
-            // TODO: Implement cart functionality
-        }
+            (async () => {
+                try {
+                    // determine userId
+                    let user = apiClient.getUser();
+                    if (!user || !user.id) {
+                        user = await apiClient.getProfile();
+                        if (user) apiClient.setUser(user);
+                    }
+                    const userId = user && user.id;
+                    if (!userId) {
+                        showAlert('Không xác định được người dùng. Vui lòng đăng nhập lại.', 'error');
+                        setTimeout(() => showLoginModal(), 800);
+                        return;
+                    }
+
+                    const payload = { userId: Number(userId), productId: Number(productId), quantity: 1 };
+                    await apiClient.request('/cart/add', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    // fetch updated cart to update badge
+                    try {
+                        const cart = await apiClient.request(`/cart/${userId}`, { method: 'GET' });
+                        const qty = cart && Array.isArray(cart.items) ? cart.items.reduce((s, it) => s + (it.quantity || 0), 0) : 0;
+                        const badge = document.getElementById('cart-badge');
+                        if (badge) badge.textContent = qty;
+                    } catch (e) {
+                        // ignore badge update errors
+                    }
+
+                    showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
+                } catch (err) {
+                    console.error('addToCart error', err);
+                    showAlert('Thêm vào giỏ hàng thất bại: ' + (err.message || err), 'error');
+                }
+            })();
+         }
     </script>
 </body>
 </html>
