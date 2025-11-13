@@ -17,6 +17,7 @@ public interface ProductMapper {
         return ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
+                .brand(product.getBrand())
                 .price(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO)
                 .priceAfterDiscount(calculatePriceAfterDiscount(product))
                 .mainImage(product.getMainImage())

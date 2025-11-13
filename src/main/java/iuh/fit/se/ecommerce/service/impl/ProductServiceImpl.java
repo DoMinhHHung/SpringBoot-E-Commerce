@@ -84,6 +84,15 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ProductResponse> getHotSaleProducts(int limit) {
+        List<Product> hotSaleProducts = productRepository.findHotSaleProducts();
+        return hotSaleProducts.stream()
+                .limit(limit > 0 ? limit : Integer.MAX_VALUE)
+                .map(ProductMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+
     public void mapCreateRequestToProduct(Product product, ProductRequest request){
         product.setName(request.getName());
         product.setBrand(request.getBrand());

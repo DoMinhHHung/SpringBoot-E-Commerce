@@ -51,7 +51,10 @@ public class SecurityConfig {
                                 "/product-detail.html",
                                 "/profile.html",
                                 "/promotions.html",
+                                "/products.html",
                                 "/forgot-password.html",
+                                "/payment-success.html",
+                                "/payment-cancel.html",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
@@ -59,6 +62,13 @@ public class SecurityConfig {
                                 "/swagger-resources/**",
                                 "/webjars/**")
                         .permitAll()
+                        
+                        // PayOS webhook callback (public)
+                        .requestMatchers(HttpMethod.POST, "/api/payments/payos-callback").permitAll()
+                        
+                        // Payment endpoints (authenticated)
+                        .requestMatchers(HttpMethod.POST, "/api/payments/create").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/payments/status/**").authenticated()
 
 
                         .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
