@@ -1,5 +1,6 @@
 // cart.js - handles loading and rendering the shopping cart using apiClient
 
+
 document.addEventListener('DOMContentLoaded', async function () {
     // Wait until apiClient is available (api.js included before this file in cart.html)
     if (typeof apiClient === 'undefined') {
@@ -20,8 +21,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         userId = currentUser.id;
     } else {
         try {
-            // Try to get profile from server (will work if server authenticates via cookie/session)
-            const profile = await apiClient.getProfile();
+            // Try to get profile from server but avoid automatic redirect on 401
+            const profile = await apiClient.request('/users/profile', { method: 'GET', noAuthRedirect: true });
             if (profile && profile.id) {
                 apiClient.setUser(profile);
                 currentUser = profile;
@@ -30,17 +31,40 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (err) {
             // Not authenticated on server side either
             showAlert('Vui lòng đăng nhập để xem giỏ hàng', 'error');
-            setTimeout(() => window.location.href = '/login.html', 800);
+            // Open login modal instead of redirecting away from the cart page
+            if (typeof showLoginModal === 'function') {
+                setTimeout(() => showLoginModal(), 200);
+            } else {
+                // fallback
+                setTimeout(() => window.location.href = '/login.html', 800);
+            }
             return;
         }
     }
 
     async function fetchCart() {
         try {
-            const cart = await apiClient.request(`/cart/${userId}`, { method: 'GET' });
+            let cart = await apiClient.request(`/cart/${userId}`, { method: 'GET', noAuthRedirect: true });
+            // If server returned empty body (null), retry once quickly
+            if (cart === null) {
+                console.warn('fetchCart: empty response, retrying once');
+                await new Promise(r => setTimeout(r, 200));
+                cart = await apiClient.request(`/cart/${userId}`, { method: 'GET', noAuthRedirect: true });
+            }
+            if (cart === null) {
+                console.warn('fetchCart: server returned no content for cart, rendering empty cart');
+                cart = { items: [] };
+            }
             renderCart(cart);
         } catch (error) {
             console.error('Error fetching cart:', error);
+            // If unauthorized, open login modal instead of redirect
+            if (error && error.status === 401) {
+                if (typeof showLoginModal === 'function') {
+                    showLoginModal();
+                    return;
+                }
+            }
             if (cartItemsEl) {
                 cartItemsEl.innerHTML = `<tr><td colspan="5" class="text-center text-danger">${error.message}</td></tr>`;
             }
@@ -59,18 +83,46 @@ document.addEventListener('DOMContentLoaded', async function () {
             return;
         }
 
-        let totalQuantity = 0;
-
+        // Aggregate items by productId to merge duplicates (sum quantities and totals)
+        const map = new Map();
         cart.items.forEach(item => {
+            const pid = item.productId;
+            const unit = item.unitPrice || 0;
+            const qty = Number(item.quantity) || 0;
+            if (!map.has(pid)) {
+                // clone to avoid mutating original
+                map.set(pid, {
+                    productId: pid,
+                    productName: item.productName,
+                    productImage: item.productImage,
+                    unitPrice: unit,
+                    quantity: qty,
+                    totalPrice: (typeof item.totalPrice !== 'undefined' ? item.totalPrice : unit * qty)
+                });
+            } else {
+                const existing = map.get(pid);
+                existing.quantity += qty;
+                // recalc totalPrice from unitPrice to avoid rounding issues
+                existing.totalPrice = existing.unitPrice * existing.quantity;
+            }
+        });
+
+        const aggregated = Array.from(map.values());
+
+        let totalQuantity = 0;
+        let totalPrice = 0;
+
+        aggregated.forEach(item => {
             totalQuantity += item.quantity;
+            totalPrice += Number(item.totalPrice || (item.unitPrice * item.quantity) || 0);
 
             const tr = document.createElement('tr');
-
+            const imgSrc = item.productImage && item.productImage !== 'null' ? item.productImage : 'https://via.placeholder.com/60?text=No+Image';
             tr.innerHTML = `
                 <td class="d-flex align-items-center">
-                    <img src="${item.productImage || '/images/placeholder-readme.txt'}" alt="" style="width:60px;height:60px;object-fit:cover;margin-right:12px;">
+                    <img src="${imgSrc}" alt="" onerror="this.onerror=null;this.src='https://via.placeholder.com/60?text=No+Image'" style="width:60px;height:60px;object-fit:cover;margin-right:12px;">
                     <div>
-                        <div class="fw-bold">${item.productName}</div>
+                        <div class="fw-bold"><a href="/product-detail.html?id=${item.productId}" class="text-decoration-none text-dark">${item.productName}</a></div>
                         <div class="text-muted small">Mã: ${item.productId}</div>
                     </div>
                 </td>
@@ -88,7 +140,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
 
         totalQuantityEl.textContent = totalQuantity;
-        totalPriceEl.textContent = formatPrice(cart.totalPrice || 0);
+        totalPriceEl.textContent = formatPrice(totalPrice || 0);
         updateCartBadge(totalQuantity);
 
         // Attach event listeners
@@ -143,14 +195,20 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function updateQuantity(userId, productId, quantity) {
         try {
-            await apiClient.request('/cart/update', {
+            const resp = await apiClient.request('/cart/update', {
                 method: 'PUT',
-                body: JSON.stringify({ userId: Number(userId), productId: Number(productId), quantity: Number(quantity) })
+                body: JSON.stringify({ userId: Number(userId), productId: Number(productId), quantity: Number(quantity) }),
+                noAuthRedirect: true
             });
+            console.log('updateQuantity response', resp);
+            // Fetch latest cart (resp might be null or object)
             await fetchCart();
             showAlert('Cập nhật số lượng thành công', 'success');
         } catch (error) {
             console.error('updateQuantity error', error);
+            if (error && error.status === 401) {
+                if (typeof showLoginModal === 'function') { showLoginModal(); return; }
+            }
             showAlert('Cập nhật số lượng thất bại: ' + error.message, 'error');
         }
     }
@@ -158,22 +216,29 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function removeItem(userId, productId) {
         if (!confirm('Bạn có chắc muốn xóa sản phẩm này?')) return;
         try {
-            await apiClient.request(`/cart/remove?userId=${userId}&productId=${productId}`, { method: 'DELETE' });
+            const resp = await apiClient.request(`/cart/remove?userId=${userId}&productId=${productId}`, { method: 'DELETE', noAuthRedirect: true });
+            console.log('removeItem response', resp);
             await fetchCart();
             showAlert('Xóa sản phẩm thành công', 'success');
         } catch (error) {
             console.error('removeItem error', error);
+            if (error && error.status === 401) {
+                if (typeof showLoginModal === 'function') { showLoginModal(); return; }
+            }
             showAlert('Xóa sản phẩm thất bại: ' + error.message, 'error');
         }
     }
 
     async function clearCart(userId) {
         try {
-            await apiClient.request(`/cart/clear/${userId}`, { method: 'DELETE' });
+            await apiClient.request(`/cart/clear/${userId}`, { method: 'DELETE', noAuthRedirect: true });
             await fetchCart();
             showAlert('Giỏ hàng đã được xóa', 'success');
         } catch (error) {
             console.error('clearCart error', error);
+            if (error && error.status === 401) {
+                if (typeof showLoginModal === 'function') { showLoginModal(); return; }
+            }
             showAlert('Xóa giỏ hàng thất bại: ' + error.message, 'error');
         }
     }

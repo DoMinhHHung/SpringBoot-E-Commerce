@@ -87,6 +87,24 @@
                                 <textarea id="product-description" class="form-control" rows="3"></textarea>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">Thông số kỹ thuật (Specs)</label>
+                                <div id="product-specs-section">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th style="width:45%">Tên</th>
+                                                <th style="width:45%">Giá trị</th>
+                                                <th style="width:10%">Hành động</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="specs-tbody">
+                                        </tbody>
+                                    </table>
+                                    <button id="btn-add-spec" type="button" class="btn btn-sm btn-outline-primary">Thêm thông số</button>
+                                    <div class="form-text">Bạn có thể thêm nhiều dòng specs; các dòng trống sẽ bị bỏ qua khi gửi.</div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Ảnh chính</label>
                                 <input id="product-main-image" type="file" class="form-control" accept="image/*">
                             </div>
@@ -130,7 +148,63 @@
             document.getElementById('product-save-btn').addEventListener('click', () => submitProductForm(productModal));
             document.getElementById('admin-search').addEventListener('input', (e) => renderFiltered(e.target.value));
 
+            // specs: add row button
+            document.getElementById('btn-add-spec').addEventListener('click', () => addSpecRow());
+
             let productsCache = [];
+
+            // Specs helper functions
+            function addSpecRow(key = '', value = '') {
+                const tbody = document.getElementById('specs-tbody');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" class="form-control spec-key" value="${escapeHtml(key)}" placeholder="Ví dụ: CPU"></td>
+                    <td><input type="text" class="form-control spec-value" value="${escapeHtml(value)}" placeholder="Ví dụ: Intel i7"></td>
+                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remove-spec">Xóa</button></td>
+                `;
+                tbody.appendChild(tr);
+                tr.querySelector('.btn-remove-spec').addEventListener('click', () => tr.remove());
+            }
+
+            function getSpecsFromUI() {
+                const rows = Array.from(document.querySelectorAll('#specs-tbody tr'));
+                const specs = [];
+                rows.forEach(r => {
+                    const k = (r.querySelector('.spec-key') && r.querySelector('.spec-key').value || '').trim();
+                    const v = (r.querySelector('.spec-value') && r.querySelector('.spec-value').value || '').trim();
+                    if (k || v) {
+                        specs.push({ key: k, value: v });
+                    }
+                });
+                return specs;
+            }
+
+            function setSpecsInUI(specs) {
+                const tbody = document.getElementById('specs-tbody');
+                tbody.innerHTML = '';
+                if (!specs || specs.length === 0) {
+                    // start with one empty row
+                    addSpecRow('', '');
+                    return;
+                }
+                specs.forEach(s => {
+                    if (typeof s === 'string') {
+                        // if server returned simple string, try parse JSON
+                        try { s = JSON.parse(s); } catch (e) { s = { key: '', value: '' }; }
+                    }
+                    if (s && (s.key !== undefined || s.name !== undefined)) {
+                        const key = s.key !== undefined ? s.key : (s.name || '');
+                        const value = s.value !== undefined ? s.value : (s.val || '');
+                        addSpecRow(key, value);
+                    }
+                });
+            }
+
+            // basic escape for inserted values into inputs
+            function escapeHtml(str) {
+                if (!str && str !== 0) return '';
+                return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            }
 
             async function loadProducts() {
                 try {
@@ -188,6 +262,7 @@
                 document.getElementById('product-form').reset();
                 document.getElementById('product-id').value = '';
                 document.getElementById('productModalTitle').textContent = 'Thêm sản phẩm';
+                setSpecsInUI([]);
                 modal.show();
             }
 
@@ -201,6 +276,21 @@
                     document.getElementById('product-stock').value = detail.stock || '';
                     document.getElementById('product-description').value = detail.description || '';
                     if (detail.productType) document.getElementById('product-type').value = detail.productType;
+                    // populate specs if available
+                    if (detail.specs) {
+                        let specs = detail.specs;
+                        // handle JSON string from backend
+                        if (typeof specs === 'string') {
+                            try { specs = JSON.parse(specs); } catch (e) { /* ignore */ }
+                        }
+                        // if specs is an object map convert to array
+                        if (specs && !Array.isArray(specs) && typeof specs === 'object') {
+                            specs = Object.keys(specs).map(k => ({ key: k, value: specs[k] }));
+                        }
+                        setSpecsInUI(specs);
+                    } else {
+                        setSpecsInUI([]);
+                    }
                     document.getElementById('productModalTitle').textContent = 'Chỉnh sửa sản phẩm';
                     modal.show();
                 } catch (err) {
@@ -227,6 +317,13 @@
                 if (stock) formData.append('stock', stock);
                 if (productType) formData.append('productType', productType);
                 if (description) formData.append('description', description);
+                // append specs as JSON string if present
+                try {
+                    const specs = getSpecsFromUI();
+                    if (specs && specs.length > 0) {
+                        formData.append('specs', JSON.stringify(specs));
+                    }
+                } catch (e) { console.warn('Could not read specs', e); }
                 if (mainImageInput && mainImageInput.files && mainImageInput.files[0]) {
                     formData.append('mainImage', mainImageInput.files[0]);
                 }
