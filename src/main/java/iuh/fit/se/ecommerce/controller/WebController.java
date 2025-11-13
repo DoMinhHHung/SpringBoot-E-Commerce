@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class WebController {
 
-    @GetMapping({"/", "/index", "/index.html"})
+    @GetMapping({ "/", "/index", "/index.html" })
     public String index() {
         return "index";
     }
@@ -70,5 +70,10 @@ public class WebController {
     @GetMapping("/admin/orders.html")
     public String adminOrders() {
         return "admin/orders";
+    }
+
+    @GetMapping("/admin/support.html")
+    public String adminSupport() {
+        return "admin/support";
     }
 }

@@ -13,9 +13,8 @@ import java.util.List;
 public class ChatResponse {
     private String text;
     private List<SimpleProduct> products;
-    private List<Suggestion> suggestions; // changed to Suggestion objects
+    private List<Suggestion> suggestions;
 
-    // keep a convenient 2-arg constructor
     public ChatResponse(String text, List<SimpleProduct> products) {
         this.text = text;
         this.products = products;
