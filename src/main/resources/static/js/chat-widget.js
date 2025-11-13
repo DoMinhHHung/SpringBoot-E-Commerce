@@ -233,7 +233,7 @@ class ChatWidget {
                     <div class="product-suggestion">
                         <img src="${this.escapeHtml(product.imageUrl)}" 
                              alt="${this.escapeHtml(product.name)}"
-                             onerror="this.src='https://via.placeholder.com/80x80'">
+                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><rect width=\'100%\' height=\'100%\' fill=\'%23f3f3f3\' /><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23888\' font-family=\'Arial, Helvetica, sans-serif\' font-size=\'10\'>No Image</text></svg>'">
                         <div class="product-info">
                             <div class="product-name">${this.escapeHtml(product.name)}</div>
                             <div class="product-price">${price}</div>

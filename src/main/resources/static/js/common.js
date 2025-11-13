@@ -225,7 +225,7 @@ function logout() {
 }
 
 function showCart() {
-    alert('Tính năng giỏ hàng đang được phát triển');
+    window.location.href = "/cart.html"
 }
 
 function handleSearch() {

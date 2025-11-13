@@ -166,8 +166,8 @@
                         ${product.priceAfterDiscount && product.priceAfterDiscount < product.price ? 
                             `<span class="product-discount">-${Math.round((1 - product.priceAfterDiscount / product.price) * 100)}%</span>` : ''}
                         <a href="/product-detail.html?id=${product.id}">
-                            <img src="${product.mainImage || 'https://via.placeholder.com/300x250'}" 
-                                 alt="${product.name}" 
+                            <img src="${product.mainImage || 'https://via.placeholder.com/300x250'}"
+                                 alt="${product.name}"
                                  onerror="this.src='https://via.placeholder.com/300x250'">
                         </a>
                         <div class="product-card-body">

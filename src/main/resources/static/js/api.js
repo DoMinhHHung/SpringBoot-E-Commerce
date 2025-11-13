@@ -68,6 +68,8 @@ class ApiClient {
         const url = `${this.baseURL}${endpoint}`;
         const config = {
             headers: this.getHeaders(!options.skipAuth),
+            // include same-origin credentials so server-side session cookies are sent
+            credentials: 'same-origin',
             ...options
         };
 
@@ -180,6 +182,7 @@ class ApiClient {
         const response = await fetch(url, {
             method: 'POST',
             headers: headers,
+            credentials: 'same-origin',
             body: formData
         });
         return this.handleResponse(response);
@@ -194,6 +197,7 @@ class ApiClient {
         const response = await fetch(url, {
             method: 'PUT',
             headers: headers,
+            credentials: 'same-origin',
             body: formData
         });
         return this.handleResponse(response);

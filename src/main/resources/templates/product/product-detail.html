@@ -210,8 +210,8 @@
                 : [mainImage];
             
             thumbnailsContainer.innerHTML = allImages.map((img, index) => `
-                <img src="${img}" 
-                     alt="Thumbnail ${index + 1}" 
+                <img src="${img}"
+                     alt="Thumbnail ${index + 1}"
                      class="img-thumbnail" 
                      style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;"
                      onclick="changeMainImage('${img}')"
@@ -291,8 +291,8 @@
                         <div class="col-md-3">
                             <div class="product-card">
                                 <a href="/product-detail.html?id=${p.id}">
-                                    <img src="${p.mainImage || 'https://via.placeholder.com/300x250'}" 
-                                         alt="${p.name}" 
+                                    <img src="${p.mainImage || 'https://via.placeholder.com/300x250'}"
+                                         alt="${p.name}"
                                          onerror="this.src='https://via.placeholder.com/300x250'">
                                 </a>
                                 <div class="product-card-body">
