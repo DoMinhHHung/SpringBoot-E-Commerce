@@ -45,8 +45,7 @@ class ChatWidget {
                         </button>
                     </div>
                     <div id="chat-active-filters" class="chat-active-filters" style="display:none;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e9ecef;">
-                        <!-- Active filters will appear here -->
-                    </div>
+                        </div>
                     <div id="chat-search-spinner" class="chat-search-spinner" style="display:none;padding:8px 12px;border-bottom:1px solid #e9ecef;color:#6c757d;">
                         <i class="bi bi-arrow-repeat" style="margin-right:6px;" aria-hidden="true"></i>
                         Đang tìm...
@@ -93,7 +92,7 @@ class ChatWidget {
     toggleWidget() {
         const container = document.getElementById('chat-widget-container');
         const button = document.getElementById('chat-widget-button');
-        
+
         if (container.style.display === 'none') {
             container.style.display = 'flex';
             button.style.display = 'none';
@@ -109,17 +108,18 @@ class ChatWidget {
     connect() {
         const socket = new SockJS('/ws');
         this.stompClient = Stomp.over(socket);
-        
+
         // Disable debug logging
         this.stompClient.debug = null;
+        this._retries = 0;
 
-        this.stompClient.connect({}, 
+        this.stompClient.connect({},
             () => {
                 console.log('Connected to WebSocket');
                 this.connected = true;
                 this.updateConnectionStatus(true);
                 this._retries = 0;
-                
+
                 // Subscribe to replies for this session
                 this.stompClient.subscribe('/topic/replies.' + this.sessionId, (message) => {
                     const response = JSON.parse(message.body);
@@ -143,35 +143,23 @@ class ChatWidget {
                 console.error('WebSocket connection error:', error);
                 this.connected = false;
                 this.updateConnectionStatus(false);
-                this.scheduleReconnect();
+
+                // Retry logic
+                if (this._retries < this._maxRetries) {
+                    this._retries++;
+                    console.log(`Retrying connection in 2s (Attempt ${this._retries}/${this._maxRetries})`);
+                    setTimeout(() => this.connect(), 2000);
+                } else {
+                    this.displayErrorMessage('Không thể kết nối. Vui lòng thử lại sau.');
+                }
             }
         );
-
-        // also handle unexpected close
-        if (this.stompClient && this.stompClient.ws) {
-            this.stompClient.ws.onclose = () => {
-                if (this.connected) return; // already handled
-                this.updateConnectionStatus(false);
-                this.scheduleReconnect();
-            };
-        }
-    }
-
-    scheduleReconnect() {
-        const attempt = Math.min(this._retries + 1, this._maxRetries);
-        this._retries = attempt;
-        const delay = Math.min(30000, 1000 * Math.pow(2, attempt - 1)); // 1s,2s,4s.. up to 30s
-        const statusText = document.querySelector('.status-text');
-        if (statusText) statusText.textContent = 'Mất kết nối - Đang thử kết nối lại...';
-        setTimeout(() => {
-            this.connect();
-        }, delay);
     }
 
     updateConnectionStatus(connected) {
         const statusText = document.querySelector('.status-text');
         const statusIndicator = document.querySelector('.status-indicator');
-        
+
         if (connected) {
             statusText.textContent = 'Đã kết nối';
             statusIndicator.className = 'status-indicator connected';
@@ -184,14 +172,14 @@ class ChatWidget {
     sendMessage() {
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
-        
+
         if (!text || !this.connected) {
             return;
         }
 
         // Display user message
         this.displayUserMessage(text);
-        
+
         // Show spinner and active filters
         this.showSearchSpinner(true);
         this.setActiveFiltersFromQuery(text);
@@ -204,7 +192,7 @@ class ChatWidget {
         };
 
         this.stompClient.send('/app/chat', {}, JSON.stringify(chatMessage));
-        
+
         // Clear input
         input.value = '';
     }
@@ -235,7 +223,7 @@ class ChatWidget {
     displayBotMessage(response) {
         this.showSearchSpinner(false);
         const messagesDiv = document.getElementById('chat-widget-messages');
-        
+
         let productsHTML = '';
         if (response.products && response.products.length > 0) {
             productsHTML = '<div class="product-suggestions">';
@@ -306,14 +294,6 @@ class ChatWidget {
                         input.value = label || '';
                         input.focus();
                     } else {
-                        if (query === 'CONNECT_AGENT') {
-                            this.displayUserMessage(label || 'Kết nối tư vấn viên');
-                            const chatMessage = { sessionId: this.sessionId, text: 'CONNECT_AGENT', productId: this.productId };
-                            this.stompClient.send('/app/chat', {}, JSON.stringify(chatMessage));
-                            this.showSearchSpinner(true);
-                            this.renderWaitingForAgent();
-                            return;
-                        }
                         // Display a friendly user message using the label (or query if no label)
                         this.displayUserMessage(label || query);
                         // Send the structured query to server
@@ -334,22 +314,9 @@ class ChatWidget {
         this.scrollToBottom();
     }
 
-    renderWaitingForAgent() {
-        const messagesDiv = document.getElementById('chat-widget-messages');
-        const messageHTML = `
-            <div class="chat-message bot-message">
-                <div class="message-content">
-                    Đang kết nối đến tư vấn viên. Vui lòng đợi trong giây lát...
-                </div>
-            </div>
-        `;
-        messagesDiv.insertAdjacentHTML('beforeend', messageHTML);
-        this.scrollToBottom();
-    }
-
     displayErrorMessage(text) {
-+        // hide spinner on error
-+        this.showSearchSpinner(false);
+        // hide spinner on error
+        this.showSearchSpinner(false);
         const messagesDiv = document.getElementById('chat-widget-messages');
         const messageHTML = `
             <div class="chat-message bot-message error-message">
@@ -394,7 +361,7 @@ class ChatWidget {
         console.log('Disconnected from WebSocket');
     }
 
-// add helper to render active filters
+    // add helper to render active filters
     setActiveFiltersFromQuery(query) {
         try {
             if (!query) {
@@ -403,37 +370,77 @@ class ChatWidget {
             }
             const el = document.getElementById('chat-active-filters');
             const parts = [];
-            const q = String(query).trim();
+            let q = String(query).trim();
             const lower = q.toLowerCase();
-            if (q.startsWith('brand:')) {
-                parts.push('Hãng: ' + q.substring('brand:'.length));
-            } else if (q.startsWith('type:')) {
-                parts.push('Loại: ' + q.substring('type:'.length));
-            } else if (q.startsWith('price:')) {
-                const r = q.substring('price:'.length);
-                parts.push('Tầm giá: ' + r);
-            } else if (q.startsWith('spec:')) {
-                parts.push('Thông số: ' + q.substring('spec:'.length));
-            } else {
-                // try to parse common pieces
-                // brand words
-                const brands = ['dell','hp','asus','acer','lenovo','apple','msi','lg'];
-                for (const b of brands) {
-                    if (lower.includes(b)) {
-                        parts.push('Hãng: ' + b);
-                        break;
+
+            // Nếu là QUERY: (từ AI trả về), ta trích xuất phần sau QUERY:
+            if (lower.startsWith('query:')) {
+                q = q.substring('query:'.length).trim();
+            }
+
+            // 1. Structured filters - Dùng regex để bắt các cặp key:value
+            const regexMap = {
+                'brand:': { label: 'Hãng' },
+                'type:': { label: 'Loại' },
+                'promotion:': { label: 'Khuyến mãi' },
+                'spec:': { label: 'Thông số' },
+                // Xử lý giá tiền đặc biệt để format lại VND cho đẹp
+                'price:': {
+                    label: 'Tầm giá',
+                    handler: (val) => {
+                        // Định dạng lại giá: 15000000-20000000 -> 15 Triệu - 20 Triệu
+                        const [min, max] = val.split('-').map(s => s.trim());
+                        const format = (price) => {
+                            const num = parseInt(price, 10);
+                            if (isNaN(num)) return price;
+                            if (num >= 1000000) {
+                                // Sử dụng Intl.NumberFormat để định dạng số triệu
+                                return new Intl.NumberFormat('vi-VN', {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 1 // Giữ 1 số lẻ cho 15.5 Triệu
+                                }).format(num / 1000000) + ' Triệu';
+                            }
+                            // Nếu nhỏ hơn 1 triệu, hiển thị VND
+                            return new Intl.NumberFormat('vi-VN').format(num) + ' đ';
+                        };
+
+                        let displayMin = min ? format(min) : '';
+                        let displayMax = max ? format(max) : '';
+
+                        if (!min && max) {
+                            return `Tối đa ${displayMax}`;
+                        } else if (min && !max) {
+                            return `Tối thiểu ${displayMin}`;
+                        }
+                        return (displayMin) + (displayMax ? ' - ' + displayMax : '');
                     }
                 }
-                if (lower.includes('gaming')) parts.push('Loại: Gaming');
-                if (lower.includes('ultrabook')) parts.push('Loại: Ultrabook');
-                // price patterns
-                const mRange = lower.match(/(\d+[\.,]?\d*)\s*-\s*(\d+[\.,]?\d*)/);
-                if (mRange) parts.push('Tầm giá: ' + mRange[1] + '-' + mRange[2]);
-                const mSingle = lower.match(/(\d+[\.,]?\d*)\s*(triệu|m|vnđ|vnd)/);
-                if (mSingle) parts.push('Tầm giá: ' + mSingle[1] + ' ' + (mSingle[2] || ''));
-                // specs
-                if (lower.includes('ram')) parts.push('Spec: RAM');
-                if (lower.match(/\d+\s*gb/)) parts.push('Spec: ' + lower.match(/\d+\s*gb/)[0]);
+            };
+
+            let remainingQuery = ' ' + q; // Thêm khoảng trắng để regex dễ match
+
+            for (const key in regexMap) {
+                // Regex: Tìm khoảng trắng + key + : + value (value là non-whitespace)
+                // Ta tìm kiếm các pattern theo cú pháp ` key:value `
+                const pattern = new RegExp(`\\s*${key}\\s*([^\\s]+)`, 'gi');
+                let match;
+                // Dùng .exec liên tục để tìm tất cả matches
+                while ((match = pattern.exec(remainingQuery)) !== null) {
+                    const value = match[1].trim();
+                    if (value) {
+                        const { label, handler } = regexMap[key];
+                        const displayValue = handler ? handler(value) : value;
+                        parts.push(`${label}: ${displayValue}`);
+                        // Xóa phần đã match (cả key:value) khỏi chuỗi để chuẩn bị cho free-text
+                        remainingQuery = remainingQuery.replace(match[0], ' ');
+                    }
+                }
+            }
+
+            // 2. Fallback: Nếu vẫn còn text, coi là free-text search
+            const freeText = remainingQuery.trim();
+            if (freeText && freeText !== 'query:') {
+                parts.push(`Tìm kiếm: ${freeText}`);
             }
 
             if (parts.length === 0) {
@@ -445,7 +452,9 @@ class ChatWidget {
             el.style.display = 'block';
             const clearBtn = document.getElementById('clear-filters');
             if (clearBtn) {
-                clearBtn.addEventListener('click', () => this.clearActiveFilters());
+                clearBtn.addEventListener('click', () => {
+                    this.clearActiveFilters();
+                });
             }
         } catch (err) {
             console.warn('setActiveFiltersFromQuery error', err);

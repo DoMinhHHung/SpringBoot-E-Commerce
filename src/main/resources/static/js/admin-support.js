@@ -109,12 +109,25 @@ class AdminSupportApp {
         });
         this.clearPending(sessionId);
         this.renderActiveSession(sessionId);
+        const endBtn = document.getElementById('end-session');
+        if (endBtn) {
+            endBtn.onclick = () => this.closeSession();
+            endBtn.disabled = false;
+        }
     }
 
     sendMessage(text) {
         if (!this.activeSessionId || !text) return;
         const payload = { sessionId: this.activeSessionId, adminId: this.adminId, text: text, timestamp: Date.now() };
         this.stomp.send('/app/support/adminSend', {}, JSON.stringify(payload));
+    }
+
+    closeSession() {
+        if (!this.activeSessionId) return;
+        const payload = { sessionId: this.activeSessionId, adminId: this.adminId };
+        this.stomp.send('/app/support/close', {}, JSON.stringify(payload));
+        const endBtn = document.getElementById('end-session');
+        if (endBtn) endBtn.disabled = true;
     }
 
     // UI helpers below (vanilla, minimal)

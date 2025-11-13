@@ -1,6 +1,7 @@
 package iuh.fit.se.ecommerce.controller;
 
 import iuh.fit.se.ecommerce.config.SupportSessionRegistry;
+import iuh.fit.se.ecommerce.dto.response.ChatResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,7 +51,8 @@ public class AdminSupportController {
 
         String notifyUser = "Tư vấn viên đã tham gia cuộc trò chuyện. Bạn có thể đặt câu hỏi trực tiếp.";
         messagingTemplate.convertAndSend("/topic/replies." + req.getSessionId(),
-                new AdminChatMessage(req.getSessionId(), adminId, notifyUser, Instant.now().toEpochMilli()));
+                new ChatResponse(notifyUser, java.util.List.of(), java.util.List.of(
+                        new ChatResponse.Suggestion("Rời cuộc trò chuyện", "LEAVE_AGENT"))));
 
         messagingTemplate.convertAndSend("/topic/admin.session." + req.getSessionId(),
                 new AdminChatMessage(req.getSessionId(), adminId, "Đã tham gia phiên.", Instant.now().toEpochMilli()));
@@ -64,8 +66,32 @@ public class AdminSupportController {
         AdminChatMessage payload = new AdminChatMessage(msg.getSessionId(),
                 msg.getAdminId() == null ? "admin" : msg.getAdminId(), msg.getText(), ts);
 
-        messagingTemplate.convertAndSend("/topic/replies." + msg.getSessionId(), payload);
+        messagingTemplate.convertAndSend("/topic/replies." + msg.getSessionId(),
+                new ChatResponse("Tư vấn viên: " + (msg.getText() == null ? "" : msg.getText()), java.util.List.of(),
+                        java.util.List.of(
+                                new ChatResponse.Suggestion("Rời cuộc trò chuyện", "LEAVE_AGENT"))));
         messagingTemplate.convertAndSend("/topic/admin.session." + msg.getSessionId(), payload);
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CloseRequest {
+        private String adminId;
+        private String sessionId;
+    }
+
+    @MessageMapping("/support/close")
+    public void closeSession(@Payload CloseRequest req) {
+        if (req == null || req.getSessionId() == null)
+            return;
+        registry.unassign(req.getSessionId());
+        messagingTemplate.convertAndSend("/topic/replies." + req.getSessionId(),
+                new ChatResponse("Cuộc trò chuyện đã được kết thúc bởi tư vấn viên.", java.util.List.of(),
+                        java.util.List.of()));
+        messagingTemplate.convertAndSend("/topic/admin.session." + req.getSessionId(),
+                new AdminChatMessage(req.getSessionId(), req.getAdminId(), "Đã kết thúc phiên.",
+                        Instant.now().toEpochMilli()));
     }
 }
 
