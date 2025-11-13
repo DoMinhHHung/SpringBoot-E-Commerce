@@ -91,4 +91,9 @@ public class WebController {
     public String paymentCancel() {
         return "payment/payment-cancel";
     }
+
+    @GetMapping("/checkout.html")
+    public String checkout() {
+        return "checkout/checkout";
+    }
 }

@@ -375,8 +375,6 @@
 
             const quantity = parseInt(document.getElementById('quantity').value);
             const unitPrice = product.priceAfterDiscount || product.price;
-            const discountAmount = product.priceAfterDiscount ? 
-                product.price - product.priceAfterDiscount : 0;
 
             // Validate stock
             if (quantity > product.stock) {
@@ -384,157 +382,43 @@
                 return;
             }
 
-            // Create payment request
-            const paymentRequest = {
-                items: [{
-                    productId: product.id,
-                    quantity: quantity,
-                    unitPrice: unitPrice,
-                    discountAmount: discountAmount
-                }],
-                paymentMethod: 'PAYOS'
-            };
-
             try {
-                // Show loading
-                const loadingAlert = showAlert('Đang tạo đơn hàng...', 'info');
+                // Get user info
+                let user = apiClient.getUser();
+                if (!user || !user.id) {
+                    user = await apiClient.getProfile();
+                    if (user) apiClient.setUser(user);
+                }
+                const userId = user && user.id;
+                if (!userId) {
+                    showAlert('Không xác định được người dùng. Vui lòng đăng nhập lại.', 'error');
+                    setTimeout(() => showLoginModal(), 800);
+                    return;
+                }
+
+                // Add product to cart
+                showAlert('Đang thêm sản phẩm vào giỏ hàng...', 'info');
                 
-                // Call API
-                const response = await apiClient.createPayment(paymentRequest);
+                const payload = { 
+                    userId: Number(userId), 
+                    productId: Number(product.id), 
+                    quantity: Number(quantity) 
+                };
                 
-                // Hide loading
-                if (loadingAlert) loadingAlert.remove();
-                
-                // Show payment modal
-                showPaymentModal(response);
+                await apiClient.request('/cart/add', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                // Redirect to checkout page
+                window.location.href = '/checkout.html';
                 
             } catch (error) {
-                showAlert('Lỗi tạo đơn hàng: ' + error.message, 'error');
+                console.error('Error in buyNow:', error);
+                showAlert('Lỗi: ' + (error.message || error), 'error');
             }
         }
 
-        function showPaymentModal(paymentResponse) {
-            // Remove existing modal if any
-            const existingModal = document.getElementById('paymentModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-
-            // Create modal HTML
-            const modalHTML = `
-                <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true" data-bs-backdrop="static">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="paymentModalLabel">
-                                    <i class="bi bi-credit-card"></i> Thanh toán đơn hàng
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body text-center">
-                                <div class="mb-3">
-                                    <p class="mb-1">Mã đơn hàng: <strong>#${paymentResponse.orderCode}</strong></p>
-                                    <p class="mb-1">Tổng tiền: <strong class="text-danger fs-4">${formatPrice(paymentResponse.totalAmount)}</strong></p>
-                                </div>
-                                
-                                <hr>
-                                
-                                <p class="mb-3"><strong>Quét mã QR để thanh toán:</strong></p>
-                                <div class="mb-3">
-                                    <img src="${paymentResponse.qrCode}" 
-                                         alt="QR Code" 
-                                         class="img-fluid border rounded p-2" 
-                                         style="max-width: 300px; background: white;"
-                                         onerror="this.src='https://via.placeholder.com/300x300?text=QR+Code+Error'">
-                                </div>
-                                
-                                <p class="text-muted small mb-3">Hoặc click vào nút bên dưới để thanh toán</p>
-                                
-                                <a href="${paymentResponse.checkoutUrl}" 
-                                   target="_blank" 
-                                   class="btn btn-primary btn-lg w-100 mb-3">
-                                    <i class="bi bi-box-arrow-up-right"></i> Thanh toán qua PayOS
-                                </a>
-                                
-                                <hr>
-                                
-                                <div class="alert alert-info mb-0">
-                                    <i class="bi bi-info-circle"></i> 
-                                    <small>Đang chờ thanh toán... Hệ thống sẽ tự động cập nhật khi bạn thanh toán thành công.</small>
-                                </div>
-                                
-                                <button class="btn btn-outline-secondary btn-sm mt-3" onclick="checkPaymentStatus(${paymentResponse.orderCode})">
-                                    <i class="bi bi-arrow-clockwise"></i> Kiểm tra trạng thái
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // Inject modal
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
-            modal.show();
-
-            // Start polling for payment status
-            let pollCount = 0;
-            const maxPolls = 60; // Poll for 5 minutes (60 * 5 seconds)
-            
-            const pollInterval = setInterval(async () => {
-                pollCount++;
-                
-                try {
-                    const statusResponse = await apiClient.getPaymentStatus(paymentResponse.orderCode);
-                    
-                    if (statusResponse.status === 'PAID') {
-                        clearInterval(pollInterval);
-                        modal.hide();
-                        showAlert('Thanh toán thành công!', 'success');
-                        setTimeout(() => {
-                            window.location.href = `/payment-success.html?orderCode=${paymentResponse.orderCode}`;
-                        }, 1500);
-                    } else if (statusResponse.status === 'CANCELLED' || statusResponse.status === 'FAILED') {
-                        clearInterval(pollInterval);
-                        showAlert('Thanh toán thất bại hoặc đã hủy', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error checking payment status:', error);
-                }
-
-                // Stop polling after max attempts
-                if (pollCount >= maxPolls) {
-                    clearInterval(pollInterval);
-                }
-            }, 5000); // Check every 5 seconds
-
-            // Clean up interval when modal is closed
-            document.getElementById('paymentModal').addEventListener('hidden.bs.modal', () => {
-                clearInterval(pollInterval);
-            });
-        }
-
-        async function checkPaymentStatus(orderCode) {
-            try {
-                showAlert('Đang kiểm tra trạng thái thanh toán...', 'info');
-                const response = await apiClient.getPaymentStatus(orderCode);
-                
-                if (response.status === 'PAID') {
-                    showAlert('Thanh toán thành công!', 'success');
-                    setTimeout(() => {
-                        window.location.href = `/payment-success.html?orderCode=${orderCode}`;
-                    }, 1500);
-                } else if (response.status === 'PENDING') {
-                    showAlert('Đơn hàng đang chờ thanh toán', 'info');
-                } else {
-                    showAlert('Thanh toán thất bại hoặc đã hủy', 'error');
-                }
-            } catch (error) {
-                showAlert('Lỗi kiểm tra trạng thái: ' + error.message, 'error');
-            }
-        }
 
         function showError() {
             document.getElementById('error-state').classList.remove('d-none');

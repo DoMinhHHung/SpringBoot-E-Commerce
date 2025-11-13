@@ -43,11 +43,9 @@ public class PaymentServiceImpl implements PaymentService {
         Order order = orderService.createOrder(request, user);
 
         // Create payment link via PayOS
-        Long amountInVND = order.getTotalAmount()
-                .multiply(BigDecimal.valueOf(100))
-                .longValue(); // Convert to VND (smallest unit)
+        Long amountInVND = order.getTotalAmount().longValue(); // PayOS v2 nhận số tiền ở đơn vị VND
 
-        String description = String.format("Thanh toán đơn hàng #%d", order.getOrderCode());
+        String description = String.format("Don hang #%d", order.getOrderCode());
 
         PayOSGateway.PayOSResponse payOSResponse = payOSGateway.createPaymentLink(
                 order.getOrderCode(),
@@ -74,12 +72,25 @@ public class PaymentServiceImpl implements PaymentService {
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
                 .totalAmount(order.getTotalAmount())
-                .qrCode(payOSResponse.getData().getQrCode())
+                .qrCode(formatQrCode(payOSResponse.getData().getQrCode()))
                 .checkoutUrl(payOSResponse.getData().getCheckoutUrl())
                 .paymentLinkId(payOSResponse.getData().getPaymentLinkId())
                 .status(PaymentStatus.PENDING)
                 .message("Vui lòng quét mã QR hoặc click vào link để thanh toán")
                 .build();
+    }
+
+    private String formatQrCode(String qrCode) {
+        if (qrCode == null || qrCode.isEmpty()) {
+            return null;
+        }
+        if (qrCode.startsWith("data:image")) {
+            return qrCode;
+        }
+        if (!qrCode.startsWith("http")) {
+            return "data:image/png;base64," + qrCode;
+        }
+        return qrCode;
     }
 
     @Override

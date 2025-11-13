@@ -187,8 +187,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
 
             document.getElementById('checkout').addEventListener('click', () => {
-                // In this project there is no checkout page yet; redirect or show message
-                showAlert('Chức năng thanh toán chưa được triển khai trong bản demo này.', 'info');
+                // Redirect to checkout page
+                window.location.href = '/checkout.html';
             });
         }
     }
