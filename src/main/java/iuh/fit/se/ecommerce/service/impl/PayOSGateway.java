@@ -104,7 +104,7 @@ public class PayOSGateway {
 
             log.info("Calling PayOS API: {}", apiUrl + "/payment-requests");
             ResponseEntity<PayOSResponse> response = restTemplate.exchange(
-                    apiUrl + "/payment-requests",
+                    apiUrl + "/v2/payment-requests",
                     HttpMethod.POST,
                     entity,
                     PayOSResponse.class
