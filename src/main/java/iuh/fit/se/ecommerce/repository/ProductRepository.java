@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, ProductRepositoryCustom {
     List<Product> findByProductType(ProductType productType);
     List<Product> findByPromotion(Promotion promotion);
     
@@ -19,4 +19,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "AND p.promotion.endDate >= CURRENT_DATE " +
            "ORDER BY p.promotion.discountPercent DESC")
     List<Product> findHotSaleProducts();
+    List<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String name, String description);
 }

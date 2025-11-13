@@ -11,6 +11,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="/css/style.css" rel="stylesheet">
+    <!-- Chat Widget CSS -->
+    <link href="/css/chat-widget.css" rel="stylesheet">
 </head>
 <body>
     <!-- Header -->
@@ -120,10 +122,15 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SockJS and STOMP -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
     <!-- Common JS -->
     <script src="/js/common.js"></script>
     <!-- API Client -->
     <script src="/js/api.js"></script>
+    <!-- Chat Widget -->
+    <script src="/js/chat-widget.js"></script>
     <!-- Page Script -->
     <script>
         let product = null;
@@ -150,6 +157,9 @@
                 
                 // Load related products
                 loadRelatedProducts(product.productType);
+                
+                // Initialize chat widget with product ID
+                initChatWidget(id);
             } catch (error) {
                 showAlert('Không thể tải chi tiết sản phẩm: ' + error.message, 'error');
                 showError();
@@ -210,13 +220,37 @@
             
             // Specifications
             const specsTable = document.getElementById('specifications-table');
+            specsTable.innerHTML = '';
             if (product.specifications && product.specifications.length > 0) {
-                specsTable.innerHTML = product.specifications.map(spec => `
-                    <tr>
-                        <td style="width: 30%;"><strong>${spec.specName}</strong></td>
-                        <td>${spec.specValue}</td>
-                    </tr>
-                `).join('');
+                product.specifications.forEach(spec => {
+                    let name = '';
+                    let value = '';
+
+                    if (spec && (spec.specName !== undefined || spec.specValue !== undefined)) {
+                        name = spec.specName || '';
+                        value = spec.specValue || '';
+                    } else if (spec && typeof spec === 'object') {
+                        const entries = Object.entries(spec);
+                        if (entries.length > 0) {
+                            name = entries[0][0];
+                            value = entries[0][1];
+                        }
+                    }
+
+                    const tr = document.createElement('tr');
+                    const tdName = document.createElement('td');
+                    tdName.style.width = '30%';
+                    const strong = document.createElement('strong');
+                    strong.textContent = name;
+                    tdName.appendChild(strong);
+
+                    const tdValue = document.createElement('td');
+                    tdValue.textContent = value;
+
+                    tr.appendChild(tdName);
+                    tr.appendChild(tdValue);
+                    specsTable.appendChild(tr);
+                });
             } else {
                 specsTable.innerHTML = '<tr><td colspan="2" class="text-muted">Không có thông số kỹ thuật</td></tr>';
             }
@@ -476,4 +510,3 @@
     </script>
 </body>
 </html>
-
