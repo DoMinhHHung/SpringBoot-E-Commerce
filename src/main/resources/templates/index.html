@@ -80,6 +80,11 @@
     <script src="/js/common.js"></script>
     <!-- API Client -->
     <script src="/js/api.js"></script>
+    <!-- SockJS and STOMP for chat widget -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link href="/css/chat-widget.css" rel="stylesheet">
+    <script src="/js/chat-widget.js"></script>
     <!-- Page Script -->
     <script>
         let allProducts = [];
@@ -102,6 +107,11 @@
             }
 
             updateActiveFilter();
+
+            // Initialize chat widget on products page (no specific product)
+            if (typeof initChatWidget === 'function') {
+                initChatWidget(null);
+            }
         });
 
         async function loadAllProducts(searchTerm = '') {

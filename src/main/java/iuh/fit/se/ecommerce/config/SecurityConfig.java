@@ -20,84 +20,86 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final OAuth2SuccessHandler oAuth2SuccessHandler;
-    private final CustomOAuth2UserService customOAuth2UserService;
+        private final JwtAuthenticationFilter jwtAuthenticationFilter;
+        private final OAuth2SuccessHandler oAuth2SuccessHandler;
+        private final CustomOAuth2UserService customOAuth2UserService;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/oauth2/**",
-                                "/oauth2/callback",
-                                "/login/**",
-                                "/register/**",
-                                "/error",
-                                "/verify/**",
-                                "/forgot/**",
-                                "/reset/**",
-                                "/css/**",
-                                "/js/**",
-                                "/fragments/**",
-                                "/",
-                                "/index.html",
-                                "/login.html",
-                                "/register.html",
-                                "/product-detail.html",
-                                "/profile.html",
-                                "/promotions.html",
-                                "/forgot-password.html",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs/swagger-config",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/ws/**")
-                        .permitAll()
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(
+                                                                "/api/auth/**",
+                                                                "/oauth2/**",
+                                                                "/oauth2/callback",
+                                                                "/login/**",
+                                                                "/register/**",
+                                                                "/error",
+                                                                "/verify/**",
+                                                                "/forgot/**",
+                                                                "/reset/**",
+                                                                "/css/**",
+                                                                "/js/**",
+                                                                "/fragments/**",
+                                                                "/",
+                                                                "/index.html",
+                                                                "/login.html",
+                                                                "/register.html",
+                                                                "/product-detail.html",
+                                                                "/profile.html",
+                                                                "/promotions.html",
+                                                                "/forgot-password.html",
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/v3/api-docs/**",
+                                                                "/v3/api-docs/swagger-config",
+                                                                "/swagger-resources/**",
+                                                                "/webjars/**",
+                                                                "/ws/**")
+                                                .permitAll()
 
+                                                .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.GET, "/api/support/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.POST, "/api/support/**").hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
+                                                // Products: allow GET to public, restrict modifications to ADMIN
+                                                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
-                        // Products: allow GET to public, restrict modifications to ADMIN
-                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
+                                                .requestMatchers(HttpMethod.POST, "/api/promotions/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/promotions/**")
+                                                .hasRole("ADMIN")
 
-                        .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/promotions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/promotions/**").hasRole("ADMIN")
+                                                .anyRequest().authenticated())
+                                .formLogin(AbstractHttpConfigurer::disable)
+                                .oauth2Login(oauth2 -> oauth2
+                                                .loginPage("/login.html")
+                                                .failureUrl("/login.html?error=true")
+                                                .userInfoEndpoint(userInfo -> userInfo
+                                                                .userService(customOAuth2UserService))
+                                                .successHandler(oAuth2SuccessHandler))
+                                .httpBasic(AbstractHttpConfigurer::disable);
 
-                        .anyRequest().authenticated())
-                .formLogin(AbstractHttpConfigurer::disable)
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login.html")
-                        .failureUrl("/login.html?error=true")
-                        .userInfoEndpoint(userInfo -> userInfo
-                                .userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler))
-                .httpBasic(AbstractHttpConfigurer::disable);
+                http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                return http.build();
+        }
 
-        return http.build();
-    }
+        @Bean
+        public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+                return config.getAuthenticationManager();
+        }
 
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }
