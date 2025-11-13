@@ -46,6 +46,8 @@ public class SecurityConfig {
                                                                 "/fragments/**",
                                                                 "/",
                                                                 "/index.html",
+                                                                "/cart",
+                                                                "/cart.html",
                                                                 "/login.html",
                                                                 "/register.html",
                                                                 "/product-detail.html",
