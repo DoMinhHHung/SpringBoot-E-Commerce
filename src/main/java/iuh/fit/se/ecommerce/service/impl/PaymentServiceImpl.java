@@ -72,25 +72,12 @@ public class PaymentServiceImpl implements PaymentService {
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
                 .totalAmount(order.getTotalAmount())
-                .qrCode(formatQrCode(payOSResponse.getData().getQrCode()))
+                .qrCode(payOSResponse.getData().getQrCode()) // Trả về raw QR code data từ PayOS
                 .checkoutUrl(payOSResponse.getData().getCheckoutUrl())
                 .paymentLinkId(payOSResponse.getData().getPaymentLinkId())
                 .status(PaymentStatus.PENDING)
                 .message("Vui lòng quét mã QR hoặc click vào link để thanh toán")
                 .build();
-    }
-
-    private String formatQrCode(String qrCode) {
-        if (qrCode == null || qrCode.isEmpty()) {
-            return null;
-        }
-        if (qrCode.startsWith("data:image")) {
-            return qrCode;
-        }
-        if (!qrCode.startsWith("http")) {
-            return "data:image/png;base64," + qrCode;
-        }
-        return qrCode;
     }
 
     @Override
@@ -150,6 +137,18 @@ public class PaymentServiceImpl implements PaymentService {
         Payment payment = paymentRepository.findByOrder(order)
                 .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Payment không tồn tại"));
 
+        // Sync status from PayOS nếu payment vẫn đang PENDING
+        if (payment.getStatus() == PaymentStatus.PENDING && payment.getPaymentLinkId() != null) {
+            try {
+                syncPaymentStatusFromPayOS(orderCode, payment);
+                // Reload payment sau khi sync
+                payment = paymentRepository.findByOrder(order)
+                        .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Payment không tồn tại"));
+            } catch (Exception e) {
+                log.warn("Could not sync payment status from PayOS for order {}: {}", orderCode, e.getMessage());
+            }
+        }
+
         return PaymentResponse.builder()
                 .orderId(order.getId())
                 .orderCode(order.getOrderCode())
@@ -160,6 +159,72 @@ public class PaymentServiceImpl implements PaymentService {
                 .status(payment.getStatus())
                 .message(getStatusMessage(payment.getStatus()))
                 .build();
+    }
+
+    /**
+     * Sync payment status from PayOS API
+     * This method queries PayOS API to get the latest payment status and updates the database
+     */
+    @Transactional
+    public void syncPaymentStatusFromPayOS(Long orderCode, Payment payment) {
+        try {
+            if (payment.getPaymentLinkId() == null) {
+                log.warn("Payment link ID is null for order: {}, cannot sync status", orderCode);
+                return;
+            }
+
+            log.info("Syncing payment status from PayOS for order: {}, paymentLinkId: {}", orderCode, payment.getPaymentLinkId());
+
+            // Query status from PayOS
+            PayOSGateway.PayOSResponse payOSResponse = payOSGateway.getPaymentStatus(payment.getPaymentLinkId());
+            
+            if (payOSResponse == null || payOSResponse.getData() == null) {
+                log.warn("PayOS response is null or data is null for paymentLinkId: {}", payment.getPaymentLinkId());
+                return;
+            }
+
+            // Check status from PayOS response
+            // PayOS có thể trả về status trong data.code hoặc data.status
+            String payOSStatus = payOSResponse.getData().getCode();
+            if (payOSStatus == null || payOSStatus.isEmpty()) {
+                payOSStatus = payOSResponse.getData().getStatus();
+            }
+
+            log.info("PayOS status for order {}: code={}, status={}", orderCode, payOSResponse.getCode(), payOSStatus);
+
+            // Update payment status nếu PayOS báo đã thanh toán
+            if ("PAID".equals(payOSStatus) || "00".equals(payOSStatus) || "PAID".equals(payOSResponse.getCode())) {
+                if (payment.getStatus() != PaymentStatus.PAID) {
+                    payment.setStatus(PaymentStatus.PAID);
+                    if (payOSResponse.getData().getCode() != null) {
+                        // Có thể có transaction reference trong response
+                        // payment.setTransactionId(...);
+                    }
+                    paymentRepository.save(payment);
+                    orderService.confirmOrder(orderCode);
+                    log.info("✅ Payment status synced to PAID for order: {}", orderCode);
+                } else {
+                    log.debug("Payment already PAID for order: {}", orderCode);
+                }
+            } else if ("CANCELLED".equals(payOSStatus) || "CANCELLED".equals(payOSResponse.getCode())) {
+                if (payment.getStatus() != PaymentStatus.CANCELLED) {
+                    payment.setStatus(PaymentStatus.CANCELLED);
+                    paymentRepository.save(payment);
+                    log.info("Payment status synced to CANCELLED for order: {}", orderCode);
+                }
+            } else if ("FAILED".equals(payOSStatus) || "FAILED".equals(payOSResponse.getCode())) {
+                if (payment.getStatus() != PaymentStatus.FAILED) {
+                    payment.setStatus(PaymentStatus.FAILED);
+                    paymentRepository.save(payment);
+                    log.info("Payment status synced to FAILED for order: {}", orderCode);
+                }
+            } else {
+                log.debug("Payment still PENDING on PayOS for order: {}, PayOS code: {}", orderCode, payOSResponse.getCode());
+            }
+        } catch (Exception e) {
+            log.error("Error syncing payment status from PayOS for order {}: ", orderCode, e);
+            // Không throw exception để không break polling
+        }
     }
 
     private String getStatusMessage(PaymentStatus status) {

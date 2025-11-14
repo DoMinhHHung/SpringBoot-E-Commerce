@@ -193,15 +193,15 @@
                 discountBadgeEl.style.display = 'none';
             }
             
-            // Brand and stock
             document.getElementById('product-brand').textContent = product.brand || 'N/A';
             document.getElementById('product-stock').textContent = product.stock || 0;
             
-            // Description
             document.getElementById('product-description').textContent = product.description || 'Không có mô tả';
             
-            // Images
-            const mainImage = product.mainImage || 'https://via.placeholder.com/500x500';
+            const placeholder500 = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="500"%3E%3Crect fill="%23ddd" width="500" height="500"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="20" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+            const placeholder80 = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23ddd" width="80" height="80"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="10" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+            
+            const mainImage = product.mainImage || placeholder500;
             document.getElementById('main-product-image').src = mainImage;
             
             const thumbnailsContainer = document.querySelector('.thumbnail-images');
@@ -215,7 +215,7 @@
                      class="img-thumbnail" 
                      style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;"
                      onclick="changeMainImage('${img}')"
-                     onerror="this.src='https://via.placeholder.com/80x80'">
+                     onerror="this.src='${placeholder80}'">
             `).join('');
             
             // Specifications
@@ -291,9 +291,9 @@
                         <div class="col-md-3">
                             <div class="product-card">
                                 <a href="/product-detail.html?id=${p.id}">
-                                    <img src="${p.mainImage || 'https://via.placeholder.com/300x250'}"
+                                    <img src="${p.mainImage}"
                                          alt="${p.name}"
-                                         onerror="this.src='https://via.placeholder.com/300x250'">
+                                         class="product-image">
                                 </a>
                                 <div class="product-card-body">
                                     <h5 class="product-title">${p.name}</h5>

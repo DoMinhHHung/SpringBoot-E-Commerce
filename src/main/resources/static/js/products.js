@@ -172,10 +172,9 @@ function displayProducts(products) {
                     ${discountPercent > 0 ? 
                         `<span class="product-type-discount-badge">-${discountPercent}%</span>` : ''}
                     <a href="/product-detail.html?id=${product.id}" class="product-type-image-wrapper">
-                        <img src="${product.mainImage || 'https://via.placeholder.com/300x250'}" 
+                        <img src="${product.mainImage}" 
                              alt="${product.name}" 
-                             class="product-type-product-image"
-                             onerror="this.src='https://via.placeholder.com/300x250'">
+                             class="product-type-product-image">
                     </a>
                     <div class="product-type-card-body">
                         <h5 class="product-type-product-title">${product.name}</h5>
