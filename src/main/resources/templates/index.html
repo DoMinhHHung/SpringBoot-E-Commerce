@@ -11,6 +11,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom CSS -->
     <link href="/css/style.css" rel="stylesheet">
+    <link rel="icon" href="/logo/logo_web.png">
 </head>
 <body>
     <!-- Header -->
@@ -23,10 +24,19 @@
             <div id="carouselBanner" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
                     <div class="carousel-item active">
-                        <img src="https://cdn-imgix.headout.com/media/images/c9db3cea62133b6a6bb70597326b4a34-388-dubai-img-worlds-of-adventure-tickets-01.jpg?auto=format&w=1222.3999999999999&h=687.6&q=90&ar=16%3A9&crop=faces&fit=crop" class="d-block h-500 w-100" alt="Banner 1">
+                        <img src="https://pcmarket.vn/media/banner/PCM-061.jpg" class="d-block h-500 w-100" alt="Banner 1">
                     </div>
                     <div class="carousel-item">
-                        <img src="https://cdn-imgix.headout.com/media/images/c9db3cea62133b6a6bb70597326b4a34-388-dubai-img-worlds-of-adventure-tickets-01.jpg?auto=format&w=1222.3999999999999&h=687.6&q=90&ar=16%3A9&crop=faces&fit=crop" class="d-block h-500 w-100" alt="Banner 2">
+                        <img src="https://pcmarket.vn/media/banner/pcmt5-03.png" class="d-block h-500 w-100" alt="Banner 2">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://pcmarket.vn/media/banner/10805THUCU-04.jpg" class="d-block h-500 w-100" alt="Banner 3">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://pcmarket.vn/media/banner/21_Marb98a191b5d1cb549d58722773620511a.jpg" class="d-block h-500 w-100" alt="Banner 4">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="https://pcmarket.vn/media/banner/pcm.jpg" class="d-block h-500 w-100" alt="Banner 5">
                     </div>
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselBanner" data-bs-slide="prev">
@@ -36,39 +46,237 @@
                     <span class="carousel-control-next-icon"></span>
                 </button>
             </div>
-        </section>
-
-        <!-- Products Section -->
-        <section class="products-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">Sản phẩm nổi bật</h2>
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-secondary active" onclick="filterProducts('ALL')">Tất cả</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('PC')">PC</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('LAPTOP')">Laptop</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('KEYBOARD')">Bàn phím</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="filterProducts('MOUSE')">Chuột</button>
+            <div class="sub-banner row g-3">
+                <div class="sub-banner-item col-md-4">
+                    <img src="https://pcmarket.vn/media/banner/pcmt5-03.png" class="d-block" alt="Banner 1">
+                </div>
+                
+                <div class="sub-banner-item col-md-4">
+                    <img src="https://pcmarket.vn/media/banner/PCM-061.jpg" class="d-block" alt="Banner 2">
+                </div>
+                
+                <div class="sub-banner-item col-md-4">
+                    <img src="https://pcmarket.vn/media/banner/10805THUCU-04.jpg" class="d-block" alt="Banner 3">
                 </div>
             </div>
+        </section>
 
-            <!-- Loading Spinner -->
-            <div id="loading-spinner" class="loading-spinner">
-                <div class="spinner-border text-primary" role="status">
+        <!-- Hot Sale Section -->
+        <section class="hot-sale-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-fire text-danger"></i> HOT SALE MỖI NGÀY
+                </h2>
+                <a href="/promotions.html" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+
+            <!-- Loading Spinner for Hot Sale -->
+            <div id="hot-sale-loading-spinner" class="loading-spinner">
+                <div class="spinner-border text-danger" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
 
-            <!-- Products Grid -->
-            <div id="products-container" class="row g-4">
-                <!-- Products will be loaded here dynamically -->
+            <!-- Hot Sale Carousel Container -->
+            <div class="hot-sale-carousel-wrapper position-relative">
+                <!-- Navigation Arrow Left -->
+                <button class="hot-sale-nav-btn hot-sale-nav-prev" onclick="scrollHotSale('left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                
+                <!-- Hot Sale Products Carousel -->
+                <div class="hot-sale-carousel" id="hot-sale-container">
+                    <!-- Hot Sale products will be loaded here dynamically -->
+                </div>
+                
+                <!-- Navigation Arrow Right -->
+                <button class="hot-sale-nav-btn hot-sale-nav-next" onclick="scrollHotSale('right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
 
-            <!-- Empty State -->
-            <div id="empty-state" class="text-center py-5 d-none">
-                <i class="bi bi-inbox" style="font-size: 4rem; color: #ccc;"></i>
-                <p class="mt-3 text-muted">Không có sản phẩm nào</p>
+            <!-- Empty State for Hot Sale -->
+            <div id="hot-sale-empty-state" class="text-center py-5 d-none">
+                <i class="bi bi-fire" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="mt-3 text-muted">Hiện tại không có sản phẩm đang khuyến mãi</p>
             </div>
         </section>
+
+        <!-- PC Gaming Section -->
+        <section class="product-type-section pc-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-cpu-fill text-primary"></i> PC GAMING, STREAMING
+                </h2>
+                <a href="/index.html?type=PC" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('pc', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="pc-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('pc', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Laptop Section -->
+        <section class="product-type-section laptop-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-laptop text-success"></i> LAPTOP
+                </h2>
+                <a href="/index.html?type=LAPTOP" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('laptop', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="laptop-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-success" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('laptop', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Keyboard Section -->
+        <section class="product-type-section keyboard-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-keyboard text-warning"></i> BÀN PHÍM
+                </h2>
+                <a href="/index.html?type=KEYBOARD" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('keyboard', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="keyboard-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-warning" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('keyboard', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Mouse Section -->
+        <section class="product-type-section mouse-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-mouse text-info"></i> CHUỘT
+                </h2>
+                <a href="/index.html?type=MOUSE" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('mouse', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="mouse-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-info" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('mouse', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Monitor Section -->
+        <section class="product-type-section monitor-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-display text-danger"></i> MÀN HÌNH PC GAMING
+                </h2>
+                <a href="/index.html?type=MONITOR" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('monitor', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="monitor-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-danger" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('monitor', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Headphone Section -->
+        <section class="product-type-section headphone-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-headphones text-secondary"></i> TAI NGHE
+                </h2>
+                <a href="/index.html?type=HEADPHONE" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('headphone', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="headphone-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-secondary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('headphone', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- Accessory Section -->
+        <section class="product-type-section accessory-section my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">
+                    <i class="bi bi-puzzle text-dark"></i> PHỤ KIỆN
+                </h2>
+                <a href="/index.html?type=ACCESSORY" class="btn btn-outline-primary">Xem tất cả +</a>
+            </div>
+            <div class="product-type-carousel-wrapper position-relative">
+                <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('accessory', 'left')" aria-label="Previous">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="product-type-carousel" id="accessory-container">
+                    <div class="product-type-loading-spinner">
+                        <div class="spinner-border text-dark" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="product-type-nav-btn product-type-nav-next" onclick="scrollProductType('accessory', 'right')" aria-label="Next">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </section>
+
     </main>
 
     <!-- Footer -->
@@ -80,6 +288,11 @@
     <script src="/js/common.js"></script>
     <!-- API Client -->
     <script src="/js/api.js"></script>
+    <!-- SockJS and STOMP for chat widget -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <link href="/css/chat-widget.css" rel="stylesheet">
+    <script src="/js/chat-widget.js"></script>
     <!-- Page Script -->
     <script>
         let allProducts = [];
@@ -102,6 +315,22 @@
             }
 
             updateActiveFilter();
+            
+            if (typeof initChatWidget === 'function') {
+                initChatWidget(null);
+            }
+
+            // Load Hot Sale products
+            loadHotSaleProducts();
+            
+            // Load products by type for each section
+            loadProductsByTypeForSection('PC', 'pc-container');
+            loadProductsByTypeForSection('LAPTOP', 'laptop-container');
+            loadProductsByTypeForSection('KEYBOARD', 'keyboard-container');
+            loadProductsByTypeForSection('MOUSE', 'mouse-container');
+            loadProductsByTypeForSection('MONITOR', 'monitor-container');
+            loadProductsByTypeForSection('HEADPHONE', 'headphone-container');
+            loadProductsByTypeForSection('ACCESSORY', 'accessory-container');
         });
 
         async function loadAllProducts(searchTerm = '') {
@@ -156,9 +385,9 @@
                         ${product.priceAfterDiscount && product.priceAfterDiscount < product.price ? 
                             `<span class="product-discount">-${Math.round((1 - product.priceAfterDiscount / product.price) * 100)}%</span>` : ''}
                         <a href="/product-detail.html?id=${product.id}">
-                            <img src="${product.mainImage || 'https://via.placeholder.com/300x250'}" 
-                                 alt="${product.name}" 
-                                 onerror="this.src='https://via.placeholder.com/300x250'">
+                            <img src="${product.mainImage}"
+                                 alt="${product.name}"
+                                 class="product-image">
                         </a>
                         <div class="product-card-body">
                             <h5 class="product-title">${product.name}</h5>
@@ -214,8 +443,217 @@
                 setTimeout(() => showLoginModal(), 1000);
                 return;
             }
-            showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
-            // TODO: Implement cart functionality
+            (async () => {
+                try {
+                    // determine userId
+                    let user = apiClient.getUser();
+                    if (!user || !user.id) {
+                        user = await apiClient.getProfile();
+                        if (user) apiClient.setUser(user);
+                    }
+                    const userId = user && user.id;
+                    if (!userId) {
+                        showAlert('Không xác định được người dùng. Vui lòng đăng nhập lại.', 'error');
+                        setTimeout(() => showLoginModal(), 800);
+                        return;
+                    }
+
+                    const payload = { userId: Number(userId), productId: Number(productId), quantity: 1 };
+                    await apiClient.request('/cart/add', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    // fetch updated cart to update badge
+                    try {
+                        const cart = await apiClient.request(`/cart/${userId}`, { method: 'GET' });
+                        const qty = cart && Array.isArray(cart.items) ? cart.items.reduce((s, it) => s + (it.quantity || 0), 0) : 0;
+                        const badge = document.getElementById('cart-badge');
+                        if (badge) badge.textContent = qty;
+                    } catch (e) {
+                        // ignore badge update errors
+                    }
+
+                    showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
+                } catch (err) {
+                    console.error('addToCart error', err);
+                    showAlert('Thêm vào giỏ hàng thất bại: ' + (err.message || err), 'error');
+                }
+            })();
+         }
+
+        async function loadHotSaleProducts() {
+            const loadingSpinner = document.getElementById('hot-sale-loading-spinner');
+            const container = document.getElementById('hot-sale-container');
+            const emptyState = document.getElementById('hot-sale-empty-state');
+            
+            if (loadingSpinner) loadingSpinner.classList.add('active');
+            if (container) container.innerHTML = '';
+            if (emptyState) emptyState.classList.add('d-none');
+
+            try {
+                const hotSaleProducts = await apiClient.getHotSaleProducts(6);
+                
+                if (hotSaleProducts.length === 0) {
+                    if (emptyState) emptyState.classList.remove('d-none');
+                    return;
+                }
+
+                displayHotSaleProducts(hotSaleProducts);
+            } catch (error) {
+                console.error('Error loading hot sale products:', error);
+                if (emptyState) emptyState.classList.remove('d-none');
+            } finally {
+                if (loadingSpinner) loadingSpinner.classList.remove('active');
+            }
+        }
+
+        function displayHotSaleProducts(products) {
+            const container = document.getElementById('hot-sale-container');
+            if (!container) return;
+
+            container.innerHTML = products.map(product => {
+                const discountPercent = product.priceAfterDiscount && product.priceAfterDiscount < product.price
+                    ? Math.round((1 - product.priceAfterDiscount / product.price) * 100)
+                    : 0;
+
+                return `
+                    <div class="hot-sale-card-item">
+                        <div class="hot-sale-card">
+                            ${discountPercent > 0 ? 
+                                `<span class="hot-sale-discount-badge">-${discountPercent}%</span>` : ''}
+                            <a href="/product-detail.html?id=${product.id}" class="hot-sale-image-wrapper">
+                                <img src="${product.mainImage}" 
+                                     alt="${product.name}" 
+                                     class="hot-sale-product-image">
+                            </a>
+                            <div class="hot-sale-card-body">
+                                <h5 class="hot-sale-product-title">${product.name}</h5>
+                                <div class="hot-sale-product-price">
+                                    ${product.priceAfterDiscount && product.priceAfterDiscount < product.price ? 
+                                        `<span class="hot-sale-price-old">${formatPrice(product.price)}</span>
+                                         <span class="hot-sale-price-new">${formatPrice(product.priceAfterDiscount)}</span>` :
+                                        `<span class="hot-sale-price-new">${formatPrice(product.price)}</span>`
+                                    }
+                                </div>
+                                <button class="hot-sale-cart-btn" onclick="addToCart(${product.id})" title="Thêm vào giỏ">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function scrollHotSale(direction) {
+            const carousel = document.getElementById('hot-sale-container');
+            if (!carousel) return;
+            
+            const scrollAmount = 300; // Scroll by card width + gap
+            const currentScroll = carousel.scrollLeft;
+            const newScroll = direction === 'left' 
+                ? currentScroll - scrollAmount 
+                : currentScroll + scrollAmount;
+            
+            carousel.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
+        }
+
+        async function loadProductsByTypeForSection(type, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            // Show loading spinner
+            container.innerHTML = `
+                <div class="product-type-loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+
+            try {
+                const products = await apiClient.getProductsByType(type);
+                
+                // Limit to 8 products per section
+                const limitedProducts = products.slice(0, 8);
+                
+                if (limitedProducts.length === 0) {
+                    container.innerHTML = `
+                        <div class="product-type-empty-state text-center py-4">
+                            <p class="text-muted">Hiện tại không có sản phẩm loại này</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                displayProductsInCarousel(limitedProducts, containerId);
+            } catch (error) {
+                console.error(`Error loading ${type} products:`, error);
+                container.innerHTML = `
+                    <div class="product-type-empty-state text-center py-4">
+                        <p class="text-muted">Không thể tải sản phẩm</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayProductsInCarousel(products, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            container.innerHTML = products.map(product => {
+                const discountPercent = product.priceAfterDiscount && product.priceAfterDiscount < product.price
+                    ? Math.round((1 - product.priceAfterDiscount / product.price) * 100)
+                    : 0;
+
+                return `
+                    <div class="product-type-card-item">
+                        <div class="product-type-card">
+                            ${discountPercent > 0 ? 
+                                `<span class="product-type-discount-badge">-${discountPercent}%</span>` : ''}
+                            <a href="/product-detail.html?id=${product.id}" class="product-type-image-wrapper">
+                                <img src="${product.mainImage}" 
+                                     alt="${product.name}" 
+                                     class="product-type-product-image">
+                            </a>
+                            <div class="product-type-card-body">
+                                <h5 class="product-type-product-title">${product.name}</h5>
+                                <div class="product-type-product-price">
+                                    ${product.priceAfterDiscount && product.priceAfterDiscount < product.price ? 
+                                        `<span class="product-type-price-old">${formatPrice(product.price)}</span>
+                                         <span class="product-type-price-new">${formatPrice(product.priceAfterDiscount)}</span>` :
+                                        `<span class="product-type-price-new">${formatPrice(product.price)}</span>`
+                                    }
+                                </div>
+                                <button class="product-type-cart-btn" onclick="addToCart(${product.id})" title="Thêm vào giỏ">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function scrollProductType(type, direction) {
+            const containerId = `${type}-container`;
+            const carousel = document.getElementById(containerId);
+            if (!carousel) return;
+            
+            const scrollAmount = 300;
+            const currentScroll = carousel.scrollLeft;
+            const newScroll = direction === 'left' 
+                ? currentScroll - scrollAmount 
+                : currentScroll + scrollAmount;
+            
+            carousel.scrollTo({
+                left: newScroll,
+                behavior: 'smooth'
+            });
         }
     </script>
 </body>

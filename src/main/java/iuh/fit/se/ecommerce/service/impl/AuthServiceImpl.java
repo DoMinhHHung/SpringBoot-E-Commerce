@@ -19,7 +19,6 @@ import iuh.fit.se.ecommerce.repository.VerificationTokenRepository;
 import iuh.fit.se.ecommerce.service.interfaces.AuthService;
 import iuh.fit.se.ecommerce.service.interfaces.EmailService;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

@@ -14,4 +14,5 @@ public interface ProductService {
     List<ProductResponse> getAllProducts();
     List<ProductResponse> getProductsByType(String type);
     List<ProductResponse> findByQuery(String query);
+    List<ProductResponse> getHotSaleProducts(int limit);
 }

@@ -91,6 +91,16 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductResponse> getHotSaleProducts(int limit) {
+        List<Product> hotSaleProducts = productRepository.findHotSaleProducts();
+        return hotSaleProducts.stream()
+                .limit(limit > 0 ? limit : Integer.MAX_VALUE)
+                .map(ProductMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
     public List<ProductResponse> findByQuery(String query) {
         if (query == null || query.trim().isEmpty()) {
             return List.of();
@@ -202,6 +212,13 @@ public class ProductServiceImpl implements ProductService {
             if (qLower.contains("hdd")) specTerms.add("hdd");
             if (qLower.contains("cpu") || qLower.contains("core") || qLower.contains("intel") || qLower.contains("amd")) specTerms.add("cpu");
             if (qLower.contains("vga") || qLower.contains("card")) specTerms.add("vga");
+
+            // --- THÊM CÁC THUẬT NGỮ VỀ MÀN HÌNH ---
+            if (qLower.contains("màn hình") || qLower.contains("man hinh") || qLower.contains("display")) specTerms.add("màn hình");
+            if (qLower.contains("120hz") || qLower.contains("144hz") || qLower.contains("165hz") || qLower.contains("240hz")) specTerms.add("tần số quét cao");
+            if (qLower.contains("oled") || qLower.contains("ips") || qLower.contains("amoled")) specTerms.add("công nghệ màn hình");
+            // ----------------------------------------
+
             if (!specTerms.isEmpty()) criteria.setSpecTerms(specTerms);
 
             // if no structured filters detected, set text for free-text search
