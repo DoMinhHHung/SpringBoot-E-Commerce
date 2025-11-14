@@ -70,6 +70,8 @@ public class PayOSGateway {
             private String qrCode;
             private String checkoutUrl;
             private String paymentLinkId;
+            private String status; // Status từ PayOS (PAID, PENDING, etc.)
+            private String code; // Code từ PayOS response
         }
     }
 
@@ -126,6 +128,45 @@ public class PayOSGateway {
         } catch (Exception e) {
             log.error("Error creating PayOS payment link: ", e);
             throw new AppException(ErrorCode.INTERNAL_ERROR, "Lỗi tạo payment link: " + e.getMessage());
+        }
+    }
+
+    public PayOSResponse getPaymentStatus(String paymentLinkId) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-client-id", clientId);
+            headers.set("x-api-key", apiKey);
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+            String apiEndpoint = apiUrl + "/v2/payment-requests/" + paymentLinkId;
+            log.info("Calling PayOS API to get payment status: {}", apiEndpoint);
+            
+            ResponseEntity<PayOSResponse> response = restTemplate.exchange(
+                    apiEndpoint,
+                    HttpMethod.GET,
+                    entity,
+                    PayOSResponse.class
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                PayOSResponse payOSResponse = response.getBody();
+                if ("00".equals(payOSResponse.getCode())) {
+                    log.info("PayOS payment status retrieved successfully for paymentLinkId: {}", paymentLinkId);
+                    return payOSResponse;
+                } else {
+                    log.warn("PayOS API returned error: {} - {}", payOSResponse.getCode(), payOSResponse.getDesc());
+                    return payOSResponse;
+                }
+            }
+
+            log.error("Failed to get payment status from PayOS: HTTP {}", response.getStatusCode());
+            return null;
+
+        } catch (Exception e) {
+            log.error("Error getting PayOS payment status for paymentLinkId {}: {}", paymentLinkId, e.getMessage());
+            return null;
         }
     }
 

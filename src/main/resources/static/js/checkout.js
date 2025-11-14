@@ -93,13 +93,14 @@ function renderCartItems(items) {
     items.forEach(item => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'cart-item';
+        const placeholder60 = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect fill="%23ddd" width="60" height="60"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="8" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
         const imgSrc = item.productImage && item.productImage !== 'null' 
             ? item.productImage 
-            : 'https://via.placeholder.com/60?text=No+Image';
+            : placeholder60;
         
         itemDiv.innerHTML = `
             <img src="${imgSrc}" alt="${item.productName}" 
-                 onerror="this.onerror=null;this.src='https://via.placeholder.com/60?text=No+Image'">
+                 onerror="this.onerror=null;this.src='${placeholder60}'">
             <div class="flex-grow-1">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
@@ -348,31 +349,22 @@ function showPaymentModal(paymentResponse, originalButtonText) {
         }
     }, 1000);
 
-    // Generate QR code from checkoutUrl (URL thanh toán)
+    // Generate QR code using api.qrserver.com with qrCode data from PayOS
     setTimeout(() => {
         const qrCodeDiv = document.getElementById(`qrcode-${paymentResponse.orderCode}`);
-        if (qrCodeDiv && typeof QRCode !== 'undefined') {
-            // Chỉ dùng checkoutUrl để generate QR code (URL thanh toán)
-            const qrData = paymentResponse.checkoutUrl;
+        if (qrCodeDiv) {
+            // Lấy qrCode data từ response (raw data string từ PayOS)
+            const qrData = paymentResponse.qrCode;
             if (qrData) {
-                // Clear any existing content
-                qrCodeDiv.innerHTML = '';
-                // Generate QR code
-                try {
-                    new QRCode(qrCodeDiv, {
-                        text: qrData,
-                        width: 300,
-                        height: 300,
-                        colorDark: "#000000",
-                        colorLight: "#ffffff",
-                        correctLevel: QRCode.CorrectLevel.H
-                    });
-                } catch (error) {
-                    console.error('Error generating QR code:', error);
-                    qrCodeDiv.innerHTML = '<p class="text-danger">Không thể tạo mã QR</p>';
-                }
+                // Encode qrData để dùng trong URL
+                const encodedQrData = encodeURIComponent(qrData);
+                // Tạo URL từ api.qrserver.com
+                const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodedQrData}`;
+                
+                // Tạo img tag
+                qrCodeDiv.innerHTML = `<img src="${qrImageUrl}" alt="QR Code" class="img-fluid" style="max-width: 300px; height: auto;">`;
             } else {
-                qrCodeDiv.innerHTML = '<p class="text-danger">Không có URL thanh toán</p>';
+                qrCodeDiv.innerHTML = '<p class="text-danger">Không có dữ liệu QR code</p>';
             }
         }
     }, 100);
@@ -398,6 +390,13 @@ function showPaymentModal(paymentResponse, originalButtonText) {
             
             if (statusResponse.status === 'PAID') {
                 clearInterval(pollInterval);
+                clearInterval(countdownInterval);
+                
+                // Set flag to allow modal close
+                const modalElement = document.getElementById('paymentModal');
+                if (modalElement) {
+                    modalElement.setAttribute('data-allow-close', 'true');
+                }
                 
                 // Update modal body to show success message
                 const modalBody = document.getElementById('payment-modal-body');
@@ -412,6 +411,7 @@ function showPaymentModal(paymentResponse, originalButtonText) {
                             <p class="mb-1">Tổng tiền: <strong class="text-danger fs-4">${formatPrice(paymentResponse.totalAmount)}</strong></p>
                         </div>
                         <p class="text-muted mb-4">Cảm ơn bạn đã mua hàng. Đơn hàng của bạn đang được xử lý.</p>
+                        <p class="text-info small mb-3">Tự động chuyển về trang chủ sau <span id="redirect-countdown">3</span> giây...</p>
                         <button class="btn btn-success btn-lg" onclick="closePaymentModal()">
                             <i class="bi bi-check-circle"></i> OK
                         </button>
@@ -422,7 +422,22 @@ function showPaymentModal(paymentResponse, originalButtonText) {
                 const closeBtn = document.querySelector('#paymentModal .btn-close');
                 if (closeBtn) closeBtn.style.display = 'none';
                 
-            } else if (statusResponse.status === 'CANCELLED' || statusResponse.status === 'FAILED') {
+                // Auto close modal and redirect after 3 seconds
+                let redirectSeconds = 3;
+                const redirectCountdownElement = document.getElementById('redirect-countdown');
+                const redirectCountdown = setInterval(() => {
+                    redirectSeconds--;
+                    if (redirectCountdownElement) {
+                        redirectCountdownElement.textContent = redirectSeconds;
+                    }
+                    if (redirectSeconds <= 0) {
+                        clearInterval(redirectCountdown);
+                        closePaymentModal();
+                    }
+                }, 1000);
+                
+            } else if (status === 'CANCELLED' || status === 'FAILED') {
+                console.log('❌ Payment failed or cancelled');
                 clearInterval(pollInterval);
                 const statusAlert = document.getElementById('payment-status-alert');
                 if (statusAlert) {
@@ -432,13 +447,21 @@ function showPaymentModal(paymentResponse, originalButtonText) {
                         <small>Thanh toán thất bại hoặc đã hủy. Vui lòng thử lại.</small>
                     `;
                 }
+            } else {
+                // Log để debug nếu status không match
+                console.log(`⏳ Payment status is: ${status || 'UNKNOWN'}, waiting for PAID... (Poll #${pollCount}/${maxPolls})`);
             }
         } catch (error) {
-            console.error('Error checking payment status:', error);
+            console.error('❌ Error checking payment status:', error);
+            console.error('Error details:', error.message);
+            if (error.stack) {
+                console.error('Stack trace:', error.stack);
+            }
         }
 
         // Stop polling after max attempts
         if (pollCount >= maxPolls) {
+            console.log('⏱️ Max polling attempts reached, stopping...');
             clearInterval(pollInterval);
         }
     }, 5000); // Check every 5 seconds
@@ -446,28 +469,21 @@ function showPaymentModal(paymentResponse, originalButtonText) {
     // Intercept modal close events
     const modalElement = document.getElementById('paymentModal');
 
-    // Prevent default close behavior
     modalElement.addEventListener('hide.bs.modal', function(event) {
         const allowClose = modalElement.getAttribute('data-allow-close') === 'true';
         if (!allowClose) {
             event.preventDefault();
             event.stopPropagation();
-            showCloseConfirmation(modal, countdownInterval, pollInterval, originalButtonText);
+            
+            const existingConfirmation = document.getElementById('closeConfirmationModal');
+            if (!existingConfirmation) {
+                showCloseConfirmation(modal, countdownInterval, pollInterval, originalButtonText);
+            }
         } else {
             // Reset flag
             modalElement.removeAttribute('data-allow-close');
         }
     });
-
-    // Handle close button click
-    const closeBtn = modalElement.querySelector('.btn-close');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            showCloseConfirmation(modal, countdownInterval, pollInterval, originalButtonText);
-        });
-    }
 
     // Clean up when modal is actually closed
     modalElement.addEventListener('hidden.bs.modal', () => {
@@ -485,9 +501,12 @@ function showPaymentModal(paymentResponse, originalButtonText) {
 
 // Function to show close confirmation dialog
 function showCloseConfirmation(modal, countdownInterval, pollInterval, originalButtonText) {
-    // Remove existing confirmation if any
+    // Check if confirmation modal already exists and is showing
     const existing = document.getElementById('closeConfirmationModal');
-    if (existing) existing.remove();
+    if (existing) {
+        // Modal already showing, don't show again
+        return;
+    }
 
     const confirmationHTML = `
         <div class="modal fade" id="closeConfirmationModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">

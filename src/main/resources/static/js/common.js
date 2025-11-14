@@ -247,27 +247,22 @@ function updateUserMenu() {
             // Set avatar image
             const wrapper = document.getElementById('user-avatar-wrapper');
             if (userAvatarImg && wrapper) {
-                // Always remove icon first to avoid conflicts
                 const icon = wrapper.querySelector('.bi-person-fill');
                 if (icon) icon.remove();
                 
                 if (user.avatar && user.avatar.trim() !== '') {
-                    // User has avatar - show image
                     const avatarUrl = user.avatar.trim();
                     
-                    // Ensure img element is in the wrapper
                     if (!wrapper.contains(userAvatarImg)) {
                         wrapper.appendChild(userAvatarImg);
                     }
                     
-                    // Set image properties
                     userAvatarImg.src = avatarUrl;
                     userAvatarImg.alt = user.fullName || user.email || 'User';
                     userAvatarImg.style.display = 'block';
                     userAvatarImg.style.visibility = 'visible';
                     
                     userAvatarImg.onerror = function(e) {
-                        // Show default icon on error
                         userAvatarImg.style.display = 'none';
                         if (!wrapper.querySelector('.bi-person-fill')) {
                             const errorIcon = document.createElement('i');
@@ -277,7 +272,6 @@ function updateUserMenu() {
                         }
                     };
                 } else {
-                    // No avatar - show default icon
                     userAvatarImg.style.display = 'none';
                     userAvatarImg.src = '';
                     if (!wrapper.querySelector('.bi-person-fill')) {
