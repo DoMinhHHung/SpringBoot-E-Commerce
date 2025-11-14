@@ -117,10 +117,11 @@ document.addEventListener('DOMContentLoaded', async function () {
             totalPrice += Number(item.totalPrice || (item.unitPrice * item.quantity) || 0);
 
             const tr = document.createElement('tr');
-            const imgSrc = item.productImage && item.productImage !== 'null' ? item.productImage : 'https://via.placeholder.com/60?text=No+Image';
+            const placeholder60 = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="60" height="60"%3E%3Crect fill="%23ddd" width="60" height="60"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="8" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+            const imgSrc = item.productImage && item.productImage !== 'null' ? item.productImage : placeholder60;
             tr.innerHTML = `
                 <td class="d-flex align-items-center">
-                    <img src="${imgSrc}" alt="" onerror="this.onerror=null;this.src='https://via.placeholder.com/60?text=No+Image'" style="width:60px;height:60px;object-fit:cover;margin-right:12px;">
+                    <img src="${imgSrc}" alt="" onerror="this.onerror=null;this.src='${placeholder60}'" style="width:60px;height:60px;object-fit:cover;margin-right:12px;">
                     <div>
                         <div class="fw-bold"><a href="/product-detail.html?id=${item.productId}" class="text-decoration-none text-dark">${item.productName}</a></div>
                         <div class="text-muted small">Mã: ${item.productId}</div>
@@ -187,8 +188,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             });
 
             document.getElementById('checkout').addEventListener('click', () => {
-                // In this project there is no checkout page yet; redirect or show message
-                showAlert('Chức năng thanh toán chưa được triển khai trong bản demo này.', 'info');
+                // Redirect to checkout page
+                window.location.href = '/checkout.html';
             });
         }
     }

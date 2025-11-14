@@ -41,6 +41,11 @@ public class WebController {
         return "promotion/promotions";
     }
 
+    @GetMapping("/products.html")
+    public String products() {
+        return "products";
+    }
+
     @GetMapping("/oauth2/callback")
     public String oauth2Callback() {
         return "auth/oauth2-callback";
@@ -75,5 +80,20 @@ public class WebController {
     @GetMapping("/admin/support.html")
     public String adminSupport() {
         return "admin/support";
+    }
+
+    @GetMapping("/payment-success.html")
+    public String paymentSuccess() {
+        return "payment/payment-success";
+    }
+
+    @GetMapping("/payment-cancel.html")
+    public String paymentCancel() {
+        return "payment/payment-cancel";
+    }
+
+    @GetMapping("/checkout.html")
+    public String checkout() {
+        return "checkout/checkout";
     }
 }

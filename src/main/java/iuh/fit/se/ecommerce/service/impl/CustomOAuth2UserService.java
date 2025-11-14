@@ -27,18 +27,26 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         String email = oAuth2User.getAttribute("email");
         String name = oAuth2User.getAttribute("name");
+        String picture = oAuth2User.getAttribute("picture");
 
         User user = userRepository.findByEmail(email)
                 .orElseGet(() -> {
                     User newUser = User.builder()
                             .email(email)
                             .fullName(name)
+                            .avatar(picture)
                             .authProvider(AuthProvider.GOOGLE)
                             .enabled(true)
                             .role(Role.USER)
                             .build();
                     return userRepository.save(newUser);
                 });
+        
+        // Update avatar if user exists but doesn't have one, or if Google avatar is newer
+        if (user.getAvatar() == null || user.getAvatar().isEmpty()) {
+            user.setAvatar(picture);
+            userRepository.save(user);
+        }
 
         return new DefaultOAuth2User(
                 Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),

@@ -191,6 +191,13 @@ class ApiClient {
         });
     }
 
+    async getHotSaleProducts(limit = 6) {
+        return this.request(`/products/hot-sale?limit=${limit}`, {
+            method: 'GET',
+            skipAuth: true
+        });
+    }
+
     // Admin/Product modification APIs (use FormData because backend expects @ModelAttribute with files)
     async adminCreateProduct(formData) {
         const url = `${this.baseURL}/products`;
@@ -294,6 +301,20 @@ class ApiClient {
 
     isAuthenticated() {
         return !!this.getAuthToken();
+    }
+
+    // Payment APIs
+    async createPayment(paymentRequest) {
+        return this.request('/payments/create', {
+            method: 'POST',
+            body: JSON.stringify(paymentRequest)
+        });
+    }
+
+    async getPaymentStatus(orderCode) {
+        return this.request(`/payments/status/${orderCode}`, {
+            method: 'GET'
+        });
     }
 }
 

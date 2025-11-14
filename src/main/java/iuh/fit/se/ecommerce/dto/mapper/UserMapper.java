@@ -14,6 +14,7 @@ public interface UserMapper {
     @Mapping(target = "dob", source = "dob", qualifiedByName = "toLocalDate")
     User toEntity(RegisterRequest req);
 
+    @Mapping(target = "avatar", source = "avatar")
     UserResponse toResponse(User user);
 
     @Named("toLocalDate")
