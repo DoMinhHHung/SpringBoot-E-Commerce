@@ -6,13 +6,11 @@ function loadHeader() {
             const headerContainer = document.getElementById('header-container');
             if (headerContainer) {
                 headerContainer.innerHTML = html;
-                // Initialize header scripts after loading
                 initializeHeader();
             }
         })
         .catch(error => {
             console.error('Error loading header:', error);
-            // Fallback: create simple header
             createSimpleHeader();
         });
 }
@@ -50,11 +48,6 @@ function createSimpleHeader() {
                         <a href="#" onclick="showLoginModal(); return false;" id="login-link">Đăng nhập</a>
                         <span class="mx-2">|</span>
                         <a href="#" onclick="showRegisterModal(); return false;" id="register-link">Đăng ký</a>
-                        <span id="user-menu" class="d-none">
-                            <a href="/profile.html" id="profile-link"></a>
-                            <span class="mx-2">|</span>
-                            <a href="#" onclick="logout()">Đăng xuất</a>
-                        </span>
                     </div>
                 </div>
             </div>
@@ -63,7 +56,7 @@ function createSimpleHeader() {
         <!-- Navbar Main -->
         <nav class="navbar navbar-expand-lg navbar-main">
             <div class="container">
-                <a class="navbar-brand fw-bold" href="/index.html">E-COMMERCE</a>
+                <a class="navbar-brand fw-bold" href="/index.html"><img src="/logo/logo_main.png" alt="Logo" class="logo-img"></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
@@ -89,52 +82,101 @@ function createSimpleHeader() {
                         <li class="nav-item">
                             <a class="nav-link" href="/promotions.html">Khuyến mãi</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/profile.html">Tài khoản</a>
-                        </li>
                     </ul>
                     <div class="search-box me-3">
                         <input type="text" class="form-control" id="search-input" placeholder="Tìm kiếm sản phẩm...">
                         <button type="button" onclick="handleSearch()"><i class="bi bi-search"></i></button>
                     </div>
-                    <a href="#" class="cart-icon" onclick="showCart()">
+                    <a href="#" class="cart-icon me-3" onclick="showCart()">
                         <i class="bi bi-cart3"></i>
                         <span class="badge" id="cart-badge">0</span>
                     </a>
+                    <!-- User Avatar Dropdown -->
+                    <div id="user-avatar-dropdown" class="user-avatar-dropdown d-none">
+                        <div class="user-avatar-wrapper" id="user-avatar-wrapper">
+                            <img src="" alt="User Avatar" id="user-avatar-img" class="user-avatar-img">
+                        </div>
+                        <div class="user-dropdown-menu" id="user-dropdown-menu">
+                            <a href="/profile.html" class="dropdown-item">
+                                <i class="bi bi-person"></i> Thông tin người dùng
+                            </a>
+                            <a href="/admin/dashboard.html" class="dropdown-item d-none" id="admin-menu-item">
+                                <i class="bi bi-gear"></i> Quản lý
+                            </a>
+                            <a href="#" class="dropdown-item" onclick="showOrders(); return false;">
+                                <i class="bi bi-box-seam"></i> Tra cứu đơn hàng
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="logout(); return false;">
+                                <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
 
-        <!-- Category Navigation -->
-        <nav class="category-nav">
-            <div class="container">
-                <ul class="nav">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/index.html">Tất cả</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index.html?type=PC">PC Gaming</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index.html?type=LAPTOP">Laptop</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index.html?type=KEYBOARD">Bàn phím</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index.html?type=MOUSE">Chuột</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index.html?type=MONITOR">Màn hình</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/index.html?type=HEADPHONE">Tai nghe</a>
-                    </li>
-                </ul>
+        <!-- Fixed Category Menu Button -->
+        <button class="category-menu-btn" id="categoryMenuBtn" onclick="toggleCategoryMenu()">
+            <i class="bi bi-list"></i>
+            <span>Danh mục</span>
+            <i class="bi bi-chevron-down ms-2"></i>
+        </button>
+
+        <!-- Category Dropdown Menu -->
+        <div class="category-dropdown-menu" id="categoryDropdownMenu">
+            <div class="category-menu-wrapper">
+                <!-- Left Panel: Categories List -->
+                <div class="category-menu-left">
+                    <div class="category-menu-item" data-category="LAPTOP" onmouseenter="showCategorySubMenu('LAPTOP')" onclick="navigateToCategory('LAPTOP')">
+                        <i class="bi bi-laptop category-icon"></i>
+                        <span>Laptop</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                    <div class="category-menu-item" data-category="PC" onmouseenter="showCategorySubMenu('PC')" onclick="navigateToCategory('PC')">
+                        <i class="bi bi-cpu category-icon"></i>
+                        <span>PC Gaming, Streaming</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                    <div class="category-menu-item" data-category="KEYBOARD" onmouseenter="showCategorySubMenu('KEYBOARD')" onclick="navigateToCategory('KEYBOARD')">
+                        <i class="bi bi-keyboard category-icon"></i>
+                        <span>Bàn phím</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                    <div class="category-menu-item" data-category="MOUSE" onmouseenter="showCategorySubMenu('MOUSE')" onclick="navigateToCategory('MOUSE')">
+                        <i class="bi bi-mouse category-icon"></i>
+                        <span>Chuột</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                    <div class="category-menu-item" data-category="MONITOR" onmouseenter="showCategorySubMenu('MONITOR')" onclick="navigateToCategory('MONITOR')">
+                        <i class="bi bi-display category-icon"></i>
+                        <span>Màn hình PC Gaming</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                    <div class="category-menu-item" data-category="HEADPHONE" onmouseenter="showCategorySubMenu('HEADPHONE')" onclick="navigateToCategory('HEADPHONE')">
+                        <i class="bi bi-headphones category-icon"></i>
+                        <span>Tai nghe</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                    <div class="category-menu-item" data-category="ACCESSORY" onmouseenter="showCategorySubMenu('ACCESSORY')" onclick="navigateToCategory('ACCESSORY')">
+                        <i class="bi bi-puzzle category-icon"></i>
+                        <span>Phụ kiện</span>
+                        <i class="bi bi-chevron-right category-arrow"></i>
+                    </div>
+                </div>
+                
+                <!-- Right Panel: Sub-menu Content -->
+                <div class="category-menu-right" id="categorySubMenu">
+                    <!-- Sub-menu content will be loaded here -->
+                </div>
             </div>
-        </nav>
+        </div>
     `;
     initializeHeader();
+    // Initialize category menu hover after header is created
+    setTimeout(function() {
+        initCategoryMenuHover();
+    }, 100);
 }
 
 function createSimpleFooter() {
@@ -189,30 +231,73 @@ function initializeHeader() {
 function updateUserMenu() {
     if (!apiClient) return;
     
-    apiClient.getProfile().then(user => {
+    // Use request directly with noAuthRedirect to avoid automatic redirect to login when token invalid
+    apiClient.request('/users/profile', { method: 'GET', noAuthRedirect: true }).then(user => {
         const loginLink = document.getElementById('login-link');
         const registerLink = document.getElementById('register-link');
-        const userMenu = document.getElementById('user-menu');
-        const profileLink = document.getElementById('profile-link');
-        const adminMenu = document.getElementById('admin-menu');
+        const userAvatarDropdown = document.getElementById('user-avatar-dropdown');
+        const userAvatarImg = document.getElementById('user-avatar-img');
+        const adminMenuItem = document.getElementById('admin-menu-item');
         
         if (loginLink) loginLink.classList.add('d-none');
         if (registerLink) registerLink.classList.add('d-none');
-        if (userMenu) userMenu.classList.remove('d-none');
-        if (profileLink) profileLink.textContent = user.fullName || user.email;
+        if (userAvatarDropdown) {
+            userAvatarDropdown.classList.remove('d-none');
+            
+            // Set avatar image
+            const wrapper = document.getElementById('user-avatar-wrapper');
+            if (userAvatarImg && wrapper) {
+                const icon = wrapper.querySelector('.bi-person-fill');
+                if (icon) icon.remove();
+                
+                if (user.avatar && user.avatar.trim() !== '') {
+                    const avatarUrl = user.avatar.trim();
+                    
+                    if (!wrapper.contains(userAvatarImg)) {
+                        wrapper.appendChild(userAvatarImg);
+                    }
+                    
+                    userAvatarImg.src = avatarUrl;
+                    userAvatarImg.alt = user.fullName || user.email || 'User';
+                    userAvatarImg.style.display = 'block';
+                    userAvatarImg.style.visibility = 'visible';
+                    
+                    userAvatarImg.onerror = function(e) {
+                        userAvatarImg.style.display = 'none';
+                        if (!wrapper.querySelector('.bi-person-fill')) {
+                            const errorIcon = document.createElement('i');
+                            errorIcon.className = 'bi bi-person-fill';
+                            errorIcon.style.cssText = 'font-size: 24px; color: #666;';
+                            wrapper.appendChild(errorIcon);
+                        }
+                    };
+                } else {
+                    userAvatarImg.style.display = 'none';
+                    userAvatarImg.src = '';
+                    if (!wrapper.querySelector('.bi-person-fill')) {
+                        const icon = document.createElement('i');
+                        icon.className = 'bi bi-person-fill';
+                        icon.style.cssText = 'font-size: 24px; color: #666;';
+                        wrapper.appendChild(icon);
+                    }
+                }
+            }
+        }
 
-        // Show admin menu if role === 'ADMIN'
-        if (adminMenu) {
-            // user.role might be an array or string depending on backend; normalize
+        // Show admin menu item if role === 'ADMIN'
+        if (adminMenuItem) {
             const roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
-            if (roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1) {
-                adminMenu.classList.remove('d-none');
+            if (roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1 || user.role === 'ADMIN') {
+                adminMenuItem.classList.remove('d-none');
             } else {
-                adminMenu.classList.add('d-none');
+                adminMenuItem.classList.add('d-none');
             }
         }
     }).catch(() => {
         if (apiClient) apiClient.clearAuth();
+        // Hide avatar dropdown on error
+        const userAvatarDropdown = document.getElementById('user-avatar-dropdown');
+        if (userAvatarDropdown) userAvatarDropdown.classList.add('d-none');
     });
 }
 
@@ -224,8 +309,34 @@ function logout() {
     }
 }
 
-function showCart() {
-    alert('Tính năng giỏ hàng đang được phát triển');
+async function showCart() {
+    try {
+        if (!apiClient || !apiClient.isAuthenticated()) {
+            showAlert('Vui lòng đăng nhập để xem giỏ hàng', 'warning');
+            showLoginModal();
+            return;
+        }
+
+        try {
+            const profile = await apiClient.getProfile();
+            if (!profile || !profile.id) {
+                showLoginModal();
+                return;
+            }
+            // token OK -> go to cart
+            window.location.href = '/cart.html';
+        } catch (err) {
+            console.warn('showCart: profile check failed', err);
+            showLoginModal();
+        }
+    } catch (e) {
+        console.error('showCart error', e);
+        window.location.href = '/cart.html';
+    }
+}
+
+function showOrders() {
+    alert('Tính năng tra cứu đơn hàng đang được phát triển');
 }
 
 function handleSearch() {
@@ -243,10 +354,28 @@ function showLoginModal() {
     if (modal) {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
-    } else {
-        // Fallback if modal not loaded yet
-        window.location.href = '/login.html';
+        return;
     }
+
+    // If modal not present, try to load it and wait for it to be added to DOM.
+    // This avoids redirecting the user away when the modal fragment is still loading.
+    loadAuthModal();
+
+    const maxRetries = 200; // ~20 seconds (200 * 100ms) to allow modal fragment to load on slow connections
+    let attempts = 0;
+    const interval = setInterval(() => {
+        const m = document.getElementById('loginModal');
+        attempts++;
+        if (m) {
+            clearInterval(interval);
+            const bsModal = new bootstrap.Modal(m);
+            bsModal.show();
+        } else if (attempts >= maxRetries) {
+            clearInterval(interval);
+            // Modal couldn't be loaded in time; show a helpful in-page alert and let user click Login in header
+            showAlert('Không thể mở modal đăng nhập ngay bây giờ. Vui lòng bấm "Đăng nhập" ở góc trên để mở trang đăng nhập.', 'warning');
+         }
+    }, 100);
 }
 
 function showRegisterModal() {
@@ -255,14 +384,12 @@ function showRegisterModal() {
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
     } else {
-        // Fallback if modal not loaded yet
         window.location.href = '/register.html';
     }
 }
 
 // Modal Functions
 function switchToRegisterModal() {
-    // Close login modal
     const loginModal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
     if (loginModal) {
         loginModal.hide();
@@ -463,10 +590,615 @@ function loadAuthModal() {
         });
 }
 
+// Category Menu Functions
+let categoryMenuTimeout = null;
+
+function toggleCategoryMenu() {
+    const menu = document.getElementById('categoryDropdownMenu');
+    const btn = document.getElementById('categoryMenuBtn');
+    
+    if (menu && menu.classList.contains('show')) {
+        closeCategoryMenu();
+    } else {
+        openCategoryMenu();
+    }
+}
+
+function openCategoryMenu() {
+    const menu = document.getElementById('categoryDropdownMenu');
+    const btn = document.getElementById('categoryMenuBtn');
+    
+    if (menu && btn) {
+        clearTimeout(categoryMenuTimeout);
+        menu.classList.add('show');
+        btn.classList.add('active');
+        
+        // Show default sub-menu (LAPTOP) when menu first opens
+        const subMenuContainer = document.getElementById('categorySubMenu');
+        if (subMenuContainer && !subMenuContainer.innerHTML.trim()) {
+            showCategorySubMenu('LAPTOP');
+        }
+    }
+}
+
+function closeCategoryMenu() {
+    const menu = document.getElementById('categoryDropdownMenu');
+    const btn = document.getElementById('categoryMenuBtn');
+    
+    if (menu) {
+        // Add closing animation class
+        menu.classList.add('closing');
+        menu.classList.remove('show');
+        
+        // Remove closing class after animation completes
+        setTimeout(function() {
+            if (menu) {
+                menu.classList.remove('closing');
+            }
+        }, 300);
+    }
+    if (btn) btn.classList.remove('active');
+}
+
+function navigateToCategory(type, brand = null) {
+    closeCategoryMenu();
+    let url = `/products.html?type=${type}`;
+    if (brand) {
+        url += `&brand=${encodeURIComponent(brand)}`;
+    }
+    window.location.href = url;
+}
+
+// Category Sub-menu Data
+const categorySubMenus = {
+    LAPTOP: {
+        sections: [
+            {
+                title: 'Thương hiệu',
+                type: 'brand',
+                items: [
+                    { name: 'MacBook', icon: 'bi-apple' },
+                    { name: 'ASUS', icon: 'bi-laptop' },
+                    { name: 'Lenovo', icon: 'bi-laptop' },
+                    { name: 'DELL', icon: 'bi-laptop' },
+                    { name: 'hp', icon: 'bi-laptop' },
+                    { name: 'acer', icon: 'bi-laptop' },
+                    { name: 'LG', icon: 'bi-laptop' },
+                    { name: 'msi', icon: 'bi-laptop' },
+                    { name: 'GIGABYTE', icon: 'bi-laptop' },
+                    { name: 'Masstel', icon: 'bi-laptop' },
+                    { name: 'Samsung', icon: 'bi-laptop' },
+                    { name: 'Microsoft', icon: 'bi-laptop' }
+                ]
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                type: 'usage',
+                items: [
+                    { name: 'Văn phòng', icon: 'bi-briefcase' },
+                    { name: 'Gaming', icon: 'bi-controller' },
+                    { name: 'Mỏng nhẹ', icon: 'bi-laptop' },
+                    { name: 'Đồ họa - kỹ thuật', icon: 'bi-palette' },
+                    { name: 'Sinh viên', icon: 'bi-mortarboard' },
+                    { name: 'Cảm ứng', icon: 'bi-hand-index' },
+                    { name: 'Laptop AI', icon: 'bi-cpu', badge: 'Hot' },
+                    { name: 'Mac CTO', icon: 'bi-gear' }
+                ]
+            },
+            {
+                title: 'Dòng chip',
+                type: 'chip',
+                items: [
+                    { name: 'Laptop Core i3', icon: 'bi-cpu' },
+                    { name: 'Laptop Core i5', icon: 'bi-cpu' },
+                    { name: 'Laptop Core i7', icon: 'bi-cpu' },
+                    { name: 'Laptop Core i9', icon: 'bi-cpu' },
+                    { name: 'Laptop Core U5', icon: 'bi-cpu' },
+                    { name: 'Laptop Core U7', icon: 'bi-cpu' },
+                    { name: 'Laptop Core U9', icon: 'bi-cpu' },
+                    { name: 'Apple M3 Series', icon: 'bi-apple' },
+                    { name: 'Apple M4 Series', icon: 'bi-apple' },
+                    { name: 'Apple M5 Series', icon: 'bi-apple', badge: 'Mới' },
+                    { name: 'AMD Ryzen', icon: 'bi-cpu' },
+                    { name: 'Intel Core Ultra', icon: 'bi-cpu', badge: 'Hot' }
+                ]
+            },
+            {
+                title: 'Phân khúc giá',
+                type: 'price',
+                items: [
+                    { name: 'Dưới 10 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 10 - 15 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 15 - 20 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 20 - 25 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 25 - 30 triệu', icon: 'bi-currency-dollar' }
+                ]
+            },
+            {
+                title: 'Kích thước màn hình',
+                type: 'screen',
+                items: [
+                    { name: 'Laptop 13 inch', icon: 'bi-display' },
+                    { name: 'Laptop 14 inch', icon: 'bi-display' },
+                    { name: 'Laptop 15.6 inch', icon: 'bi-display' },
+                    { name: 'Laptop 16 inch', icon: 'bi-display' }
+                ]
+            }
+        ]
+    },
+    PC: {
+        sections: [
+            {
+                title: 'Loại PC',
+                type: 'pc-type',
+                items: [
+                    { name: 'Build PC', icon: 'bi-tools' },
+                    { name: 'Cấu hình sẵn', icon: 'bi-pc-display' },
+                    { name: 'All In One', icon: 'bi-display' },
+                    { name: 'PC bộ', icon: 'bi-cpu' }
+                ]
+            },
+            {
+                title: 'Chọn PC theo nhu cầu',
+                type: 'pc-usage',
+                items: [
+                    { name: 'Gaming', icon: 'bi-controller' },
+                    { name: 'Đồ họa', icon: 'bi-palette' },
+                    { name: 'Văn phòng', icon: 'bi-briefcase' }
+                ]
+            },
+            {
+                title: 'Linh kiện máy tính',
+                type: 'components',
+                items: [
+                    { name: 'CPU', icon: 'bi-cpu' },
+                    { name: 'Main', icon: 'bi-cpu' },
+                    { name: 'RAM', icon: 'bi-cpu' },
+                    { name: 'Ổ cứng', icon: 'bi-hdd' },
+                    { name: 'Nguồn', icon: 'bi-lightning-charge' },
+                    { name: 'VGA', icon: 'bi-cpu' },
+                    { name: 'Tản nhiệt', icon: 'bi-snow' },
+                    { name: 'Case', icon: 'bi-box' }
+                ]
+            },
+            {
+                title: 'Chọn màn hình theo hãng',
+                type: 'monitor-brand',
+                items: [
+                    { name: 'ASUS', icon: 'bi-display' },
+                    { name: 'SAMSUNG', icon: 'bi-display' },
+                    { name: 'DELL', icon: 'bi-display' },
+                    { name: 'LG', icon: 'bi-display' },
+                    { name: 'msi', icon: 'bi-display' },
+                    { name: 'acer', icon: 'bi-display' },
+                    { name: 'XIAOMI', icon: 'bi-display' },
+                    { name: 'ViewSonic', icon: 'bi-display' },
+                    { name: 'PHILIPS', icon: 'bi-display' },
+                    { name: 'AOC', icon: 'bi-display' },
+                    { name: 'alhua', icon: 'bi-display' },
+                    { name: 'KOORUI', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Chọn màn hình theo nhu cầu',
+                type: 'monitor-usage',
+                items: [
+                    { name: 'Gaming', icon: 'bi-controller' },
+                    { name: 'Văn phòng', icon: 'bi-briefcase' },
+                    { name: 'Đồ họa', icon: 'bi-palette' },
+                    { name: 'Lập trình', icon: 'bi-code-square' },
+                    { name: 'Màn hình di động', icon: 'bi-display' },
+                    { name: 'Arm màn hình', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Gaming Gear',
+                type: 'gaming',
+                items: [
+                    { name: 'PlayStation', icon: 'bi-controller' },
+                    { name: 'ROG Ally', icon: 'bi-controller' },
+                    { name: 'Bàn phím Gaming', icon: 'bi-keyboard' },
+                    { name: 'Chuột chơi game', icon: 'bi-mouse' },
+                    { name: 'Tai nghe Gaming', icon: 'bi-headphones' },
+                    { name: 'Tay cầm chơi Game', icon: 'bi-controller' }
+                ]
+            },
+            {
+                title: 'Thiết bị văn phòng',
+                type: 'office',
+                items: [
+                    { name: 'Máy in', icon: 'bi-printer' },
+                    { name: 'Phần mềm', icon: 'bi-file-earmark-code' }
+                ]
+            }
+        ]
+    },
+    KEYBOARD: {
+        sections: [
+            {
+                title: 'Thương hiệu',
+                type: 'brand',
+                items: [
+                    { name: 'Logitech', icon: 'bi-keyboard' },
+                    { name: 'Corsair', icon: 'bi-keyboard' },
+                    { name: 'Razer', icon: 'bi-keyboard' },
+                    { name: 'SteelSeries', icon: 'bi-keyboard' },
+                    { name: 'HyperX', icon: 'bi-keyboard' },
+                    { name: 'ASUS ROG', icon: 'bi-keyboard' },
+                    { name: 'Cooler Master', icon: 'bi-keyboard' },
+                    { name: 'Ducky', icon: 'bi-keyboard' }
+                ]
+            },
+            {
+                title: 'Loại switch',
+                type: 'switch',
+                items: [
+                    { name: 'Mechanical', icon: 'bi-keyboard' },
+                    { name: 'Membrane', icon: 'bi-keyboard' },
+                    { name: 'Optical', icon: 'bi-keyboard' },
+                    { name: 'Hybrid', icon: 'bi-keyboard' }
+                ]
+            },
+            {
+                title: 'Kết nối',
+                type: 'connection',
+                items: [
+                    { name: 'Có dây', icon: 'bi-usb' },
+                    { name: 'Không dây', icon: 'bi-bluetooth' },
+                    { name: 'Cả hai', icon: 'bi-wifi' }
+                ]
+            },
+            {
+                title: 'Kích thước',
+                type: 'size',
+                items: [
+                    { name: 'Full-size', icon: 'bi-keyboard' },
+                    { name: 'Tenkeyless', icon: 'bi-keyboard' },
+                    { name: 'Compact', icon: 'bi-keyboard' }
+                ]
+            },
+            {
+                title: 'Phân khúc giá',
+                type: 'price',
+                items: [
+                    { name: 'Dưới 1 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 1 - 2 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 2 - 3 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Trên 3 triệu', icon: 'bi-currency-dollar' }
+                ]
+            }
+        ]
+    },
+    MOUSE: {
+        sections: [
+            {
+                title: 'Thương hiệu',
+                type: 'brand',
+                items: [
+                    { name: 'Logitech', icon: 'bi-mouse' },
+                    { name: 'Razer', icon: 'bi-mouse' },
+                    { name: 'Corsair', icon: 'bi-mouse' },
+                    { name: 'SteelSeries', icon: 'bi-mouse' },
+                    { name: 'ASUS ROG', icon: 'bi-mouse' },
+                    { name: 'HyperX', icon: 'bi-mouse' },
+                    { name: 'Zowie', icon: 'bi-mouse' },
+                    { name: 'Glorious', icon: 'bi-mouse' }
+                ]
+            },
+            {
+                title: 'Kết nối',
+                type: 'connection',
+                items: [
+                    { name: 'Có dây', icon: 'bi-usb' },
+                    { name: 'Không dây', icon: 'bi-bluetooth' },
+                    { name: 'Cả hai', icon: 'bi-wifi' }
+                ]
+            },
+            {
+                title: 'DPI',
+                type: 'dpi',
+                items: [
+                    { name: 'Dưới 8000 DPI', icon: 'bi-mouse' },
+                    { name: '8000 - 12000 DPI', icon: 'bi-mouse' },
+                    { name: '12000 - 16000 DPI', icon: 'bi-mouse' },
+                    { name: 'Trên 16000 DPI', icon: 'bi-mouse' }
+                ]
+            },
+            {
+                title: 'Loại',
+                type: 'type',
+                items: [
+                    { name: 'Gaming', icon: 'bi-controller' },
+                    { name: 'Văn phòng', icon: 'bi-briefcase' },
+                    { name: 'Ergonomic', icon: 'bi-hand-index' }
+                ]
+            },
+            {
+                title: 'Phân khúc giá',
+                type: 'price',
+                items: [
+                    { name: 'Dưới 500k', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 500k - 1 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 1 - 2 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Trên 2 triệu', icon: 'bi-currency-dollar' }
+                ]
+            }
+        ]
+    },
+    MONITOR: {
+        sections: [
+            {
+                title: 'Thương hiệu',
+                type: 'brand',
+                items: [
+                    { name: 'ASUS', icon: 'bi-display' },
+                    { name: 'SAMSUNG', icon: 'bi-display' },
+                    { name: 'DELL', icon: 'bi-display' },
+                    { name: 'LG', icon: 'bi-display' },
+                    { name: 'msi', icon: 'bi-display' },
+                    { name: 'acer', icon: 'bi-display' },
+                    { name: 'XIAOMI', icon: 'bi-display' },
+                    { name: 'ViewSonic', icon: 'bi-display' },
+                    { name: 'PHILIPS', icon: 'bi-display' },
+                    { name: 'AOC', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Kích thước',
+                type: 'size',
+                items: [
+                    { name: '24 inch', icon: 'bi-display' },
+                    { name: '27 inch', icon: 'bi-display' },
+                    { name: '32 inch', icon: 'bi-display' },
+                    { name: '34 inch', icon: 'bi-display' },
+                    { name: 'Trên 34 inch', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Độ phân giải',
+                type: 'resolution',
+                items: [
+                    { name: 'Full HD (1920x1080)', icon: 'bi-display' },
+                    { name: '2K (2560x1440)', icon: 'bi-display' },
+                    { name: '4K (3840x2160)', icon: 'bi-display' },
+                    { name: 'Ultrawide', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Tần số quét',
+                type: 'refresh',
+                items: [
+                    { name: '60Hz', icon: 'bi-display' },
+                    { name: '144Hz', icon: 'bi-display' },
+                    { name: '165Hz', icon: 'bi-display' },
+                    { name: '240Hz', icon: 'bi-display' },
+                    { name: 'Trên 240Hz', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                type: 'usage',
+                items: [
+                    { name: 'Gaming', icon: 'bi-controller' },
+                    { name: 'Văn phòng', icon: 'bi-briefcase' },
+                    { name: 'Đồ họa', icon: 'bi-palette' },
+                    { name: 'Lập trình', icon: 'bi-code-square' }
+                ]
+            },
+            {
+                title: 'Phân khúc giá',
+                type: 'price',
+                items: [
+                    { name: 'Dưới 5 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 5 - 10 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 10 - 15 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Trên 15 triệu', icon: 'bi-currency-dollar' }
+                ]
+            }
+        ]
+    },
+    HEADPHONE: {
+        sections: [
+            {
+                title: 'Thương hiệu',
+                type: 'brand',
+                items: [
+                    { name: 'Sony', icon: 'bi-headphones' },
+                    { name: 'Bose', icon: 'bi-headphones' },
+                    { name: 'Sennheiser', icon: 'bi-headphones' },
+                    { name: 'Audio-Technica', icon: 'bi-headphones' },
+                    { name: 'HyperX', icon: 'bi-headphones' },
+                    { name: 'SteelSeries', icon: 'bi-headphones' },
+                    { name: 'Razer', icon: 'bi-headphones' },
+                    { name: 'Logitech', icon: 'bi-headphones' }
+                ]
+            },
+            {
+                title: 'Loại',
+                type: 'type',
+                items: [
+                    { name: 'Over-ear', icon: 'bi-headphones' },
+                    { name: 'On-ear', icon: 'bi-headphones' },
+                    { name: 'In-ear', icon: 'bi-headphones' },
+                    { name: 'True Wireless', icon: 'bi-headphones' }
+                ]
+            },
+            {
+                title: 'Kết nối',
+                type: 'connection',
+                items: [
+                    { name: 'Có dây', icon: 'bi-usb' },
+                    { name: 'Bluetooth', icon: 'bi-bluetooth' },
+                    { name: 'Cả hai', icon: 'bi-wifi' }
+                ]
+            },
+            {
+                title: 'Nhu cầu sử dụng',
+                type: 'usage',
+                items: [
+                    { name: 'Gaming', icon: 'bi-controller' },
+                    { name: 'Nghe nhạc', icon: 'bi-music-note' },
+                    { name: 'Văn phòng', icon: 'bi-briefcase' },
+                    { name: 'Thể thao', icon: 'bi-activity' }
+                ]
+            },
+            {
+                title: 'Phân khúc giá',
+                type: 'price',
+                items: [
+                    { name: 'Dưới 1 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 1 - 3 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 3 - 5 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Trên 5 triệu', icon: 'bi-currency-dollar' }
+                ]
+            }
+        ]
+    },
+    ACCESSORY: {
+        sections: [
+            {
+                title: 'Loại phụ kiện',
+                type: 'type',
+                items: [
+                    { name: 'USB Drive', icon: 'bi-usb' },
+                    { name: 'Webcam', icon: 'bi-camera-video' },
+                    { name: 'Microphone', icon: 'bi-mic' },
+                    { name: 'Speaker', icon: 'bi-speaker' },
+                    { name: 'Hub USB', icon: 'bi-usb' },
+                    { name: 'Adapter', icon: 'bi-lightning-charge' },
+                    { name: 'Cable', icon: 'bi-usb' },
+                    { name: 'Stand', icon: 'bi-display' }
+                ]
+            },
+            {
+                title: 'Thương hiệu',
+                type: 'brand',
+                items: [
+                    { name: 'Logitech', icon: 'bi-puzzle' },
+                    { name: 'Anker', icon: 'bi-puzzle' },
+                    { name: 'Belkin', icon: 'bi-puzzle' },
+                    { name: 'Samsung', icon: 'bi-puzzle' },
+                    { name: 'SanDisk', icon: 'bi-puzzle' },
+                    { name: 'Kingston', icon: 'bi-puzzle' }
+                ]
+            },
+            {
+                title: 'Phân khúc giá',
+                type: 'price',
+                items: [
+                    { name: 'Dưới 500k', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 500k - 1 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Từ 1 - 2 triệu', icon: 'bi-currency-dollar' },
+                    { name: 'Trên 2 triệu', icon: 'bi-currency-dollar' }
+                ]
+            }
+        ]
+    }
+};
+
+// Show category sub-menu
+function showCategorySubMenu(category) {
+    const subMenuContainer = document.getElementById('categorySubMenu');
+    const menuItems = document.querySelectorAll('.category-menu-item');
+    
+    if (!subMenuContainer) return;
+    
+    // Remove active class from all items
+    menuItems.forEach(item => item.classList.remove('active'));
+    
+    // Add active class to current item
+    const currentItem = document.querySelector(`[data-category="${category}"]`);
+    if (currentItem) {
+        currentItem.classList.add('active');
+    }
+    
+    // Get sub-menu data
+    const subMenuData = categorySubMenus[category];
+    if (!subMenuData) {
+        subMenuContainer.innerHTML = '<p class="text-muted">Đang tải...</p>';
+        return;
+    }
+    
+    // Render sub-menu
+    let html = '';
+    subMenuData.sections.forEach(section => {
+        html += `
+            <div class="sub-menu-section">
+                <h6 class="sub-menu-title">${section.title}</h6>
+                <div class="sub-menu-grid">
+                    ${section.items.map(item => `
+                        <div class="sub-menu-item" onclick="navigateToCategory('${category}', '${item.name}')">
+                            <i class="bi ${item.icon} sub-menu-icon"></i>
+                            <span class="sub-menu-item-text">
+                                ${item.name}
+                                ${item.badge ? `<span class="sub-menu-badge">${item.badge}</span>` : ''}
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    });
+    
+    subMenuContainer.innerHTML = html;
+}
+
+// Initialize hover events for category menu
+function initCategoryMenuHover() {
+    const btn = document.getElementById('categoryMenuBtn');
+    const menu = document.getElementById('categoryDropdownMenu');
+    
+    if (!btn || !menu) return;
+    
+    // Open menu on button hover
+    btn.addEventListener('mouseenter', function() {
+        clearTimeout(categoryMenuTimeout);
+        openCategoryMenu();
+    });
+    
+    // Keep menu open when hovering over menu
+    menu.addEventListener('mouseenter', function() {
+        clearTimeout(categoryMenuTimeout);
+    });
+    
+    // Close menu when mouse leaves button and menu
+    btn.addEventListener('mouseleave', function() {
+        categoryMenuTimeout = setTimeout(function() {
+            // Check if mouse is not over menu
+            if (!menu.matches(':hover')) {
+                closeCategoryMenu();
+            }
+        }, 200);
+    });
+    
+    menu.addEventListener('mouseleave', function() {
+        categoryMenuTimeout = setTimeout(function() {
+            // Check if mouse is not over button
+            if (!btn.matches(':hover')) {
+                closeCategoryMenu();
+            }
+        }, 200);
+    });
+}
+
+// Close menu when clicking outside (optional, for click behavior)
+document.addEventListener('click', function(event) {
+    const menu = document.getElementById('categoryDropdownMenu');
+    const btn = document.getElementById('categoryMenuBtn');
+    
+    if (menu && btn && !menu.contains(event.target) && !btn.contains(event.target)) {
+        closeCategoryMenu();
+    }
+});
+
 // Load header and footer when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
     loadHeader();
     loadFooter();
     loadAuthModal();
+    
+    // Initialize category menu hover after header is loaded
+    setTimeout(function() {
+        initCategoryMenuHover();
+    }, 500);
 });
-

@@ -193,15 +193,15 @@
                 discountBadgeEl.style.display = 'none';
             }
             
-            // Brand and stock
             document.getElementById('product-brand').textContent = product.brand || 'N/A';
             document.getElementById('product-stock').textContent = product.stock || 0;
             
-            // Description
             document.getElementById('product-description').textContent = product.description || 'Không có mô tả';
             
-            // Images
-            const mainImage = product.mainImage || 'https://via.placeholder.com/500x500';
+            const placeholder500 = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="500" height="500"%3E%3Crect fill="%23ddd" width="500" height="500"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="20" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+            const placeholder80 = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="80" height="80"%3E%3Crect fill="%23ddd" width="80" height="80"/%3E%3Ctext fill="%23999" font-family="sans-serif" font-size="10" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+            
+            const mainImage = product.mainImage || placeholder500;
             document.getElementById('main-product-image').src = mainImage;
             
             const thumbnailsContainer = document.querySelector('.thumbnail-images');
@@ -210,12 +210,12 @@
                 : [mainImage];
             
             thumbnailsContainer.innerHTML = allImages.map((img, index) => `
-                <img src="${img}" 
-                     alt="Thumbnail ${index + 1}" 
+                <img src="${img}"
+                     alt="Thumbnail ${index + 1}"
                      class="img-thumbnail" 
                      style="width: 80px; height: 80px; object-fit: cover; cursor: pointer;"
                      onclick="changeMainImage('${img}')"
-                     onerror="this.src='https://via.placeholder.com/80x80'">
+                     onerror="this.src='${placeholder80}'">
             `).join('');
             
             // Specifications
@@ -291,9 +291,9 @@
                         <div class="col-md-3">
                             <div class="product-card">
                                 <a href="/product-detail.html?id=${p.id}">
-                                    <img src="${p.mainImage || 'https://via.placeholder.com/300x250'}" 
-                                         alt="${p.name}" 
-                                         onerror="this.src='https://via.placeholder.com/300x250'">
+                                    <img src="${p.mainImage}"
+                                         alt="${p.name}"
+                                         class="product-image">
                                 </a>
                                 <div class="product-card-body">
                                     <h5 class="product-title">${p.name}</h5>
@@ -322,21 +322,103 @@
                 setTimeout(() => showLoginModal(), 1000);
                 return;
             }
-            
-            const quantity = parseInt(document.getElementById('quantity').value);
-            showAlert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`, 'success');
-            // TODO: Implement cart API
+
+            (async () => {
+                try {
+                    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+
+                    let user = apiClient.getUser();
+                    if (!user || !user.id) {
+                        user = await apiClient.getProfile();
+                        if (user) apiClient.setUser(user);
+                    }
+                    const userId = user && user.id;
+                    if (!userId) {
+                        showAlert('Không xác định được người dùng. Vui lòng đăng nhập lại.', 'error');
+                        setTimeout(() => showLoginModal(), 800);
+                        return;
+                    }
+
+                    const payload = { userId: Number(userId), productId: Number(product.id), quantity: Number(quantity) };
+                    await apiClient.request('/cart/add', {
+                        method: 'POST',
+                        body: JSON.stringify(payload)
+                    });
+
+                    // update cart badge
+                    try {
+                        const cart = await apiClient.request(`/cart/${userId}`, { method: 'GET' });
+                        const qty = cart && Array.isArray(cart.items) ? cart.items.reduce((s, it) => s + (it.quantity || 0), 0) : 0;
+                        const badge = document.getElementById('cart-badge');
+                        if (badge) badge.textContent = qty;
+                    } catch (e) { /* ignore */ }
+
+                    showAlert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`, 'success');
+                } catch (err) {
+                    console.error('addToCart error', err);
+                    showAlert('Thêm vào giỏ hàng thất bại: ' + (err.message || err), 'error');
+                }
+            })();
         }
 
-        function buyNow() {
+        async function buyNow() {
             if (!apiClient.isAuthenticated()) {
                 showAlert('Vui lòng đăng nhập để mua hàng', 'warning');
                 setTimeout(() => showLoginModal(), 1000);
                 return;
             }
-            showAlert('Tính năng đang được phát triển', 'info');
-            // TODO: Implement order API
+
+            if (!product) {
+                showAlert('Không tìm thấy thông tin sản phẩm', 'error');
+                return;
+            }
+
+            const quantity = parseInt(document.getElementById('quantity').value);
+            const unitPrice = product.priceAfterDiscount || product.price;
+
+            // Validate stock
+            if (quantity > product.stock) {
+                showAlert(`Số lượng vượt quá tồn kho. Chỉ còn ${product.stock} sản phẩm`, 'error');
+                return;
+            }
+
+            try {
+                // Get user info
+                let user = apiClient.getUser();
+                if (!user || !user.id) {
+                    user = await apiClient.getProfile();
+                    if (user) apiClient.setUser(user);
+                }
+                const userId = user && user.id;
+                if (!userId) {
+                    showAlert('Không xác định được người dùng. Vui lòng đăng nhập lại.', 'error');
+                    setTimeout(() => showLoginModal(), 800);
+                    return;
+                }
+
+                // Add product to cart
+                showAlert('Đang thêm sản phẩm vào giỏ hàng...', 'info');
+                
+                const payload = { 
+                    userId: Number(userId), 
+                    productId: Number(product.id), 
+                    quantity: Number(quantity) 
+                };
+                
+                await apiClient.request('/cart/add', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                // Redirect to checkout page
+                window.location.href = '/checkout.html';
+                
+            } catch (error) {
+                console.error('Error in buyNow:', error);
+                showAlert('Lỗi: ' + (error.message || error), 'error');
+            }
         }
+
 
         function showError() {
             document.getElementById('error-state').classList.remove('d-none');

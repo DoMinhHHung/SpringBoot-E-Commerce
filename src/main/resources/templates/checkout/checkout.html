@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toán - E-Commerce</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="icon" href="/logo/logo_web.png">
+</head>
+<body>
+    <!-- Header -->
+    <div id="header-container"></div>
+
+    <!-- Main Content -->
+    <main class="container my-5">
+        <div class="checkout-container">
+            <h2 class="mb-4">Thanh toán</h2>
+            
+            <!-- Login Banner (if not authenticated) -->
+            <div id="login-banner" class="alert alert-info d-none mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>Đăng nhập để mua hàng tiện lợi và nhận nhiều ưu đãi hơn nữa</span>
+                    <button class="btn btn-sm btn-primary" onclick="showLoginModal()">Đăng nhập</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Left Column: 60% - Form -->
+                <div class="col-lg-7 checkout-left">
+                    <!-- Thông tin giao hàng -->
+                    <div class="form-section">
+                        <h5><i class="bi bi-truck"></i> Thông tin giao hàng</h5>
+                        <form id="shipping-form">
+                            <div class="mb-3">
+                                <label for="receiverName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="receiverName" name="receiverName" 
+                                       placeholder="Nhập họ và tên" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="receiverPhone" class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text">🇻🇳 +84</span>
+                                    <input type="tel" class="form-control" id="receiverPhone" name="receiverPhone" 
+                                           placeholder="Nhập số điện thoại" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="receiverEmail" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="receiverEmail" name="receiverEmail" 
+                                       placeholder="Nhập email" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="country" class="form-label">Quốc gia</label>
+                                <input type="text" class="form-control" id="country" name="country" 
+                                       value="Vietnam" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="addressDetail" class="form-label">Địa chỉ, tên đường <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="addressDetail" name="addressDetail" 
+                                       placeholder="Nhập địa chỉ chi tiết" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="province" class="form-label">Tỉnh/TP <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="province" name="province" 
+                                           placeholder="Tỉnh/TP" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="district" class="form-label">Quận/Huyện <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="district" name="district" 
+                                           placeholder="Quận/Huyện" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="ward" class="form-label">Phường/Xã <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="ward" name="ward" 
+                                           placeholder="Phường/Xã" required>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Phương thức thanh toán -->
+                    <div class="form-section">
+                        <h5><i class="bi bi-credit-card"></i> Phương thức thanh toán</h5>
+                        <div id="payment-methods">
+                            <div class="payment-method-option selected" data-method="BANK_TRANSFER">
+                                <input type="radio" name="paymentMethod" value="BANK_TRANSFER" id="payment-bank" checked>
+                                <label for="payment-bank" class="d-flex align-items-center">
+                                    <i class="bi bi-bank me-2" style="font-size: 1.5rem;"></i>
+                                    <span>Chuyển khoản qua ngân hàng</span>
+                                </label>
+                                <div id="bank-transfer-details" class="mt-3 ms-4">
+                                    <p class="mb-2"><strong>Bạn chuyển khoản qua thông tin sau nhé:</strong></p>
+                                    <p class="mb-1">Ngân hàng Kiên Long Bank Việt Nam (Kiên Long Bank)</p>
+                                    <p class="mb-1">Chi nhánh: Hồ Chí Minh</p>
+                                    <p class="mb-1">Chủ tài khoản: NGUYEN TRONG BAO</p>
+                                    <p class="mb-1">Số tài khoản: 0332916529</p>
+                                    <p class="mb-1">Nội dung: Tên & email đặt hàng</p>
+                                    <p class="text-muted small">Chúc bạn một ngày tốt lành.</p>
+                                </div>
+                            </div>
+                            <div class="payment-method-option" data-method="COD">
+                                <input type="radio" name="paymentMethod" value="COD" id="payment-cod">
+                                <label for="payment-cod" class="d-flex align-items-center">
+                                    <i class="bi bi-truck me-2" style="font-size: 1.5rem;"></i>
+                                    <span>Thanh toán khi giao hàng (COD)</span>
+                                </label>
+                            </div>
+                            <div class="payment-method-option" data-method="PAYOS">
+                                <input type="radio" name="paymentMethod" value="PAYOS" id="payment-payos">
+                                <label for="payment-payos" class="d-flex align-items-center">
+                                    <i class="bi bi-qr-code me-2" style="font-size: 1.5rem;"></i>
+                                    <span>Chuyển khoản qua QR - PayOS</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hóa đơn điện tử -->
+                    <div class="form-section">
+                        <h5><i class="bi bi-receipt"></i> Hóa đơn điện tử</h5>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <input type="text" class="form-control me-2" placeholder="Yêu cầu xuất hóa đơn" readonly>
+                            <button class="btn btn-outline-secondary">Yêu cầu xuất ></button>
+                        </div>
+                    </div>
+
+                    <!-- Ghi chú đơn hàng -->
+                    <div class="form-section">
+                        <h5><i class="bi bi-chat-left-text"></i> Ghi chú đơn hàng</h5>
+                        <textarea class="form-control" id="orderNotes" name="orderNotes" rows="4" 
+                                  placeholder="Ghi chú đơn hàng (tùy chọn)"></textarea>
+                    </div>
+                </div>
+
+                <!-- Right Column: 40% - Order Summary -->
+                <div class="col-lg-5 checkout-right">
+                    <!-- Giỏ hàng -->
+                    <div class="form-section">
+                        <h5><i class="bi bi-cart"></i> Giỏ hàng</h5>
+                        <div id="cart-items-list">
+                            <!-- Cart items will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Mã khuyến mãi -->
+                    <div class="form-section">
+                        <h5><i class="bi bi-ticket-perforated"></i> Mã khuyến mãi</h5>
+                        <div class="mb-2">
+                            <button class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <i class="bi bi-ticket"></i> Chọn mã
+                            </button>
+                            <div class="d-flex align-items-center p-2 bg-light rounded mb-2" style="cursor: pointer;">
+                                <i class="bi bi-star-fill text-warning me-2"></i>
+                                <span>Giảm giá 30,000₫</span>
+                                <i class="bi bi-chevron-right ms-auto"></i>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="promoCode" placeholder="Nhập mã khuyến mãi">
+                            <button class="btn btn-dark" id="apply-promo">Áp dụng</button>
+                        </div>
+                    </div>
+
+                    <!-- Tóm tắt đơn hàng -->
+                    <div class="order-summary">
+                        <h5 class="mb-3">Tóm tắt đơn hàng</h5>
+                        <div class="summary-row">
+                            <span>Tổng tiền hàng:</span>
+                            <span id="subtotal">0₫</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Phí vận chuyển:</span>
+                            <span id="shipping-fee">-</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tổng thanh toán:</span>
+                            <span id="total-amount">0₫</span>
+                        </div>
+                        <button class="btn btn-checkout" id="place-order-btn" disabled>
+                            Đặt hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <div id="footer-container"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Common JS -->
+    <script src="/js/common.js"></script>
+    <!-- API Client -->
+    <script src="/js/api.js"></script>
+    <!-- Checkout JS -->
+    <script src="/js/checkout.js"></script>
+</body>
+</html>
+

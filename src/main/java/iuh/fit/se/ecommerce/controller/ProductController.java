@@ -48,4 +48,10 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getProductsByType(@PathVariable String type) {
         return ResponseEntity.ok(productService.getProductsByType(type));
     }
+
+    @GetMapping("/hot-sale")
+    public ResponseEntity<List<ProductResponse>> getHotSaleProducts(
+            @RequestParam(required = false, defaultValue = "6") int limit) {
+        return ResponseEntity.ok(productService.getHotSaleProducts(limit));
+    }
 }
