@@ -58,6 +58,8 @@ public class SecurityConfig {
                                 "/payment-success.html",
                                 "/payment-cancel.html",
                                 "/checkout.html",
+                                "/orders.html",
+                                "/order-detail.html",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",

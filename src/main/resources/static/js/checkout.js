@@ -432,12 +432,12 @@ function showPaymentModal(paymentResponse, originalButtonText) {
                     }
                     if (redirectSeconds <= 0) {
                         clearInterval(redirectCountdown);
-                        closePaymentModal();
+                        // Redirect to payment success page
+                        window.location.href = `/payment-success.html?orderCode=${paymentResponse.orderCode}`;
                     }
                 }, 1000);
                 
-            } else if (status === 'CANCELLED' || status === 'FAILED') {
-                console.log('❌ Payment failed or cancelled');
+            } else if (statusResponse.status === 'CANCELLED' || statusResponse.status === 'FAILED') {
                 clearInterval(pollInterval);
                 const statusAlert = document.getElementById('payment-status-alert');
                 if (statusAlert) {
@@ -448,23 +448,16 @@ function showPaymentModal(paymentResponse, originalButtonText) {
                     `;
                 }
             } else {
-                // Log để debug nếu status không match
-                console.log(`⏳ Payment status is: ${status || 'UNKNOWN'}, waiting for PAID... (Poll #${pollCount}/${maxPolls})`);
+                console.log(`Payment status is: ${statusResponse.status || 'UNKNOWN'}, waiting for PAID... (Poll #${pollCount}/${maxPolls})`);
             }
         } catch (error) {
-            console.error('❌ Error checking payment status:', error);
-            console.error('Error details:', error.message);
-            if (error.stack) {
-                console.error('Stack trace:', error.stack);
-            }
+            console.error('Error checking payment status:', error);
         }
 
-        // Stop polling after max attempts
         if (pollCount >= maxPolls) {
-            console.log('⏱️ Max polling attempts reached, stopping...');
             clearInterval(pollInterval);
         }
-    }, 5000); // Check every 5 seconds
+    }, 5000);
 
     // Intercept modal close events
     const modalElement = document.getElementById('paymentModal');
@@ -609,15 +602,27 @@ function confirmClosePayment() {
     }, 300);
 }
 
-// Function to close payment modal and redirect to home
+// Function to close payment modal and redirect to payment success page
 function closePaymentModal() {
     const modal = bootstrap.Modal.getInstance(document.getElementById('paymentModal'));
     if (modal) {
         modal.hide();
     }
-    // Redirect to home page after closing modal
+    // Get orderCode from modal if available
+    const orderCodeElement = document.querySelector('#payment-modal-body strong');
+    let orderCode = null;
+    if (orderCodeElement) {
+        const text = orderCodeElement.textContent;
+        orderCode = text.replace('#', '');
+    }
+    
+    // Redirect to payment success page with orderCode
     setTimeout(() => {
-        window.location.href = `/index.html`;
+        if (orderCode) {
+            window.location.href = `/payment-success.html?orderCode=${orderCode}`;
+        } else {
+            window.location.href = `/index.html`;
+        }
     }, 300);
 }
 

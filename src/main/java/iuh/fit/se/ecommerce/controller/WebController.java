@@ -77,6 +77,11 @@ public class WebController {
         return "admin/orders";
     }
 
+    @GetMapping("/admin/transactions.html")
+    public String adminTransactions() {
+        return "admin/transactions";
+    }
+
     @GetMapping("/admin/support.html")
     public String adminSupport() {
         return "admin/support";
@@ -95,5 +100,16 @@ public class WebController {
     @GetMapping("/checkout.html")
     public String checkout() {
         return "checkout/checkout";
+    }
+
+    // Order pages
+    @GetMapping("/orders.html")
+    public String orders() {
+        return "order/orders";
+    }
+
+    @GetMapping("/order-detail.html")
+    public String orderDetail() {
+        return "order/order-detail";
     }
 }

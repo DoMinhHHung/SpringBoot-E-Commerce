@@ -14,6 +14,7 @@ import iuh.fit.se.ecommerce.repository.PaymentRepository;
 import iuh.fit.se.ecommerce.repository.UserRepository;
 import iuh.fit.se.ecommerce.service.interfaces.OrderService;
 import iuh.fit.se.ecommerce.service.interfaces.PaymentService;
+import iuh.fit.se.ecommerce.service.interfaces.TransactionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final TransactionService transactionService;
 
     @Override
     @Transactional
@@ -64,6 +66,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .build();
 
         payment = paymentRepository.save(payment);
+
+        // Create transaction record
+        transactionService.createPaymentTransaction(payment, user);
 
         log.info("Created payment for order: {}", order.getOrderCode());
 
@@ -105,25 +110,33 @@ public class PaymentServiceImpl implements PaymentService {
             Payment payment = paymentRepository.findByOrder(order)
                     .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Payment không tồn tại"));
 
-            // Verify webhook signature (simplified - should verify checksum)
-            // TODO: Implement proper checksum verification
-
             // Update payment status
             if ("PAID".equals(webhook.getData().getCode()) || "00".equals(webhook.getData().getCode())) {
                 payment.setStatus(PaymentStatus.PAID);
-                payment.setTransactionId(webhook.getData().getReference());
+                String reference = webhook.getData().getReference();
+                if (reference != null) {
+                    payment.setTransactionId(reference);
+                }
                 // paidAt will be set by @UpdateTimestamp
+
+                paymentRepository.save(payment);
+
+                // Update transaction status to SUCCESS
+                // Dùng reference từ webhook hoặc fallback sang paymentLinkId
+                String externalTxId = reference != null 
+                    ? reference 
+                    : (webhook.getData().getPaymentLinkId() != null 
+                        ? webhook.getData().getPaymentLinkId() 
+                        : payment.getPaymentLinkId());
+                transactionService.updateTransactionOnPaymentSuccess(payment, externalTxId);
 
                 // Confirm order
                 orderService.confirmOrder(orderCode);
-
-                log.info("Payment confirmed for order: {}", orderCode);
             } else {
                 payment.setStatus(PaymentStatus.FAILED);
+                paymentRepository.save(payment);
                 log.warn("Payment failed for order: {}", orderCode);
             }
-
-            paymentRepository.save(payment);
 
         } catch (Exception e) {
             log.error("Error handling PayOS webhook: ", e);
@@ -201,6 +214,16 @@ public class PaymentServiceImpl implements PaymentService {
                         // payment.setTransactionId(...);
                     }
                     paymentRepository.save(payment);
+                    
+                    // Update transaction status to SUCCESS
+                    // PayOSResponse không có field reference, nên dùng transactionId từ payment hoặc paymentLinkId
+                    String externalTxId = payment.getTransactionId() != null 
+                        ? payment.getTransactionId() 
+                        : (payOSResponse.getData().getPaymentLinkId() != null 
+                            ? payOSResponse.getData().getPaymentLinkId() 
+                            : payment.getPaymentLinkId());
+                    transactionService.updateTransactionOnPaymentSuccess(payment, externalTxId);
+                    
                     orderService.confirmOrder(orderCode);
                     log.info("✅ Payment status synced to PAID for order: {}", orderCode);
                 } else {

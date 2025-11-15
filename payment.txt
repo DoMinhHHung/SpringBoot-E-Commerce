@@ -1,0 +1,6 @@
+payos.client-id=23a7acae-d318-4983-aefe-1dfef0930629
+payos.api-key=02e4fabb-8f3c-40b5-b9d9-2978314d7db6
+payos.checksum-key=2d3da55867f7af0a4d9b5526cec5574b9b5c5a26d57bdc81dd78b753be234b22
+payos.api-url=https://api-merchant.payos.vn
+payos.return-url=http://localhost:8080/payment-success
+payos.cancel-url=http://localhost:8080/payment-cancel
