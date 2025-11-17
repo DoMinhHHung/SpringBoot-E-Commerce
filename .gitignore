@@ -1,8 +1,8 @@
+### Application ###
 application.properties
+application-dev.properties
 
 .env
-### Application ###
-application-dev.properties
 
 HELP.md
 target/
