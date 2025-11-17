@@ -336,7 +336,11 @@ async function showCart() {
 }
 
 function showOrders() {
-    alert('Tính năng tra cứu đơn hàng đang được phát triển');
+    if (!apiClient || !apiClient.isAuthenticated()) {
+        showLoginModal();
+        return;
+    }
+    window.location.href = '/orders.html';
 }
 
 function handleSearch() {
