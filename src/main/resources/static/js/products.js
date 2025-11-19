@@ -235,14 +235,43 @@ function updatePageTitle() {
     document.title = `${titleMap[currentType] || 'Sản phẩm'} - E-Commerce`;
 }
 
-function addToCart(productId) {
+async function addToCart(productId) {
     if (!apiClient.isAuthenticated()) {
         showAlert('Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng', 'warning');
         setTimeout(() => showLoginModal(), 1000);
         return;
     }
-    showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
-    // TODO: Implement cart functionality
+    
+    try {
+        // Determine userId
+        let user = apiClient.getUser();
+        if (!user || !user.id) {
+            user = await apiClient.getProfile();
+            if (user) apiClient.setUser(user);
+        }
+        const userId = user && user.id;
+        if (!userId) {
+            showAlert('Không xác định được người dùng. Vui lòng đăng nhập lại.', 'error');
+            setTimeout(() => showLoginModal(), 800);
+            return;
+        }
+
+        const payload = { userId: Number(userId), productId: Number(productId), quantity: 1 };
+        await apiClient.request('/cart/add', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+
+        // Update cart badge
+        if (typeof updateCartBadge === 'function') {
+            await updateCartBadge();
+        }
+
+        showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');
+    } catch (err) {
+        console.error('addToCart error', err);
+        showAlert('Thêm vào giỏ hàng thất bại: ' + (err.message || err), 'error');
+    }
 }
 
 function showError(message) {

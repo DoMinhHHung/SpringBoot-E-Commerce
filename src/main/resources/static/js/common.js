@@ -225,6 +225,13 @@ function initializeHeader() {
     // Check authentication status
     if (apiClient && apiClient.isAuthenticated()) {
         updateUserMenu();
+        updateCartBadge();
+    } else {
+        // Nếu chưa đăng nhập, vẫn reset cart badge về 0
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            badge.textContent = '0';
+        }
     }
 }
 
@@ -293,12 +300,78 @@ function updateUserMenu() {
                 adminMenuItem.classList.add('d-none');
             }
         }
+        
+        // Sau khi update user menu thành công, cũng update cart badge
+        updateCartBadge();
     }).catch(() => {
         if (apiClient) apiClient.clearAuth();
         // Hide avatar dropdown on error
         const userAvatarDropdown = document.getElementById('user-avatar-dropdown');
         if (userAvatarDropdown) userAvatarDropdown.classList.add('d-none');
+        
+        // Reset cart badge về 0 khi logout hoặc lỗi
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            badge.textContent = '0';
+        }
     });
+}
+
+// Function để update cart badge
+async function updateCartBadge() {
+    if (!apiClient || !apiClient.isAuthenticated()) {
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            badge.textContent = '0';
+        }
+        return;
+    }
+
+    try {
+        // Lấy user ID
+        let user = apiClient.getUser();
+        if (!user || !user.id) {
+            try {
+                user = await apiClient.request('/users/profile', { method: 'GET', noAuthRedirect: true });
+                if (user && user.id) {
+                    apiClient.setUser(user);
+                } else {
+                    return;
+                }
+            } catch (err) {
+                // Không thể lấy profile, có thể chưa đăng nhập
+                const badge = document.getElementById('cart-badge');
+                if (badge) {
+                    badge.textContent = '0';
+                }
+                return;
+            }
+        }
+
+        const userId = user.id;
+        
+        // Fetch cart để lấy tổng số lượng
+        const cart = await apiClient.request(`/cart/${userId}`, { 
+            method: 'GET', 
+            noAuthRedirect: true 
+        });
+
+        const totalQuantity = cart && Array.isArray(cart.items) 
+            ? cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0) 
+            : 0;
+
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            badge.textContent = totalQuantity || '0';
+        }
+    } catch (error) {
+        // Nếu lỗi (401, 404, etc.), set badge về 0
+        console.warn('updateCartBadge error:', error);
+        const badge = document.getElementById('cart-badge');
+        if (badge) {
+            badge.textContent = '0';
+        }
+    }
 }
 
 function logout() {
@@ -336,7 +409,11 @@ async function showCart() {
 }
 
 function showOrders() {
-    alert('Tính năng tra cứu đơn hàng đang được phát triển');
+    if (!apiClient || !apiClient.isAuthenticated()) {
+        showLoginModal();
+        return;
+    }
+    window.location.href = '/orders.html';
 }
 
 function handleSearch() {

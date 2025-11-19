@@ -1,0 +1,74 @@
+<!-- Admin Layout Fragment -->
+<!-- This will be loaded dynamically by admin pages -->
+
+<div class="admin-wrapper">
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="admin-navbar-content">
+            <div class="admin-navbar-brand">
+                <i class="bi bi-shield-check"></i>
+                <span>Admin Panel</span>
+            </div>
+            <div class="admin-navbar-user">
+                <span id="admin-user-name"></span>
+                <a href="/index.html" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="bi bi-house"></i> <span class="d-none d-md-inline">Về trang chủ</span>
+                </a>
+                <a href="#" onclick="adminLogout(); return false;" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Đăng xuất</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/dashboard.html" class="admin-sidebar-item" data-page="dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Tổng quan</span>
+                </a>
+                <a href="/admin/products.html" class="admin-sidebar-item" data-page="products">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Sản phẩm</span>
+                </a>
+                <a href="/admin/promotions.html" class="admin-sidebar-item" data-page="promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Khuyến mãi</span>
+                </a>
+                <a href="/admin/users.html" class="admin-sidebar-item" data-page="users">
+                    <i class="bi bi-people"></i>
+                    <span>Người dùng</span>
+                </a>
+                <a href="/admin/permissions.html" class="admin-sidebar-item" data-page="permissions">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Phân quyền</span>
+                </a>
+                <a href="/admin/orders.html" class="admin-sidebar-item" data-page="orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Đơn hàng</span>
+                </a>
+                <a href="/admin/transactions.html" class="admin-sidebar-item" data-page="transactions">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Giao dịch</span>
+                </a>
+                <a href="/admin/support.html" class="admin-sidebar-item" data-page="support">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Hỗ trợ</span>
+                </a>
+            </nav>
+            <button class="admin-sidebar-toggle d-md-none" id="sidebar-toggle">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-content" id="admin-content-wrapper">
+                <!-- Content will be injected here -->
+            </div>
+        </main>
+    </div>
+</div>
+

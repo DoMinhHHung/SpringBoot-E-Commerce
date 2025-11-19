@@ -13,7 +13,8 @@ public enum ErrorCode {
     NOT_AUTHENTICATED(401, "Tài khoản chưa xác thực", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(401, "Bạn không có quyền truy cập", HttpStatus.UNAUTHORIZED),
     BAD_REQUEST(400, "Yêu cầu không hợp lệ", HttpStatus.BAD_REQUEST),
-    INTERNAL_ERROR(500, "Lỗi hệ thống", HttpStatus.INTERNAL_SERVER_ERROR);
+    INTERNAL_ERROR(500, "Lỗi hệ thống", HttpStatus.INTERNAL_SERVER_ERROR),
+    NOT_FOUND(404, "Không tìm thấy", HttpStatus.NOT_FOUND);
 
     private final int code;
     private final String message;

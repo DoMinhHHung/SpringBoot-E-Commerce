@@ -34,11 +34,11 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <a href="/index.html" class="btn btn-primary">
+                            <a href="/index.html" class="btn btn-primary btn-lg">
                                 <i class="bi bi-house"></i> Về trang chủ
                             </a>
-                            <a href="/profile.html" class="btn btn-outline-secondary">
-                                <i class="bi bi-person"></i> Xem đơn hàng của tôi
+                            <a href="#" id="view-order-btn" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-box-seam"></i> Xem đơn hàng
                             </a>
                         </div>
                     </div>
@@ -65,11 +65,19 @@
             if (orderCode) {
                 document.getElementById('order-code').textContent = '#' + orderCode;
                 
+                // Set view order button link
+                const viewOrderBtn = document.getElementById('view-order-btn');
+                if (viewOrderBtn) {
+                    viewOrderBtn.href = `/order-detail.html?orderCode=${orderCode}`;
+                }
+                
                 // Fetch order details if authenticated
                 if (apiClient && apiClient.isAuthenticated()) {
                     apiClient.getPaymentStatus(orderCode)
                         .then(response => {
-                            document.getElementById('total-amount').textContent = formatPrice(response.totalAmount);
+                            if (response.totalAmount) {
+                                document.getElementById('total-amount').textContent = formatPrice(response.totalAmount);
+                            }
                         })
                         .catch(error => {
                             console.error('Error fetching order details:', error);

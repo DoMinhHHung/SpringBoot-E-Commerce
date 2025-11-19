@@ -142,7 +142,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         totalQuantityEl.textContent = totalQuantity;
         totalPriceEl.textContent = formatPrice(totalPrice || 0);
-        updateCartBadge(totalQuantity);
+        
+        // Update cart badge using global function if available, otherwise use local
+        if (typeof updateCartBadge === 'function') {
+            updateCartBadge();
+        } else {
+            // Fallback: update badge directly
+            const badge = document.getElementById('cart-badge');
+            if (badge) {
+                badge.textContent = totalQuantity || 0;
+            }
+        }
 
         // Attach event listeners
         cartItemsEl.querySelectorAll('input[type="number"]').forEach(input => {
@@ -241,13 +251,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 if (typeof showLoginModal === 'function') { showLoginModal(); return; }
             }
             showAlert('Xóa giỏ hàng thất bại: ' + error.message, 'error');
-        }
-    }
-
-    function updateCartBadge(qty) {
-        const badge = document.getElementById('cart-badge');
-        if (badge) {
-            badge.textContent = qty || 0;
         }
     }
 

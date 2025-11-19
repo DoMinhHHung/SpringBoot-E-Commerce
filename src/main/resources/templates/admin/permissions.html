@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Phân quyền - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="admin-navbar-content">
+            <div class="admin-navbar-brand">
+                <button id="mobile-menu-btn" class="btn btn-sm">
+                    <i class="bi bi-list"></i>
+                </button>
+                <i class="bi bi-shield-check"></i>
+                <span>Admin Panel</span>
+            </div>
+            <div class="admin-navbar-user">
+                <span id="admin-user-name"></span>
+                <a href="/index.html" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="bi bi-house"></i> <span class="d-none d-md-inline">Về trang chủ</span>
+                </a>
+                <a href="#" onclick="adminLogout(); return false;" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Đăng xuất</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/dashboard.html" class="admin-sidebar-item" data-page="dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Tổng quan</span>
+                </a>
+                <a href="/admin/products.html" class="admin-sidebar-item" data-page="products">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Sản phẩm</span>
+                </a>
+                <a href="/admin/promotions.html" class="admin-sidebar-item" data-page="promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Khuyến mãi</span>
+                </a>
+                <a href="/admin/users.html" class="admin-sidebar-item" data-page="users">
+                    <i class="bi bi-people"></i>
+                    <span>Người dùng</span>
+                </a>
+                <a href="/admin/permissions.html" class="admin-sidebar-item active" data-page="permissions">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Phân quyền</span>
+                </a>
+                <a href="/admin/orders.html" class="admin-sidebar-item" data-page="orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Đơn hàng</span>
+                </a>
+                <a href="/admin/transactions.html" class="admin-sidebar-item" data-page="transactions">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Giao dịch</span>
+                </a>
+                <a href="/admin/support.html" class="admin-sidebar-item" data-page="support">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Hỗ trợ</span>
+                </a>
+            </nav>
+            <button class="admin-sidebar-toggle d-md-none" id="sidebar-toggle">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-content">
+                <div class="admin-page-header">
+                    <h1><i class="bi bi-shield-lock"></i> Quản lý Phân quyền</h1>
+                </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="permissionTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles-pane" type="button" role="tab">
+                    Vai trò
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="permissions-tab" data-bs-toggle="tab" data-bs-target="#permissions-pane" type="button" role="tab">
+                    Quyền hạn
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users-pane" type="button" role="tab">
+                    Người dùng
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="permissionTabContent">
+            
+            <!-- TAB 1: VAI TRÒ -->
+            <div class="tab-pane fade show active" id="roles-pane" role="tabpanel">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <select id="select-role" class="form-select">
+                            <option value="">-- Chọn vai trò --</option>
+                            <option value="ADMIN">ADMIN</option>
+                            <option value="USER">USER</option>
+                            <option value="EDITOR">EDITOR</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-primary" id="btn-add-permission-to-role" disabled>
+                            + Thêm quyền hạn
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Danh sách người dùng</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="role-users-list">
+                                    <div class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No data</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Danh sách quyền hạn</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="role-permissions-list">
+                                    <div class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No data</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: QUYỀN HẠN -->
+            <div class="tab-pane fade" id="permissions-pane" role="tabpanel">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <select id="select-permission" class="form-select">
+                            <option value="">-- Chọn quyền hạn --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-primary" id="btn-add-role-to-permission" disabled>
+                            + Thêm vai trò
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Danh sách vai trò</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="permission-roles-list">
+                                    <div class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No data</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Danh sách người dùng</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="permission-users-list">
+                                    <div class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No data</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: NGƯỜI DÙNG -->
+            <div class="tab-pane fade" id="users-pane" role="tabpanel">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <select id="select-user" class="form-select">
+                            <option value="">-- Chọn người dùng --</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-primary" id="btn-add-role-to-user" disabled>
+                            + Thêm vai trò
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Danh sách vai trò</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="user-roles-list">
+                                    <div class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No data</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Danh sách quyền hạn</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="user-permissions-list">
+                                    <div class="empty-state">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                        </svg>
+                                        <p>No data</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <!-- Modal: Add Permission to Role -->
+    <div class="modal fade" id="modal-add-permission" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm quyền hạn cho vai trò</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <select id="modal-permission-select" class="form-select">
+                        <option value="">-- Chọn quyền hạn --</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-add-permission">Thêm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Role to User -->
+    <div class="modal fade" id="modal-add-role-user" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm vai trò cho người dùng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <select id="modal-role-select" class="form-select">
+                        <option value="">-- Chọn vai trò --</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="USER">USER</option>
+                        <option value="EDITOR">EDITOR</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-add-role-user">Thêm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Role to Permission -->
+    <div class="modal fade" id="modal-add-role-permission" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm vai trò cho quyền hạn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <select id="modal-role-permission-select" class="form-select">
+                        <option value="">-- Chọn vai trò --</option>
+                        <option value="ADMIN">ADMIN</option>
+                        <option value="USER">USER</option>
+                        <option value="EDITOR">EDITOR</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-add-role-permission">Thêm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/common.js"></script>
+    <script src="/js/admin-common.js"></script>
+    <script src="/js/admin-permissions.js"></script>
+</body>
+</html>
+
