@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        document.getElementById('admin-welcome').textContent = 
-            'Xin chào, ' + (user.fullName || user.email);
+        // document.getElementById('admin-welcome').textContent = 
+            // 'Xin chào, ' + (user.fullName || user.email);
 
         // Setup event listeners
         setupEventListeners();

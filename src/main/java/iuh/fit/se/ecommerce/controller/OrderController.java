@@ -26,11 +26,12 @@ public class OrderController {
     public ResponseEntity<Page<OrderResponse>> getUserOrders(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<OrderResponse> orders = orderService.getUserOrders(userDetails.getUsername(), status, pageable);
+        Page<OrderResponse> orders = orderService.getUserOrders(userDetails.getUsername(), status, search, pageable);
         return ResponseEntity.ok(orders);
     }
 

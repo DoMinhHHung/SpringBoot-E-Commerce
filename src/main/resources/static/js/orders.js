@@ -1,8 +1,9 @@
-// orders.js - Danh sách đơn hàng của user
+// orders.js - Danh sách đơn hàng của user (Redesigned)
 
 let currentPage = 0;
 let pageSize = 10;
 let currentStatus = null;
+let searchQuery = '';
 
 document.addEventListener('DOMContentLoaded', async function() {
     if (!apiClient || !apiClient.isAuthenticated()) {
@@ -15,30 +16,52 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 function setupEventListeners() {
-    document.getElementById('btn-apply-filter').addEventListener('click', async () => {
+    // Tab clicks
+    document.querySelectorAll('.order-tab').forEach(tab => {
+        tab.addEventListener('click', async (e) => {
+            // Update active tab
+            document.querySelectorAll('.order-tab').forEach(t => t.classList.remove('active'));
+            e.target.classList.add('active');
+            
+            // Update status filter
+            currentStatus = e.target.dataset.status || null;
+            currentPage = 0;
+            await loadOrders();
+        });
+    });
+
+    // Search button
+    document.getElementById('btn-search-order').addEventListener('click', async () => {
+        searchQuery = document.getElementById('order-search-input').value.trim();
         currentPage = 0;
         await loadOrders();
     });
 
-    document.getElementById('btn-reset-filter').addEventListener('click', () => {
-        document.getElementById('filter-status').value = '';
-        currentStatus = null;
-        currentPage = 0;
-        loadOrders();
+    // Search on Enter key
+    document.getElementById('order-search-input').addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+            searchQuery = e.target.value.trim();
+            currentPage = 0;
+            await loadOrders();
+        }
     });
 }
 
 async function loadOrders() {
     try {
-        const status = document.getElementById('filter-status').value;
-        currentStatus = status || null;
+        showLoading();
 
         const params = new URLSearchParams({
             page: currentPage,
             size: pageSize
         });
+        
         if (currentStatus) {
             params.append('status', currentStatus);
+        }
+        
+        if (searchQuery) {
+            params.append('search', searchQuery);
         }
 
         const response = await apiClient.request(`/orders?${params}`, {
@@ -49,12 +72,27 @@ async function loadOrders() {
         renderPagination(response.totalPages || 0, response.totalElements || 0);
     } catch (error) {
         console.error('Error loading orders:', error);
-        document.getElementById('orders-list').innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-exclamation-triangle"></i> Lỗi tải danh sách đơn hàng: ${error.message}
-            </div>
-        `;
+        showError('Lỗi tải danh sách đơn hàng: ' + error.message);
     }
+}
+
+function showLoading() {
+    document.getElementById('orders-list').innerHTML = `
+        <div class="text-center py-5">
+            <div class="spinner-border text-danger" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Đang tải danh sách đơn hàng...</p>
+        </div>
+    `;
+}
+
+function showError(message) {
+    document.getElementById('orders-list').innerHTML = `
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> ${message}
+        </div>
+    `;
 }
 
 function renderOrders(orders) {
@@ -62,66 +100,114 @@ function renderOrders(orders) {
     
     if (!orders || orders.length === 0) {
         container.innerHTML = `
-            <div class="card">
-                <div class="card-body text-center py-5">
-                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
-                    <p class="mt-3 text-muted">Bạn chưa có đơn hàng nào</p>
-                    <a href="/index.html" class="btn btn-primary">
-                        <i class="bi bi-cart"></i> Mua sắm ngay
-                    </a>
-                </div>
+            <div class="orders-empty-state">
+                <i class="bi bi-inbox"></i>
+                <h5>Chưa có đơn hàng</h5>
+                <p>Bạn chưa có đơn hàng nào trong danh sách này</p>
+                <a href="/index.html" class="btn btn-danger">
+                    <i class="bi bi-cart" style="font-size: 1rem; color: white;"></i> Mua sắm ngay
+                </a>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = orders.map(order => {
-        const statusBadge = getStatusBadge(order.status, order.statusLabel);
-        
-        return `
-            <div class="card mb-3 order-card" style="cursor: pointer;" onclick="viewOrderDetail(${order.orderCode})">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <h6 class="mb-1">Mã đơn hàng</h6>
-                            <strong>#${order.orderCode}</strong>
-                        </div>
-                        <div class="col-md-2">
-                            <h6 class="mb-1">Số lượng</h6>
-                            <span>${order.itemCount} sản phẩm</span>
-                        </div>
-                        <div class="col-md-2">
-                            <h6 class="mb-1">Tổng tiền</h6>
-                            <strong class="text-danger">${formatPrice(order.totalAmount)}</strong>
-                        </div>
-                        <div class="col-md-2">
-                            <h6 class="mb-1">Ngày đặt</h6>
-                            <span class="text-muted small">${formatDate(order.createdAt)}</span>
-                        </div>
-                        <div class="col-md-2 text-center">
-                            ${statusBadge}
-                        </div>
-                        <div class="col-md-1 text-end">
-                            <i class="bi bi-chevron-right text-muted"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
+    container.innerHTML = orders.map(order => renderOrderCard(order)).join('');
 }
 
-function getStatusBadge(status, statusLabel) {
-    const badges = {
-        'PENDING': '<span class="badge bg-warning">Đang chờ xác nhận</span>',
-        'CONFIRMED': '<span class="badge bg-info">Đã xác nhận</span>',
-        'PROCESSING': '<span class="badge bg-primary">Đang xử lý</span>',
-        'SHIPPED': '<span class="badge bg-primary">Đang vận chuyển</span>',
-        'DELIVERED': '<span class="badge bg-success">Đã nhận hàng</span>',
-        'CANCELLED': '<span class="badge bg-secondary">Đã hủy</span>',
-        'REFUNDED': '<span class="badge bg-danger">Đã hoàn tiền</span>'
+function renderOrderCard(order) {
+    const statusInfo = getStatusInfo(order.status);
+    const items = order.items || [];
+    
+    return `
+        <div class="modern-order-card">
+            <!-- Header -->
+            <div class="order-card-header">
+                <div class="order-header-left">
+                    <i class="bi bi-shop order-shop-icon"></i>
+                    <span class="order-code">#${order.orderCode}</span>
+                    <span class="order-date">
+                        <i class="bi bi-calendar3"></i> ${formatDate(order.createdAt)}
+                    </span>
+                </div>
+                <div class="order-header-right">
+                    <span class="status-badge status-${order.status.toLowerCase()}">
+                        ${statusInfo.icon}
+                        ${statusInfo.label}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="order-card-body">
+                ${items.length > 0 ? items.map(item => `
+                    <div class="order-product-item">
+                        <img src="${item.productImage || '/images/placeholder.png'}" 
+                             alt="${item.productName}" 
+                             class="order-product-image"
+                             onerror="this.src='/images/placeholder.png'">
+                        <div class="order-product-info">
+                            <div class="order-product-name">${item.productName}</div>
+                            <div class="order-product-quantity">x${item.quantity}</div>
+                        </div>
+                        <div class="order-product-price">
+                            ${item.discountAmount && item.discountAmount > 0 ? 
+                                `<span class="order-price-old">${formatPrice(item.unitPrice)}</span>` : ''}
+                            <span class="order-price-new">${formatPrice(item.totalPrice)}</span>
+                        </div>
+                    </div>
+                `).join('') : `
+                    <div class="text-muted text-center py-3">
+                        <i class="bi bi-box"></i> ${order.itemCount || 0} sản phẩm
+                    </div>
+                `}
+            </div>
+
+            <!-- Footer -->
+            <div class="order-card-footer">
+                <div class="order-total-section">
+                    <span class="order-total-label">Thành tiền:</span>
+                    <span class="order-total-amount">${formatPrice(order.totalAmount)}</span>
+                </div>
+                <div class="order-actions">
+                    <button class="btn-order-action primary" onclick="viewOrderDetail(${order.orderCode})">
+                        Xem chi tiết
+                    </button>
+                    ${order.status === 'DELIVERED' ? 
+                        `<button class="btn-order-action" onclick="rateOrder(${order.orderCode})">
+                            Đánh giá
+                        </button>` : ''}
+                    ${order.status === 'PENDING' ? 
+                        `<button class="btn-order-action" onclick="cancelOrder(${order.orderCode})">
+                            Hủy đơn
+                        </button>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getStatusInfo(status) {
+    const statusMap = {
+        'PENDING': { label: 'Chờ xác nhận', icon: '<i class="bi bi-clock-history"></i>' },
+        'CONFIRMED': { label: 'Đã xác nhận', icon: '<i class="bi bi-check-circle"></i>' },
+        'PROCESSING': { label: 'Đang xử lý', icon: '<i class="bi bi-arrow-repeat"></i>' },
+        'SHIPPED': { label: 'Đang vận chuyển', icon: '<i class="bi bi-truck"></i>' },
+        'DELIVERED': { label: 'Giao hàng thành công', icon: '<i class="bi bi-check-circle-fill"></i>' },
+        'CANCELLED': { label: 'Đã hủy', icon: '<i class="bi bi-x-circle"></i>' },
+        'REFUNDED': { label: 'Đã hoàn tiền', icon: '<i class="bi bi-arrow-counterclockwise"></i>' }
     };
-    return badges[status] || `<span class="badge bg-secondary">${statusLabel}</span>`;
+    return statusMap[status] || { label: status, icon: '<i class="bi bi-question-circle"></i>' };
+}
+
+function rateOrder(orderCode) {
+    showAlert('Chức năng đánh giá đang được phát triển', 'info');
+}
+
+function cancelOrder(orderCode) {
+    if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
+        showAlert('Đã gửi yêu cầu hủy đơn hàng', 'success');
+    }
 }
 
 function renderPagination(totalPages, totalElements) {

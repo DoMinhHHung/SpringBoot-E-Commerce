@@ -1,18 +1,27 @@
 package iuh.fit.se.ecommerce.service.impl;
 
+import iuh.fit.se.ecommerce.dto.mapper.PermissionMapper;
 import iuh.fit.se.ecommerce.dto.mapper.UserMapper;
 import iuh.fit.se.ecommerce.dto.request.ChangePasswordRequest;
 import iuh.fit.se.ecommerce.dto.request.UpdateProfileRequest;
+import iuh.fit.se.ecommerce.dto.response.PermissionResponse;
+import iuh.fit.se.ecommerce.dto.response.RolePermissionResponse;
 import iuh.fit.se.ecommerce.dto.response.UserResponse;
 import iuh.fit.se.ecommerce.entity.User;
+import iuh.fit.se.ecommerce.entity.enums.Role;
 import iuh.fit.se.ecommerce.exception.AppException;
 import iuh.fit.se.ecommerce.exception.ErrorCode;
 import iuh.fit.se.ecommerce.repository.UserRepository;
+import iuh.fit.se.ecommerce.service.interfaces.PermissionService;
 import iuh.fit.se.ecommerce.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +29,8 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final PermissionService permissionService;
+    private final PermissionMapper permissionMapper;
 
 
     @Override
@@ -55,5 +66,70 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         return userMapper.toResponse(user);
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(userMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserResponse> getUsersByRole(Role role) {
+        return userRepository.findByRole(role).stream()
+                .map(userMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<UserResponse> getUsersByPermission(String permissionCode) {
+        // Get all roles that have this permission
+        List<RolePermissionResponse> rolePermissions = permissionService.getRolesByPermission(permissionCode);
+        Set<Role> roles = rolePermissions.stream()
+                .map(rp -> Role.valueOf(rp.getRoleName()))
+                .collect(Collectors.toSet());
+        
+        return roles.stream()
+                .flatMap(role -> userRepository.findByRole(role).stream())
+                .map(userMapper::toResponse)
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RolePermissionResponse> getUserRoles(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        
+        Role role = user.getRole();
+        if (role == null) {
+            return List.of();
+        }
+        
+        return List.of(permissionService.getRoleWithPermissions(role));
+    }
+
+    @Override
+    public Set<PermissionResponse> getUserPermissions(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        
+        if (user.getRole() == null) {
+            return Set.of();
+        }
+        
+        return permissionService.getPermissionsByRole(user.getRole()).stream()
+                .map(permissionMapper::toResponse)
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    @Transactional
+    public void assignRoleToUser(Long userId, Role role) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setRole(role);
+        userRepository.save(user);
     }
 }

@@ -17,7 +17,7 @@ public interface OrderService {
     Order getOrderByCode(Long orderCode);
     
     // New methods for user
-    Page<OrderResponse> getUserOrders(String userEmail, OrderStatus status, Pageable pageable);
+    Page<OrderResponse> getUserOrders(String userEmail, OrderStatus status, String search, Pageable pageable);
     OrderDetailResponse getOrderDetail(Long orderCode, String userEmail);
     
     // New methods for admin

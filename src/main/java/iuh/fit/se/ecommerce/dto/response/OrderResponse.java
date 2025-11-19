@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -23,6 +24,7 @@ public class OrderResponse {
     private Integer itemCount; // Số lượng sản phẩm
     private String userName; // Tên khách hàng
     private String userEmail; // Email khách hàng
+    private List<OrderItemResponse> items; // Danh sách sản phẩm
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;

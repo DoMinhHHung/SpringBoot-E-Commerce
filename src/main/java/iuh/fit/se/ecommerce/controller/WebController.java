@@ -87,6 +87,11 @@ public class WebController {
         return "admin/support";
     }
 
+    @GetMapping("/admin/permissions.html")
+    public String adminPermissions() {
+        return "admin/permissions";
+    }
+
     @GetMapping("/payment-success.html")
     public String paymentSuccess() {
         return "payment/payment-success";

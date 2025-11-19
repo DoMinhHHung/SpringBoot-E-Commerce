@@ -169,15 +169,28 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Page<OrderResponse> getUserOrders(String userEmail, OrderStatus status, Pageable pageable) {
+    public Page<OrderResponse> getUserOrders(String userEmail, OrderStatus status, String search, Pageable pageable) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         Page<Order> orders;
-        if (status != null) {
-            orders = orderRepository.findByUserAndStatusOrderByCreatedAtDesc(user, status, pageable);
+        
+        // If search query is provided
+        if (search != null && !search.trim().isEmpty()) {
+            if (status != null) {
+                // Search with status filter
+                orders = orderRepository.searchUserOrdersByStatus(user, status, search.trim(), pageable);
+            } else {
+                // Search without status filter
+                orders = orderRepository.searchUserOrders(user, search.trim(), pageable);
+            }
         } else {
-            orders = orderRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+            // No search - existing logic
+            if (status != null) {
+                orders = orderRepository.findByUserAndStatusOrderByCreatedAtDesc(user, status, pageable);
+            } else {
+                orders = orderRepository.findByUserOrderByCreatedAtDesc(user, pageable);
+            }
         }
 
         return orders.map(this::mapToOrderResponse);
@@ -262,6 +275,19 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
+        // Map items
+        List<OrderItemResponse> items = order.getItems().stream()
+                .map(item -> OrderItemResponse.builder()
+                        .productId(item.getProduct().getId())
+                        .productName(item.getProduct().getName())
+                        .productImage(item.getProduct().getMainImage())
+                        .quantity(item.getQuantity())
+                        .unitPrice(item.getUnitPrice())
+                        .discountAmount(item.getDiscountAmount())
+                        .totalPrice(item.getTotalPrice())
+                        .build())
+                .collect(Collectors.toList());
+
         return OrderResponse.builder()
                 .id(order.getId())
                 .orderCode(order.getOrderCode())
@@ -271,6 +297,7 @@ public class OrderServiceImpl implements OrderService {
                 .itemCount(order.getItems() != null ? order.getItems().size() : 0)
                 .userName(order.getUser().getFullName())
                 .userEmail(order.getUser().getEmail())
+                .items(items)
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .build();

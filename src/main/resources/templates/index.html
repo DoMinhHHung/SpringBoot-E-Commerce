@@ -63,11 +63,21 @@
 
         <!-- Hot Sale Section -->
         <section class="hot-sale-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-fire text-danger"></i> HOT SALE MỖI NGÀY
-                </h2>
-                <a href="/promotions.html" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header với background gradient -->
+            <div class="hot-sale-header">
+                <div class="hot-sale-header-content">
+                    <h2 class="hot-sale-title">
+                        <i class="bi bi-fire"></i> HOT SALE MỖI NGÀY
+                    </h2>
+                    <div class="hot-sale-header-buttons">
+                        <button class="hot-sale-header-btn hot-sale-btn-yellow">
+                            SIÊU KHUYẾN MẠI PC GAMING 2025
+                        </button>
+                        <button class="hot-sale-header-btn hot-sale-btn-white">
+                            Top Linh Kiện PC Sale Sốc
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Loading Spinner for Hot Sale -->
@@ -95,6 +105,11 @@
                 </button>
             </div>
 
+            <!-- View All Button - Moved to bottom center -->
+            <div class="text-center mt-4">
+                <a href="/promotions.html" class="hot-sale-view-all-btn">Xem tất cả +</a>
+            </div>
+
             <!-- Empty State for Hot Sale -->
             <div id="hot-sale-empty-state" class="text-center py-5 d-none">
                 <i class="bi bi-fire" style="font-size: 4rem; color: #ccc;"></i>
@@ -104,11 +119,9 @@
 
         <!-- PC Gaming Section -->
         <section class="product-type-section pc-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-cpu-fill text-primary"></i> PC GAMING, STREAMING
-                </h2>
-                <a href="/index.html?type=PC" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">PC GAMING, STREAMING</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('pc', 'left')" aria-label="Previous">
@@ -129,11 +142,9 @@
 
         <!-- Laptop Section -->
         <section class="product-type-section laptop-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-laptop text-success"></i> LAPTOP
-                </h2>
-                <a href="/index.html?type=LAPTOP" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">LAPTOP</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('laptop', 'left')" aria-label="Previous">
@@ -154,11 +165,9 @@
 
         <!-- Keyboard Section -->
         <section class="product-type-section keyboard-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-keyboard text-warning"></i> BÀN PHÍM
-                </h2>
-                <a href="/index.html?type=KEYBOARD" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">BÀN PHÍM</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('keyboard', 'left')" aria-label="Previous">
@@ -179,11 +188,9 @@
 
         <!-- Mouse Section -->
         <section class="product-type-section mouse-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-mouse text-info"></i> CHUỘT
-                </h2>
-                <a href="/index.html?type=MOUSE" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">CHUỘT</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('mouse', 'left')" aria-label="Previous">
@@ -204,11 +211,9 @@
 
         <!-- Monitor Section -->
         <section class="product-type-section monitor-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-display text-danger"></i> MÀN HÌNH PC GAMING
-                </h2>
-                <a href="/index.html?type=MONITOR" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">MÀN HÌNH PC GAMING</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('monitor', 'left')" aria-label="Previous">
@@ -229,11 +234,9 @@
 
         <!-- Headphone Section -->
         <section class="product-type-section headphone-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-headphones text-secondary"></i> TAI NGHE
-                </h2>
-                <a href="/index.html?type=HEADPHONE" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">TAI NGHE</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('headphone', 'left')" aria-label="Previous">
@@ -254,11 +257,9 @@
 
         <!-- Accessory Section -->
         <section class="product-type-section accessory-section my-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="fw-bold">
-                    <i class="bi bi-puzzle text-dark"></i> PHỤ KIỆN
-                </h2>
-                <a href="/index.html?type=ACCESSORY" class="btn btn-outline-primary">Xem tất cả +</a>
+            <!-- Header banner đơn giản -->
+            <div class="product-type-header-banner">
+                <h2 class="product-type-banner-title">PHỤ KIỆN</h2>
             </div>
             <div class="product-type-carousel-wrapper position-relative">
                 <button class="product-type-nav-btn product-type-nav-prev" onclick="scrollProductType('accessory', 'left')" aria-label="Previous">
@@ -464,14 +465,9 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // fetch updated cart to update badge
-                    try {
-                        const cart = await apiClient.request(`/cart/${userId}`, { method: 'GET' });
-                        const qty = cart && Array.isArray(cart.items) ? cart.items.reduce((s, it) => s + (it.quantity || 0), 0) : 0;
-                        const badge = document.getElementById('cart-badge');
-                        if (badge) badge.textContent = qty;
-                    } catch (e) {
-                        // ignore badge update errors
+                    // Update cart badge
+                    if (typeof updateCartBadge === 'function') {
+                        await updateCartBadge();
                     }
 
                     showAlert('Sản phẩm đã được thêm vào giỏ hàng', 'success');

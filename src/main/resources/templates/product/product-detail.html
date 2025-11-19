@@ -345,13 +345,10 @@
                         body: JSON.stringify(payload)
                     });
 
-                    // update cart badge
-                    try {
-                        const cart = await apiClient.request(`/cart/${userId}`, { method: 'GET' });
-                        const qty = cart && Array.isArray(cart.items) ? cart.items.reduce((s, it) => s + (it.quantity || 0), 0) : 0;
-                        const badge = document.getElementById('cart-badge');
-                        if (badge) badge.textContent = qty;
-                    } catch (e) { /* ignore */ }
+                    // Update cart badge
+                    if (typeof updateCartBadge === 'function') {
+                        await updateCartBadge();
+                    }
 
                     showAlert(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`, 'success');
                 } catch (err) {

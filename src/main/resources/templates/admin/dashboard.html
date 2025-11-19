@@ -1,112 +1,131 @@
 <!DOCTYPE html>
 <html lang="vi">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard - E-Commerce</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-      <link href="/css/style.css" rel="stylesheet" />
-  </head>
-  <body>
-    <div id="header-container"></div>
-
-    <main class="container my-5">
-      <h1>Admin Dashboard</h1>
-      <p id="admin-welcome" class="text-muted"></p>
-
-      <div class="row">
-        <div class="col-md-3">
-          <div class="list-group">
-            <a
-              href="/admin/dashboard.html"
-              class="list-group-item list-group-item-action active"
-              >Tổng quan</a
-            >
-            <a
-              href="/admin/products.html"
-              class="list-group-item list-group-item-action"
-              >Sản phẩm</a
-            >
-            <a
-              href="/admin/promotions.html"
-              class="list-group-item list-group-item-action"
-              >Khuyến mãi</a
-            >
-            <a
-              href="/admin/users.html"
-              class="list-group-item list-group-item-action"
-              >Người dùng</a
-            >
-            <a
-              href="/admin/orders.html"
-              class="list-group-item list-group-item-action"
-              >Đơn hàng</a
-            >
-            <a
-              href="/admin/transactions.html"
-              class="list-group-item list-group-item-action"
-              >Lịch sử giao dịch</a
-            >
-          </div>
-        </div>
-        <div class="col-md-9">
-          <div id="admin-content">
-            <div class="card mb-3">
-              <div class="card-body">
-                <h5 class="card-title">Thống kê nhanh</h5>
-                <p class="card-text">
-                  Số sản phẩm: <span id="stat-products">-</span>
-                </p>
-                <p class="card-text">
-                  Số người dùng: <span id="stat-users">-</span>
-                </p>
-              </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tổng quan - Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Admin Navbar -->
+    <nav class="admin-navbar">
+        <div class="admin-navbar-content">
+            <div class="admin-navbar-brand">
+                <button id="mobile-menu-btn" class="btn btn-sm">
+                    <i class="bi bi-list"></i>
+                </button>
+                <i class="bi bi-shield-check"></i>
+                <span>Admin Panel</span>
             </div>
-          </div>
+            <div class="admin-navbar-user">
+                <span id="admin-user-name"></span>
+                <a href="/index.html" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="bi bi-house"></i> <span class="d-none d-md-inline">Về trang chủ</span>
+                </a>
+                <a href="#" onclick="adminLogout(); return false;" class="btn btn-sm btn-outline-light ms-2">
+                    <i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Đăng xuất</span>
+                </a>
+            </div>
         </div>
-      </div>
-    </main>
+    </nav>
 
-    <div id="footer-container"></div>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <nav class="admin-sidebar-nav">
+                <a href="/admin/dashboard.html" class="admin-sidebar-item active" data-page="dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Tổng quan</span>
+                </a>
+                <a href="/admin/products.html" class="admin-sidebar-item" data-page="products">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Sản phẩm</span>
+                </a>
+                <a href="/admin/promotions.html" class="admin-sidebar-item" data-page="promotions">
+                    <i class="bi bi-tag"></i>
+                    <span>Khuyến mãi</span>
+                </a>
+                <a href="/admin/users.html" class="admin-sidebar-item" data-page="users">
+                    <i class="bi bi-people"></i>
+                    <span>Người dùng</span>
+                </a>
+                <a href="/admin/permissions.html" class="admin-sidebar-item" data-page="permissions">
+                    <i class="bi bi-shield-lock"></i>
+                    <span>Phân quyền</span>
+                </a>
+                <a href="/admin/orders.html" class="admin-sidebar-item" data-page="orders">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Đơn hàng</span>
+                </a>
+                <a href="/admin/transactions.html" class="admin-sidebar-item" data-page="transactions">
+                    <i class="bi bi-wallet2"></i>
+                    <span>Giao dịch</span>
+                </a>
+                <a href="/admin/support.html" class="admin-sidebar-item" data-page="support">
+                    <i class="bi bi-chat-dots"></i>
+                    <span>Hỗ trợ</span>
+                </a>
+            </nav>
+            <button class="admin-sidebar-toggle d-md-none" id="sidebar-toggle">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <div class="admin-content">
+                <div class="admin-page-header">
+                    <h1><i class="bi bi-speedometer2"></i> Tổng quan</h1>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card admin-stats-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Sản phẩm</h5>
+                                <p class="card-text"><span id="stat-products">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card admin-stats-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Người dùng</h5>
+                                <p class="card-text"><span id="stat-users">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card admin-stats-card">
+                            <div class="card-body">
+                                <h5 class="card-title">Đơn hàng</h5>
+                                <p class="card-text"><span id="stat-orders">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/common.js"></script>
+    <script src="/js/admin-common.js"></script>
     <script>
-      document.addEventListener("DOMContentLoaded", async function () {
-        if (!apiClient || !apiClient.isAuthenticated()) {
-          window.location.href =
-            "/login.html?redirect=" +
-            encodeURIComponent(window.location.pathname);
-          return;
-        }
-
-        try {
-          const user = await apiClient.getProfile();
-          if (!user) {
-            window.location.href = "/login.html";
-            return;
-          }
-          if (
-            Array.isArray(user.role)
-              ? user.role.indexOf("ADMIN") === -1 &&
-                user.role.indexOf("ROLE_ADMIN") === -1
-              : user.role !== "ADMIN" && user.role !== "ROLE_ADMIN"
-          ) {
-            alert("Không có quyền truy cập trang quản trị");
-            window.location.href = "/index.html";
-            return;
-          }
-          document.getElementById("admin-welcome").textContent =
-            "Xin chào, " + (user.fullName || user.email);
-          // TODO: fetch statistics from API
-        } catch (err) {
-          console.error(err);
-          alert("Lỗi tải dữ liệu: " + (err.message || err));
-        }
-      });
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Load stats
+            try {
+                // TODO: Load statistics from API
+                document.getElementById('stat-products').textContent = '0';
+                document.getElementById('stat-users').textContent = '0';
+                document.getElementById('stat-orders').textContent = '0';
+            } catch (err) {
+                console.error('Error loading stats:', err);
+            }
+        });
     </script>
-  </body>
+</body>
 </html>

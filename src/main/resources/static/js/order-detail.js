@@ -82,13 +82,7 @@ function renderOrderDetail(order) {
 
 function renderProgressBar(progressStep) {
     const steps = document.querySelectorAll('.step');
-    const progressFill = document.getElementById('progress-fill');
     
-    // Calculate progress percentage
-    const percentage = (progressStep / 3) * 100;
-    progressFill.style.width = percentage + '%';
-
-    // Update step states
     steps.forEach((step, index) => {
         step.classList.remove('active', 'completed');
         if (index < progressStep) {
