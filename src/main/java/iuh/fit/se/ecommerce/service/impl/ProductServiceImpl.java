@@ -17,6 +17,8 @@ import iuh.fit.se.ecommerce.dto.request.ProductSearchCriteria;
 import iuh.fit.se.ecommerce.repository.PromotionRepository;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +38,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final PromotionRepository promotionRepository;
     private final Cloudinary cloudinary;
+    private final SimpMessagingTemplate messagingTemplate;
 
 
     @Override
@@ -43,6 +46,18 @@ public class ProductServiceImpl implements ProductService {
         Product product = new Product();
         mapCreateRequestToProduct(product, request);
         Product saved = productRepository.save(product);
+        // Broadcast site notification about new product
+        try {
+            Map<String, Object> payload = Map.of(
+                    "type", "product",
+                    "title", "Sản phẩm mới: " + saved.getName(),
+                    "message", (saved.getPrice() != null ? "Giá: " + saved.getPrice() : ""),
+                    "productId", saved.getId(),
+                    "url", "/product-detail.html?id=" + saved.getId(),
+                    "timestamp", System.currentTimeMillis()
+            );
+            messagingTemplate.convertAndSend("/topic/site.notifications", payload);
+        } catch (Exception ignored) {}
         return ProductMapper.toProductResponse(saved);
     }
 
@@ -53,6 +68,18 @@ public class ProductServiceImpl implements ProductService {
 
         mapUpdateRequestToProduct(product, request);
         Product saved = productRepository.save(product);
+        // Broadcast site notification about updated product
+        try {
+            Map<String, Object> payload = Map.of(
+                    "type", "product",
+                    "title", "Cập nhật sản phẩm: " + saved.getName(),
+                    "message", (saved.getPrice() != null ? "Giá: " + saved.getPrice() : ""),
+                    "productId", saved.getId(),
+                    "url", "/product-detail.html?id=" + saved.getId(),
+                    "timestamp", System.currentTimeMillis()
+            );
+            messagingTemplate.convertAndSend("/topic/site.notifications", payload);
+        } catch (Exception ignored) {}
         return ProductMapper.toProductResponse(saved);
     }
 

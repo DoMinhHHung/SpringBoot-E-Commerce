@@ -99,6 +99,48 @@ body {
     font-size: 0.7rem;
 }
 
+/* Notification bell styles */
+.notification-bell {
+    position: relative;
+    display: inline-block;
+}
+
+.notification-bell #notification-bell {
+    color: var(--text-dark);
+    text-decoration: none;
+    position: relative;
+}
+
+.notification-bell .badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    padding: 4px 6px;
+    font-size: 0.65rem;
+}
+
+.notification-dropdown .card {
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.notification-dropdown .list-group-item {
+    cursor: pointer;
+}
+
+.notification-dropdown .list-group-item:hover {
+    background-color: #fff5f5;
+}
+
+.notification-dropdown .notif-item strong {
+    display: block;
+    font-size: 0.95rem;
+}
+
+.notification-dropdown .notif-item .small {
+    display: block;
+}
+
 /* User Avatar Dropdown Styles */
 .user-avatar-dropdown {
     position: relative;

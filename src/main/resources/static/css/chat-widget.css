@@ -60,8 +60,35 @@
     gap: 8px;
 }
 
-.chat-widget-header i {
-    font-size: 20px;
+/* Header actions container (close button + contact tech) */
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-contact-tech {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.18);
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.12s;
+}
+
+.chat-contact-tech:hover {
+    background: rgba(255,255,255,0.18);
+    transform: translateY(-1px);
+}
+
+/* Make contact button more compact on small screens */
+@media (max-width: 480px) {
+    .chat-contact-tech {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
 }
 
 .chat-widget-close {

@@ -12,6 +12,8 @@ import iuh.fit.se.ecommerce.repository.ProductRepository;
 import iuh.fit.se.ecommerce.repository.PromotionRepository;
 import iuh.fit.se.ecommerce.service.interfaces.PromotionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,11 +26,23 @@ public class PromotionServiceImpl implements PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final ProductRepository productRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public PromotionResponse createPromotion(PromotionRequest request) {
         Promotion promotion = PromotionMapper.fromRequest(request);
         Promotion saved = promotionRepository.save(promotion);
+        // Broadcast notification about new promotion
+        try {
+            Map<String, Object> payload = Map.of(
+                    "type", "promotion",
+                    "title", "Khuyến mãi mới: " + saved.getName(),
+                    "message", saved.getDescription() == null ? "" : saved.getDescription(),
+                    "url", "/promotions.html",
+                    "timestamp", System.currentTimeMillis()
+            );
+            messagingTemplate.convertAndSend("/topic/site.notifications", payload);
+        } catch (Exception ignored) {}
         return PromotionMapper.toResponse(saved);
     }
 
@@ -58,6 +72,17 @@ public class PromotionServiceImpl implements PromotionService {
         }
 
         Promotion saved = promotionRepository.save(promotion);
+        // Broadcast notification about updated promotion
+        try {
+            Map<String, Object> payload = Map.of(
+                    "type", "promotion",
+                    "title", "Cập nhật khuyến mãi: " + saved.getName(),
+                    "message", saved.getDescription() == null ? "" : saved.getDescription(),
+                    "url", "/promotions.html",
+                    "timestamp", System.currentTimeMillis()
+            );
+            messagingTemplate.convertAndSend("/topic/site.notifications", payload);
+        } catch (Exception ignored) {}
         return PromotionMapper.toResponse(saved);
     }
 

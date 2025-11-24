@@ -7,6 +7,8 @@ class ChatWidget {
         this.productId = null;
         this._retries = 0;
         this._maxRetries = 10;
+        this._contactRequested = false;
+        this._pendingContactTech = false;
     }
 
     generateSessionId() {
@@ -40,9 +42,12 @@ class ChatWidget {
                             <i class="bi bi-robot"></i>
                             <span>Trợ lý sản phẩm</span>
                         </div>
-                        <button id="chat-widget-close" class="chat-widget-close">
-                            <i class="bi bi-x"></i>
-                        </button>
+                        <div class="chat-header-actions">
+                            <button id="chat-contact-tech" class="chat-contact-tech" title="Liên hệ kỹ thuật">Liên hệ kỹ thuật</button>
+                            <button id="chat-widget-close" class="chat-widget-close">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
                     </div>
                     <div id="chat-active-filters" class="chat-active-filters" style="display:none;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e9ecef;">
                         </div>
@@ -78,6 +83,7 @@ class ChatWidget {
         const closeBtn = document.getElementById('chat-widget-close');
         const sendBtn = document.getElementById('chat-send');
         const input = document.getElementById('chat-input');
+        const contactTechBtn = document.getElementById('chat-contact-tech');
 
         button.addEventListener('click', () => this.toggleWidget());
         closeBtn.addEventListener('click', () => this.toggleWidget());
@@ -87,6 +93,62 @@ class ChatWidget {
                 this.sendMessage();
             }
         });
+        if (contactTechBtn) {
+            contactTechBtn.addEventListener('click', () => this.requestContactTech());
+        }
+    }
+
+    // Request contact with technical staff. Sends a special CALL_HUMAN message via /app/chat
+    requestContactTech() {
+        // Prevent duplicate requests
+        if (this._contactRequested) return;
+        this._contactRequested = true;
+
+        const doSend = () => {
+            try {
+                if (this.stompClient && this.connected) {
+                    const payload = {
+                        sessionId: this.sessionId,
+                        text: 'CALL_HUMAN',
+                        productId: this.productId || null
+                    };
+                    this.stompClient.send('/app/chat', {}, JSON.stringify(payload));
+
+                    // Show confirmation system message
+                    const messagesDiv = document.getElementById('chat-widget-messages');
+                    const msg = `Yêu cầu liên hệ kỹ thuật đã được gửi. Vui lòng chờ kỹ thuật viên liên hệ.`;
+                    const messageHTML = `\n                        <div class="chat-message bot-message">\n                            <div class="message-content">${this.escapeHtml(msg)}</div>\n                        </div>\n                    `;
+                    messagesDiv.insertAdjacentHTML('beforeend', messageHTML);
+                    this.scrollToBottom();
+                }
+            } catch (err) {
+                console.warn('requestContactTech error', err);
+                this.displayErrorMessage('Không thể gửi yêu cầu liên hệ kỹ thuật lúc này. Vui lòng thử lại.');
+                this._contactRequested = false;
+            }
+        };
+
+        if (this.connected) {
+            doSend();
+        } else {
+            // If not connected, connect and send when ready
+            this._pendingContactTech = true;
+            this.connect();
+            // ensure we send after connect success (connect sets this.connected and sends greeting)
+            // hook into a small poll to wait for connection
+            const maxWait = 10000; // 10s
+            const start = Date.now();
+            const interval = setInterval(() => {
+                if (this.connected) {
+                    clearInterval(interval);
+                    doSend();
+                } else if (Date.now() - start > maxWait) {
+                    clearInterval(interval);
+                    this.displayErrorMessage('Không thể kết nối tới dịch vụ chat. Vui lòng thử lại sau.');
+                    this._contactRequested = false;
+                }
+            }, 300);
+        }
     }
 
     toggleWidget() {
@@ -137,6 +199,24 @@ class ChatWidget {
                     }));
                 } catch (err) {
                     console.warn('Failed to request initial greeting:', err);
+                }
+
+                // If user requested contact before connection completed, send it now
+                if (this._pendingContactTech) {
+                    this._pendingContactTech = false;
+                    try {
+                        this.stompClient.send('/app/chat', {}, JSON.stringify({ sessionId: this.sessionId, text: 'CALL_HUMAN', productId: this.productId || null }));
+                        const messagesDiv = document.getElementById('chat-widget-messages');
+                        const msg = `Yêu cầu liên hệ kỹ thuật đã được gửi. Vui lòng chờ kỹ thuật viên liên hệ.`;
+                        const messageHTML = `\n                            <div class="chat-message bot-message">\n                                <div class="message-content">${this.escapeHtml(msg)}</div>\n                            </div>\n                        `;
+                        messagesDiv.insertAdjacentHTML('beforeend', messageHTML);
+                        this.scrollToBottom();
+                        this._contactRequested = true;
+                    } catch (err) {
+                        console.warn('Failed to send pending contact tech request', err);
+                        this.displayErrorMessage('Không thể gửi yêu cầu liên hệ kỹ thuật sau khi kết nối.');
+                        this._contactRequested = false;
+                    }
                 }
             },
             (error) => {

@@ -1,5 +1,7 @@
 package iuh.fit.se.ecommerce.config;
 
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
@@ -8,6 +10,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
+@RequiredArgsConstructor
 public class SupportSessionRegistry {
 
     public static class PendingRequest {
@@ -24,6 +27,7 @@ public class SupportSessionRegistry {
         }
     }
 
+    private final SimpMessagingTemplate messagingTemplate;
     private final Map<String, String> sessionToAdmin = new ConcurrentHashMap<>();
     private final Map<String, PendingRequest> pendingBySession = new ConcurrentHashMap<>();
     private final Set<String> onlineAdmins = ConcurrentHashMap.newKeySet();
@@ -39,6 +43,7 @@ public class SupportSessionRegistry {
     public void assign(String adminId, String sessionId) {
         sessionToAdmin.put(sessionId, adminId);
         pendingBySession.remove(sessionId);
+        notifyPendingUpdated();
     }
 
     public void unassign(String sessionId) {
@@ -47,6 +52,7 @@ public class SupportSessionRegistry {
 
     public void addPending(String sessionId, String lastQuestion, Long productId) {
         pendingBySession.put(sessionId, new PendingRequest(sessionId, lastQuestion, productId));
+        notifyPendingUpdated();
     }
 
     public Map<String, PendingRequest> getAllPending() {
@@ -63,5 +69,28 @@ public class SupportSessionRegistry {
 
     public boolean hasOnlineAdmin() {
         return !onlineAdmins.isEmpty();
+    }
+
+    public void registerPending(String sessionId, String lastQuestion, Long productId) {
+        addPending(sessionId, lastQuestion, productId);
+    }
+
+    // Optionally notify when cleared
+    public void clearPending(String sessionId) {
+        pendingBySession.remove(sessionId);
+        try {
+            messagingTemplate.convertAndSend("/topic/admin.incoming.clear", sessionId);
+        } catch (Exception ex) {
+            System.err.println("Failed to notify admins about cleared support: " + ex.getMessage());
+        }
+        notifyPendingUpdated();
+    }
+
+    private void notifyPendingUpdated() {
+        try {
+            messagingTemplate.convertAndSend("/topic/admin.incoming", getAllPending().values());
+        } catch (Exception ex) {
+            System.err.println("Failed to notify admins about pending support: " + ex.getMessage());
+        }
     }
 }
