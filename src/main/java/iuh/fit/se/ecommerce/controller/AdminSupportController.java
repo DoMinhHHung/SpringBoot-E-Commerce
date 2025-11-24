@@ -102,6 +102,7 @@ class AdminSupportRestController {
     private final SupportSessionRegistry registry;
 
     @GetMapping("/pending")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('SUPPORT_VIEW_PENDING')")
     public ResponseEntity<?> listPending() {
         return ResponseEntity.ok(registry.getAllPending().values());
     }

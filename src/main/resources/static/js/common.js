@@ -103,6 +103,9 @@ function createSimpleHeader() {
                             <a href="/admin/dashboard.html" class="dropdown-item d-none" id="admin-menu-item">
                                 <i class="bi bi-gear"></i> Quản lý
                             </a>
+                            <a href="/admin/dashboard.html" class="dropdown-item d-none" id="editor-menu-item">
+                                <i class="bi bi-pencil-square"></i> Editor
+                            </a>
                             <a href="#" class="dropdown-item" onclick="showOrders(); return false;">
                                 <i class="bi bi-box-seam"></i> Tra cứu đơn hàng
                             </a>
@@ -298,6 +301,18 @@ function updateUserMenu() {
                 adminMenuItem.classList.remove('d-none');
             } else {
                 adminMenuItem.classList.add('d-none');
+            }
+        }
+
+        // Show editor menu item if role === 'EDITOR'
+        const editorMenuItem = document.getElementById('editor-menu-item');
+        if (editorMenuItem) {
+            const roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
+            const isEditor = roles.indexOf('EDITOR') !== -1 || roles.indexOf('ROLE_EDITOR') !== -1 || user.role === 'EDITOR';
+            if (isEditor) {
+                editorMenuItem.classList.remove('d-none');
+            } else {
+                editorMenuItem.classList.add('d-none');
             }
         }
         

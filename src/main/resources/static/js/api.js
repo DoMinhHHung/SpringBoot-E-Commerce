@@ -280,6 +280,12 @@ class ApiClient {
         });
     }
 
+    async getMyPermissions() {
+        return this.request('/users/permissions', {
+            method: 'GET'
+        });
+    }
+
     async updateProfile(userData) {
         return this.request('/users/profile', {
             method: 'PUT',

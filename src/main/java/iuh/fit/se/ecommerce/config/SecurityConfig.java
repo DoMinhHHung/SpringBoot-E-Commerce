@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,8 +16,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Configuration
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -72,29 +81,48 @@ public class SecurityConfig {
                         // PayOS webhook callback (public)
                         .requestMatchers(HttpMethod.POST, "/api/payments/payos-callback").permitAll()
                         
+                        // Products: allow GET to public (must be before any authenticated rules)
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
+                        
+                        // Promotions: allow GET to public
+                        .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/promotions").permitAll()
+                        
                         // Payment endpoints (authenticated)
                         .requestMatchers(HttpMethod.POST, "/api/payments/create").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/payments/status/**").authenticated()
 
+                        // Admin endpoints (require roles for page access)
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyRole("ADMIN", "EDITOR")
+                        .requestMatchers(HttpMethod.POST, "/admin/**").hasAnyRole("ADMIN", "EDITOR")
+                        
+                        // Support: check permissions (WebSocket endpoints will be checked in controller)
+                        .requestMatchers(HttpMethod.GET, "/api/support/**").hasAuthority("SUPPORT_VIEW_PENDING")
+                        .requestMatchers(HttpMethod.POST, "/api/support/**").hasAuthority("SUPPORT_VIEW_PENDING")
 
-                                                .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.GET, "/api/support/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.POST, "/api/support/**").hasRole("ADMIN")
+                        // Products: check permissions instead of role
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAuthority("PRODUCT_CREATE")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAuthority("PRODUCT_UPDATE")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAuthority("PRODUCT_DELETE")
 
-                                                // Products: allow GET to public, restrict modifications to ADMIN
-                                                .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        // Promotions: check permissions instead of role
+                        .requestMatchers(HttpMethod.POST, "/api/promotions/**").hasAuthority("PROMOTION_CREATE")
+                        .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasAuthority("PROMOTION_UPDATE")
+                        .requestMatchers(HttpMethod.DELETE, "/api/promotions/**").hasAuthority("PROMOTION_DELETE")
+                        
+                        // Orders: check permissions
+                        .requestMatchers(HttpMethod.GET, "/api/admin/orders/**").hasAuthority("ORDER_VIEW")
+                        .requestMatchers(HttpMethod.PUT, "/api/admin/orders/**").hasAuthority("ORDER_UPDATE")
+                        
+                        // Transactions: check permissions
+                        .requestMatchers(HttpMethod.GET, "/api/admin/transactions/**").hasAnyAuthority("TRANSACTION_VIEW", "TRANSACTION_SUMMARY")
+                        
+                        // Permissions management: only ADMIN (keep role-based for security)
+                        .requestMatchers("/api/admin/permissions/**").hasRole("ADMIN")
 
-                                                .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
-                                                .requestMatchers(HttpMethod.POST, "/api/promotions/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.DELETE, "/api/promotions/**")
-                                                .hasRole("ADMIN")
-
-                                                .anyRequest().authenticated())
+                        // All other requests require authentication
+                        .anyRequest().authenticated())
                                 .formLogin(AbstractHttpConfigurer::disable)
                                 .oauth2Login(oauth2 -> oauth2
                                                 .loginPage("/login.html")
@@ -102,7 +130,26 @@ public class SecurityConfig {
                                                 .userInfoEndpoint(userInfo -> userInfo
                                                                 .userService(customOAuth2UserService))
                                                 .successHandler(oAuth2SuccessHandler))
-                                .httpBasic(AbstractHttpConfigurer::disable);
+                                .httpBasic(AbstractHttpConfigurer::disable)
+                                .exceptionHandling(exceptions -> exceptions
+                                        .accessDeniedHandler(new AccessDeniedHandler() {
+                                            @Override
+                                            public void handle(HttpServletRequest request, HttpServletResponse response,
+                                                    AccessDeniedException accessDeniedException) throws IOException {
+                                                log.error("Access denied for request: {} {} - User: {}, Authorities: {}", 
+                                                    request.getMethod(), 
+                                                    request.getRequestURI(),
+                                                    request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : "anonymous",
+                                                    org.springframework.security.core.context.SecurityContextHolder.getContext()
+                                                        .getAuthentication() != null 
+                                                        ? org.springframework.security.core.context.SecurityContextHolder.getContext()
+                                                            .getAuthentication().getAuthorities()
+                                                        : "no authorities");
+                                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                                response.setContentType("application/json");
+                                                response.getWriter().write("{\"error\":\"Access denied\"}");
+                                            }
+                                        }));
 
                 http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
