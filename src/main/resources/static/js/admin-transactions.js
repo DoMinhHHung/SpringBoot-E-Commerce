@@ -18,11 +18,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
         
-        const isAdmin = Array.isArray(user.role) 
-            ? user.role.indexOf('ADMIN') !== -1 || user.role.indexOf('ROLE_ADMIN') !== -1
-            : user.role === 'ADMIN' || user.role === 'ROLE_ADMIN';
+        const roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
+        const isAdmin = roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1 || user.role === 'ADMIN';
+        const isEditor = roles.indexOf('EDITOR') !== -1 || roles.indexOf('ROLE_EDITOR') !== -1 || user.role === 'EDITOR';
             
-        if (!isAdmin) {
+        if (!isAdmin && !isEditor) {
             alert('Không có quyền truy cập');
             window.location.href = '/index.html';
             return;

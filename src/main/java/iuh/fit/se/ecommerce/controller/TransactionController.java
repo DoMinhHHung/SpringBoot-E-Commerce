@@ -23,12 +23,12 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/admin/transactions")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class TransactionController {
 
     private final TransactionService transactionService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('TRANSACTION_VIEW')")
     public ResponseEntity<Page<TransactionResponse>> getAllTransactions(
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) TransactionStatus status,
@@ -45,6 +45,7 @@ public class TransactionController {
     }
 
     @GetMapping("/summary")
+    @PreAuthorize("hasAuthority('TRANSACTION_SUMMARY')")
     public ResponseEntity<TransactionSummaryResponse> getTransactionSummary(
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) TransactionStatus status,
@@ -58,6 +59,7 @@ public class TransactionController {
     }
 
     @GetMapping("/{transactionId}")
+    @PreAuthorize("hasAuthority('TRANSACTION_VIEW')")
     public ResponseEntity<TransactionResponse> getTransactionDetail(
             @PathVariable Long transactionId
     ) {

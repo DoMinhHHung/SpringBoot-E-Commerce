@@ -1,6 +1,7 @@
 // admin-common.js - Common functionality for admin pages
 
 let adminUser = null;
+let userPermissions = new Set(); // Store user permissions
 
 document.addEventListener('DOMContentLoaded', async function() {
     // Check authentication
@@ -16,15 +17,21 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
         
-        const isAdmin = Array.isArray(adminUser.role) 
-            ? adminUser.role.indexOf('ADMIN') !== -1 || adminUser.role.indexOf('ROLE_ADMIN') !== -1
-            : adminUser.role === 'ADMIN' || adminUser.role === 'ROLE_ADMIN';
+        const roles = Array.isArray(adminUser.role) ? adminUser.role : (typeof adminUser.role === 'string' ? [adminUser.role] : []);
+        const isAdmin = roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1 || adminUser.role === 'ADMIN';
+        const isEditor = roles.indexOf('EDITOR') !== -1 || roles.indexOf('ROLE_EDITOR') !== -1 || adminUser.role === 'EDITOR';
             
-        if (!isAdmin) {
+        if (!isAdmin && !isEditor) {
             alert('Không có quyền truy cập');
             window.location.href = '/index.html';
             return;
         }
+
+        // Load permissions của current user
+        await loadUserPermissions();
+        
+        // Ẩn menu items theo permission/role
+        hideMenuItemsByPermission();
 
         // Set user name
         const userNameEl = document.getElementById('admin-user-name');
@@ -42,6 +49,77 @@ document.addEventListener('DOMContentLoaded', async function() {
         alert('Lỗi tải dữ liệu: ' + (err.message || err));
     }
 });
+
+// Function để load permissions của current user
+async function loadUserPermissions() {
+    try {
+        const permissions = await apiClient.getMyPermissions();
+        userPermissions = new Set(permissions.map(p => p.code));
+        console.log('Loaded user permissions:', Array.from(userPermissions));
+    } catch (err) {
+        console.error('Error loading permissions:', err);
+        // Fallback: nếu không load được permissions, dùng role-based
+        userPermissions = new Set();
+    }
+}
+
+// Function để ẩn menu items theo permission/role
+function hideMenuItemsByPermission() {
+    const roles = Array.isArray(adminUser.role) ? adminUser.role : (typeof adminUser.role === 'string' ? [adminUser.role] : []);
+    const isAdmin = roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1 || adminUser.role === 'ADMIN';
+    const isEditor = roles.indexOf('EDITOR') !== -1 || roles.indexOf('ROLE_EDITOR') !== -1 || adminUser.role === 'EDITOR';
+    
+    // Mapping menu items với permission/role requirements
+    const menuRules = [
+        {
+            page: 'dashboard',
+            show: isAdmin || isEditor  // Luôn hiển thị cho ADMIN và EDITOR
+        },
+        {
+            page: 'products',
+            show: isAdmin || isEditor || userPermissions.has('PRODUCT_VIEW') || 
+                  userPermissions.has('PRODUCT_CREATE') || userPermissions.has('PRODUCT_UPDATE') || userPermissions.has('PRODUCT_DELETE')
+        },
+        {
+            page: 'promotions',
+            show: isAdmin || userPermissions.has('PROMOTION_CREATE') || 
+                  userPermissions.has('PROMOTION_UPDATE') || userPermissions.has('PROMOTION_DELETE')
+        },
+        {
+            page: 'users',
+            show: isAdmin  // Chỉ ADMIN
+        },
+        {
+            page: 'permissions',
+            show: isAdmin  // Chỉ ADMIN
+        },
+        {
+            page: 'orders',
+            show: isAdmin || userPermissions.has('ORDER_VIEW')
+        },
+        {
+            page: 'transactions',
+            show: isAdmin || userPermissions.has('TRANSACTION_VIEW') || userPermissions.has('TRANSACTION_SUMMARY')
+        },
+        {
+            page: 'support',
+            show: isAdmin || userPermissions.has('SUPPORT_VIEW_PENDING')
+        }
+    ];
+    
+    // Ẩn menu items không có quyền
+    menuRules.forEach(rule => {
+        const menuItem = document.querySelector(`[data-page="${rule.page}"]`);
+        if (menuItem) {
+            if (!rule.show) {
+                menuItem.style.display = 'none';
+                console.log(`Hidden menu item: ${rule.page}`);
+            } else {
+                menuItem.style.display = ''; // Hiển thị
+            }
+        }
+    });
+}
 
 function setActiveMenuItem() {
     const currentPath = window.location.pathname;
