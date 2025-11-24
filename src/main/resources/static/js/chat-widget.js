@@ -9,6 +9,7 @@ class ChatWidget {
         this._maxRetries = 10;
         this._contactRequested = false;
         this._pendingContactTech = false;
+        this.assigned = false;
     }
 
     generateSessionId() {
@@ -27,6 +28,27 @@ class ChatWidget {
         this.productId = productId;
         this.createWidget();
         this.attachEventListeners();
+
+        // Attempt to restore session status from server so assigned/pending state persists across reloads
+        try {
+            setTimeout(() => {
+                fetch('/api/support/session/' + encodeURIComponent(this.sessionId), { credentials: 'same-origin' })
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (!data) return;
+                        // server stores status as PENDING | ASSIGNED | CLOSED
+                        if (data.status === 'ASSIGNED') {
+                            this.setAssigned(true);
+                            this._contactRequested = true;
+                        } else if (data.status === 'PENDING') {
+                            this._contactRequested = true;
+                        } else {
+                            this.setAssigned(false);
+                        }
+                    }).catch(() => {});
+            }, 300);
+        } catch (e) {}
+
     }
 
     createWidget() {
@@ -44,6 +66,7 @@ class ChatWidget {
                         </div>
                         <div class="chat-header-actions">
                             <button id="chat-contact-tech" class="chat-contact-tech" title="Liên hệ kỹ thuật">Liên hệ kỹ thuật</button>
+                            <span id="chat-assigned-indicator" class="badge bg-info text-white ms-2" style="display:none; font-size:0.75rem; align-self:center;">Kỹ thuật viên đang trả lời...</span>
                             <button id="chat-widget-close" class="chat-widget-close">
                                 <i class="bi bi-x"></i>
                             </button>
@@ -94,7 +117,48 @@ class ChatWidget {
             }
         });
         if (contactTechBtn) {
-            contactTechBtn.addEventListener('click', () => this.requestContactTech());
+            // use a named handler that can be swapped when an admin joins
+            contactTechBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.assigned) {
+                    // Send structured close request to dedicated destination /app/support/close
+                    try {
+                        const payload = { adminId: null, sessionId: this.sessionId };
+                        if (this.stompClient && this.connected && typeof this.stompClient.send === 'function') {
+                            this.stompClient.send('/app/support/close', {}, JSON.stringify(payload));
+                        } else {
+                            // if sockjs/stomp not ready, try fallback to /app/chat LEAVE_AGENT
+                            if (this.stompClient && this.connected) {
+                                this.stompClient.send('/app/chat', {}, JSON.stringify({ sessionId: this.sessionId, text: 'LEAVE_AGENT' }));
+                            }
+                        }
+                    } catch (err) {
+                        console.warn('Failed to send support close', err);
+                    }
+                    // update UI optimistically
+                    this.setAssigned(false);
+                } else {
+                    this.requestContactTech();
+                }
+            });
+        }
+    }
+
+    setAssigned(flag) {
+        this.assigned = !!flag;
+        const btn = document.getElementById('chat-contact-tech');
+        const indicator = document.getElementById('chat-assigned-indicator');
+        if (!btn) return;
+        if (this.assigned) {
+            btn.textContent = 'Rời khỏi cuộc trò chuyện';
+            btn.classList.remove('chat-contact-tech');
+            btn.classList.add('btn-danger');
+            if (indicator) indicator.style.display = 'inline-block';
+        } else {
+            btn.textContent = 'Liên hệ kỹ thuật';
+            btn.classList.remove('btn-danger');
+            btn.classList.add('chat-contact-tech');
+            if (indicator) indicator.style.display = 'none';
         }
     }
 
@@ -261,7 +325,11 @@ class ChatWidget {
         this.displayUserMessage(text);
 
         // Show spinner and active filters
-        this.showSearchSpinner(true);
+        // If user already requested human support or an admin assigned, do not show the bot-search spinner
+        // so the user can continue typing multiple messages while waiting for admin.
+        if (!this._contactRequested && !this.assigned) {
+            this.showSearchSpinner(true);
+        }
         this.setActiveFiltersFromQuery(text);
 
         // Send message via STOMP
@@ -313,7 +381,7 @@ class ChatWidget {
                     <div class="product-suggestion">
                         <img src="${this.escapeHtml(product.imageUrl)}" 
                              alt="${this.escapeHtml(product.name)}"
-                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'80\' height=\'80\'><rect width=\'100%\' height=\'100%\' fill=\'%23f3f3f3\' /><text x=\'50%\' y=\'50%\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'%23888\' font-family=\'Arial, Helvetica, sans-serif\' font-size=\'10\'>No Image</text></svg>'">
+                             onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'80\\' height=\\'80\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23f3f3f3\\' /><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' fill=\\'%23888\\' font-family=\\'Arial, Helvetica, sans-serif\\' font-size=\\'10\\'>No Image</text></svg>'">
                         <div class="product-info">
                             <div class="product-name">${this.escapeHtml(product.name)}</div>
                             <div class="product-price">${price}</div>
@@ -329,9 +397,55 @@ class ChatWidget {
 
         // render suggestions as clickable buttons
         let suggestionsHTML = '';
-        if (response.suggestions && response.suggestions.length > 0) {
+        // detect special LEAVE_AGENT suggestion and handle it via contact button instead of rendering repeatedly
+        let suggestions = Array.isArray(response.suggestions) ? response.suggestions.slice() : [];
+        let hasLeave = false;
+        suggestions = suggestions.filter(s => {
+            try {
+                let label = '';
+                let query = '';
+                if (s && typeof s === 'object' && s.label !== undefined) {
+                    label = String(s.label || '');
+                    query = String(s.query || '');
+                } else {
+                    label = String(s || '');
+                    query = String(s || '');
+                }
+                if (/LEAVE_AGENT/i.test(query) || /rời/i.test(label)) {
+                    hasLeave = true;
+                    return false; // remove from suggestions to avoid repeated rendering
+                }
+            } catch (e) {}
+            return true;
+        });
+
+        if (hasLeave) {
+            // set contact button to 'leave' state
+            try { this.setAssigned(true); } catch (e) {}
+        }
+
+        // Detect system-like messages and apply special styling + state toggles
+        let isSystem = false;
+        try {
+            const txt = (response.text || '').toLowerCase();
+            // keywords: 'tư vấn' (advisor), 'tham gia' (joined), 'rời' (leave), 'kết thúc' (ended)
+            if (txt.includes('tư vấn') || txt.includes('tham gia') || txt.includes('rời') || txt.includes('kết th')) {
+                isSystem = true;
+            }
+            // toggle assigned state based on content
+            if (isSystem) {
+                if (txt.includes('tham gia') || txt.includes('đã tham gia')) {
+                    try { this.setAssigned(true); } catch (e) {}
+                }
+                if (txt.includes('kết th') || txt.includes('rời') || txt.includes('đã kết thúc')) {
+                    try { this.setAssigned(false); } catch (e) {}
+                }
+            }
+        } catch (e) {}
+
+        if (suggestions && suggestions.length > 0) {
             suggestionsHTML = '<div class="chat-suggestions">';
-            response.suggestions.forEach(s => {
+            suggestions.forEach(s => {
                 // Support both legacy string suggestions and new {label, query} objects
                 let label = '';
                 let query = '';
@@ -350,7 +464,7 @@ class ChatWidget {
         }
 
         const messageHTML = `
-            <div class="chat-message bot-message">
+            <div class="chat-message bot-message${isSystem ? ' system' : ''}">
                 <div class="message-content">
                     ${this.escapeHtml(response.text)}
                     ${productsHTML}
@@ -385,7 +499,10 @@ class ChatWidget {
                         this.stompClient.send('/app/chat', {}, JSON.stringify(chatMessage));
                     }
                     // Show spinner and set active filters based on the query
-                    this.showSearchSpinner(true);
+                    // Only show bot-search spinner if user hasn't asked for human support and no admin assigned
+                    if (!this._contactRequested && !this.assigned) {
+                        this.showSearchSpinner(true);
+                    }
                     this.setActiveFiltersFromQuery(query);
                 });
             });

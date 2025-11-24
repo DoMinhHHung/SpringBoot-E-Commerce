@@ -4,6 +4,7 @@ import iuh.fit.se.ecommerce.config.SupportSessionRegistry;
 import iuh.fit.se.ecommerce.dto.response.ChatResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import lombok.AllArgsConstructor;
@@ -104,5 +105,12 @@ class AdminSupportRestController {
     @GetMapping("/pending")
     public ResponseEntity<?> listPending() {
         return ResponseEntity.ok(registry.getAllPending().values());
+    }
+
+    @GetMapping("/session/{sessionId}")
+    public ResponseEntity<?> getSession(@PathVariable String sessionId) {
+        var s = registry.getSession(sessionId);
+        if (s == null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(s);
     }
 }

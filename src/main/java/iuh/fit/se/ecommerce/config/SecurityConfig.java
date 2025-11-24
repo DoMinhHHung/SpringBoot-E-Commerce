@@ -24,58 +24,61 @@ public class SecurityConfig {
         private final OAuth2SuccessHandler oAuth2SuccessHandler;
         private final CustomOAuth2UserService customOAuth2UserService;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/oauth2/**",
-                                "/oauth2/callback",
-                                "/login/**",
-                                "/register/**",
-                                "/error",
-                                "/verify/**",
-                                "/forgot/**",
-                                "/reset/**",
-                                "/css/**",
-                                "/js/**",
-                                "/fragments/**",
-                                "/",
-                                "/index.html",
-                                "/cart",
-                                "/cart.html",
-                                "/login.html",
-                                "/register.html",
-                                "/product-detail.html",
-                                "/profile.html",
-                                "/promotions.html",
-                                "/products.html",
-                                "/forgot-password.html",
-                                "/payment-success.html",
-                                "/payment-cancel.html",
-                                "/checkout.html",
-                                "/orders.html",
-                                "/order-detail.html",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**",
-                                "/v3/api-docs/swagger-config",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/ws/**")
-                        .permitAll()
-                        
-                        // PayOS webhook callback (public)
-                        .requestMatchers(HttpMethod.POST, "/api/payments/payos-callback").permitAll()
-                        
-                        // Payment endpoints (authenticated)
-                        .requestMatchers(HttpMethod.POST, "/api/payments/create").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/payments/status/**").authenticated()
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(
+                                                                "/api/auth/**",
+                                                                "/oauth2/**",
+                                                                "/oauth2/callback",
+                                                                "/login/**",
+                                                                "/register/**",
+                                                                "/error",
+                                                                "/verify/**",
+                                                                "/forgot/**",
+                                                                "/reset/**",
+                                                                "/css/**",
+                                                                "/js/**",
+                                                                "/fragments/**",
+                                                                "/",
+                                                                "/index.html",
+                                                                "/cart",
+                                                                "/cart.html",
+                                                                "/login.html",
+                                                                "/register.html",
+                                                                "/product-detail.html",
+                                                                "/profile.html",
+                                                                "/promotions.html",
+                                                                "/products.html",
+                                                                "/forgot-password.html",
+                                                                "/payment-success.html",
+                                                                "/payment-cancel.html",
+                                                                "/checkout.html",
+                                                                "/orders.html",
+                                                                "/notifications.html",
+                                                                "/order-detail.html",
+                                                                "/swagger-ui/**",
+                                                                "/swagger-ui.html",
+                                                                "/v3/api-docs/**",
+                                                                "/v3/api-docs/swagger-config",
+                                                                "/swagger-resources/**",
+                                                                "/webjars/**",
+                                                                "/ws/**")
+                                                .permitAll()
 
+                                                // PayOS webhook callback (public)
+                                                .requestMatchers(HttpMethod.POST, "/api/payments/payos-callback")
+                                                .permitAll()
+
+                                                // Payment endpoints (authenticated)
+                                                .requestMatchers(HttpMethod.POST, "/api/payments/create")
+                                                .authenticated()
+                                                .requestMatchers(HttpMethod.GET, "/api/payments/status/**")
+                                                .authenticated()
 
                                                 .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.POST, "/admin/**").hasRole("ADMIN")
@@ -93,6 +96,8 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.PUT, "/api/promotions/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.DELETE, "/api/promotions/**")
                                                 .hasRole("ADMIN")
+                                                .requestMatchers("/api/notifications", "/api/notifications/**")
+                                                .permitAll()
 
                                                 .anyRequest().authenticated())
                                 .formLogin(AbstractHttpConfigurer::disable)

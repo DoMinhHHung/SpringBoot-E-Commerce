@@ -359,3 +359,43 @@
         right: 10px;
     }
 }
+
+/* System messages (advisor join/leave, notices) */
+.chat-message.bot-message.system .message-content {
+    background: #f1f7ff; /* subtle blue */
+    color: #0b3d91; /* darker blue for emphasis */
+    border: 1px dashed rgba(11,61,145,0.12);
+    font-style: italic;
+    text-align: left;
+    max-width: 95%;
+}
+
+/* Reduce spacing for system messages and make them less prominent than normal bot replies */
+.chat-message.bot-message.system {
+    margin-bottom: 6px;
+}
+
+/* Make the contact button show clear leave state when admin joined */
+.chat-contact-tech.btn-danger {
+    background: #dc3545 !important;
+    color: #fff !important;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: none;
+}
+
+.chat-contact-tech.btn-danger:hover {
+    filter: brightness(0.95);
+    transform: none;
+}
+
+/* Slight visual hint when assigned: add small dot next to button */
+.chat-contact-tech.btn-danger::after {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    margin-left: 8px;
+    box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+}

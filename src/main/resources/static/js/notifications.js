@@ -1,5 +1,4 @@
-// notifications.js
-// Manage site-wide realtime notifications (new products, promotions)
+
 let notifStomp = null;
 let notifConnected = false;
 let notifUnread = 0;
@@ -37,7 +36,6 @@ function initializeNotifications() {
               </div>
             </div>
           `;
-          // Prefer inserting into header container if available
           const headerParent = document.getElementById('header-container') || document.querySelector('.navbar-main .container') || container;
           if (headerParent) {
             // insert before user avatar area if exists
@@ -228,15 +226,16 @@ function renderNotificationItem(item) {
       if (item.url) window.location.href = item.url;
       else markItemRead(item.id);
     });
+    if (item.read) li.classList.add('list-group-item-secondary');
     float.prepend(li);
     return;
   }
 
   const li = document.createElement("li");
-  li.className = "list-group-item";
+  li.className = "list-group-item d-flex justify-content-between align-items-start";
   li.dataset.id = item.id;
-  const time = new Date(item.ts).toLocaleString();
-  li.innerHTML = `<div class="notif-item"><div class="d-flex justify-content-between"><div><strong>${escapeHtml(item.title)}</strong><div class="small text-muted">${escapeHtml(item.message)}</div></div><div class="small text-muted">${escapeHtml(time)}</div></div></div>`;
+  const time = formatNotifTime(item.ts);
+  li.innerHTML = `<div class="ms-2 me-auto"><div class="fw-bold">${escapeHtml(item.title)}</div><div class="small text-muted">${escapeHtml(item.message)}</div></div><div class="small text-muted text-nowrap ms-2">${escapeHtml(time)}</div>`;
   // click opens url if exists
   li.addEventListener("click", () => {
     if (item.url) {
@@ -244,8 +243,10 @@ function renderNotificationItem(item) {
     } else {
       // mark this item read: remove badge count
       markItemRead(item.id);
+      li.classList.add('list-group-item-secondary');
     }
   });
+  if (item.read) li.classList.add('list-group-item-secondary');
   listEl.prepend(li);
 }
 
@@ -298,52 +299,303 @@ function markAllRead() {
     localStorage.setItem("site_notif_unread", "0");
   } catch (e) {}
   updateBadge();
+  // persist to server
+  try {
+    fetch('/api/notifications/read-all', { method: 'PUT', credentials: 'same-origin' }).catch(() => {});
+  } catch (e) {}
 }
 
 function markItemRead(id) {
   // optional implementation: remove that item or mark visually
-  markAllRead();
-}
-
-function toggleNotificationDropdown(e) {
-  const drop = document.getElementById("notification-dropdown");
-  if (!drop) return;
-  if (drop.style.display === "none" || drop.style.display === "") {
-    drop.style.display = "block";
-    // open: clear unread
+  try {
+    // server expects numeric id
+    const numericId = parseInt(String(id).replace(/^notif-/, ''), 10);
+    if (!isNaN(numericId)) {
+      fetch('/api/notifications/' + numericId + '/read', { method: 'PUT', credentials: 'same-origin' })
+        .then(() => {
+          // mark visually
+          const el = document.querySelector('#notification-list [data-id="' + id + '"]');
+          if (el) el.classList.add('list-group-item-secondary');
+        })
+        .catch(() => {});
+    } else {
+      // fallback: mark badge as zero
+      markAllRead();
+    }
+  } catch (e) {
     markAllRead();
-  } else {
-    drop.style.display = "none";
   }
 }
 
-function escapeHtml(text) {
-  if (text === null || text === undefined) return "";
-  return String(text).replace(/[&<>\"'\n]/g, function (m) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;",
-      "\n": " ",
-    }[m];
-  });
+// helper: format timestamp nicely
+function formatNotifTime(ts) {
+  try {
+    const d = new Date(ts);
+    return d.toLocaleString('vi-VN');
+  } catch (e) { return '' + ts; }
 }
 
-// expose for debug
-window.initializeNotifications = initializeNotifications;
-// Expose pushNotification so you can trigger notifications from the browser console while testing
-window.pushNotification = pushNotification;
+// Safe fetch for /api/notifications: returns { items: Array, authRequired: boolean, error: string }
+function fetchNotificationsSafe() {
+  const headers = {};
+  try {
+    if (window.apiClient && typeof apiClient.getAuthToken === 'function') {
+      const t = apiClient.getAuthToken();
+      if (t) headers['Authorization'] = 'Bearer ' + t;
+    }
+  } catch (e) {}
 
-// Optional helper for quick product notification testing from console:
-window.testProductNotification = function(productId = 1) {
-  pushNotification({
-    id: 'test-' + Date.now(),
-    type: 'product',
-    title: 'Test: Sản phẩm mới',
-    message: 'Click để xem chi tiết sản phẩm ' + productId,
-    productId: productId,
-    timestamp: Date.now()
+  return fetch('/api/notifications', { credentials: 'same-origin', headers })
+    .then(async (r) => {
+      if (!r.ok) {
+        let txt = null;
+        try { txt = await r.text(); } catch (e) {}
+        console.warn('Notifications endpoint returned non-OK status', r.status, txt);
+        // If server returned HTML login page (redirect), detect by looking for '<!DOCTYPE' or '<html'
+        const lower = (txt || '').toLowerCase();
+        if (lower.includes('<!doctype') || lower.includes('<html') || lower.includes('đăng nhập') || lower.includes('login')) {
+          return { items: [], authRequired: true, error: 'auth' };
+        }
+        return { items: [], authRequired: false, error: 'status-' + r.status };
+      }
+      const ct = (r.headers.get('content-type') || '').toLowerCase();
+      if (ct.includes('application/json')) {
+        try {
+          const data = await r.json();
+          return { items: Array.isArray(data) ? data : [], authRequired: false };
+        } catch (e) {
+          // invalid json
+          let txt = null;
+          try { txt = await r.text(); } catch (ex) {}
+          console.warn('Invalid JSON from /api/notifications', e, txt);
+          return { items: [], authRequired: false, error: 'invalid-json' };
+        }
+      }
+      // not JSON (HTML or text) — log for debugging and detect login page
+      let txt = null;
+      try { txt = await r.text(); } catch (e) {}
+      const lower = (txt || '').toLowerCase();
+      console.warn('Non-JSON response from /api/notifications', ct, txt);
+      if (lower.includes('<!doctype') || lower.includes('<html') || lower.includes('đăng nhập') || lower.includes('login')) {
+        return { items: [], authRequired: true, error: 'html-login' };
+      }
+      return { items: [], authRequired: false, error: 'non-json' };
+    })
+    .catch((err) => {
+      console.warn('Failed to fetch /api/notifications', err);
+      return { items: [], authRequired: false, error: err && err.message ? String(err.message) : 'network' };
+    });
+}
+
+// Add load more support: pageSize and lastTimestamp as cursor
+let notifPageSize = 20;
+let notifLoadCursor = null; // timestamp cursor for pagination (oldest loaded)
+
+function buildFloatingListItem(item) {
+  const li = document.createElement('li');
+  li.className = 'list-group-item d-flex justify-content-between align-items-start';
+  li.dataset.id = item.id;
+  const time = formatNotifTime(item.ts);
+  li.innerHTML = `<div class="ms-2 me-auto"><div class="fw-bold">${escapeHtml(item.title)}</div><div class="small text-muted">${escapeHtml(item.message)}</div></div><div class="small text-muted text-nowrap ms-2">${escapeHtml(time)}</div>`;
+  li.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    if (item.url) {
+      window.location.href = item.url;
+    } else {
+      markItemRead(item.id);
+      li.classList.add('list-group-item-secondary');
+    }
   });
-};
+  if (item.read) li.classList.add('list-group-item-secondary');
+  return li;
+}
+
+function toggleNotificationDropdown() {
+  console.debug && console.debug('toggleNotificationDropdown called');
+  // If floating panel exists, remove it (toggle off)
+  const existing = document.getElementById('notification-floating-panel');
+  if (existing) {
+    existing.remove();
+    return;
+  }
+
+  const bell = document.getElementById('notification-bell') || document.querySelector('.notification-bell');
+  const rect = bell ? bell.getBoundingClientRect() : { top: 60, left: window.innerWidth - 360, bottom: 60 };
+
+  // create floating panel
+  const panel = document.createElement('div');
+  panel.id = 'notification-floating-panel';
+  panel.style.position = 'fixed';
+  panel.style.zIndex = 9999;
+  panel.style.background = '#fff';
+  const top = (rect.bottom || 60) + 8 + window.scrollY;
+  let left = (rect.left || (window.innerWidth - 360)) + window.scrollX;
+  if (left + 340 > window.innerWidth) left = window.innerWidth - 350;
+  panel.style.top = top + 'px';
+  panel.style.left = Math.max(8, left) + 'px';
+  panel.style.width = '340px';
+  panel.style.boxShadow = '0 6px 18px rgba(0,0,0,0.15)';
+  panel.style.borderRadius = '4px';
+
+  panel.innerHTML = `
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Thông báo</strong>
+        <div>
+          <button id="floating-mark-all" class="btn btn-sm btn-link">Đánh dấu đã đọc</button>
+          <button id="floating-close" class="btn btn-sm btn-link">Đóng</button>
+        </div>
+      </div>
+      <ul id="notification-list-floating" class="list-group list-group-flush" style="max-height:360px; overflow:auto"></ul>
+      <div class="card-footer text-center"><a href="/notifications.html">Xem tất cả</a></div>
+    </div>
+  `;
+
+  document.body.appendChild(panel);
+
+  const closeBtn = document.getElementById('floating-close');
+  if (closeBtn) closeBtn.addEventListener('click', () => panel.remove());
+  const markBtn = document.getElementById('floating-mark-all');
+  if (markBtn) markBtn.addEventListener('click', () => { markAllRead(); panel.remove(); });
+
+  const listEl = document.getElementById('notification-list-floating');
+  if (!listEl) return;
+  listEl.innerHTML = '<li class="list-group-item text-muted">Đang tải...</li>';
+
+  // use safe fetch helper to handle HTML or non-JSON responses gracefully
+  fetchNotificationsSafe()
+    .then(res => {
+      listEl.innerHTML = '';
+      if (!res) {
+        listEl.innerHTML = '<li class="list-group-item text-danger">Không thể tải thông báo</li>';
+        return;
+      }
+      if (res.authRequired) {
+        // if we already have realtime notifications in memory, show them as fallback
+        if (Array.isArray(notifList) && notifList.length > 0) {
+          const items = notifList.slice().map(it => ({
+            id: it.id || ('notif-' + Date.now()),
+            type: it.type,
+            title: it.title,
+            message: it.message,
+            url: it.url || (it.productId ? '/product-detail.html?id=' + it.productId : null),
+            productId: it.productId || null,
+            ts: it.ts || it.timestamp || Date.now(),
+            read: it.read || false
+          })).reverse();
+          items.forEach(it => listEl.appendChild(buildFloatingListItem(it)));
+          return;
+        }
+        // otherwise show login prompt
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        listEl.innerHTML = `<li class="list-group-item text-warning">Bạn cần <a href="/login.html?redirect=${redirect}">đăng nhập</a> để xem lịch sử thông báo</li>`;
+        return;
+      }
+       const serverItems = Array.isArray(res.items) ? res.items : [];
+       let items = serverItems.slice().reverse();
+       if ((!items || items.length === 0) && Array.isArray(notifList) && notifList.length > 0) {
+         // fallback to in-memory websocket notifications so dropdown matches badge count
+         items = notifList.slice().reverse();
+       }
+       if (!items || items.length === 0) {
+         listEl.innerHTML = '<li class="list-group-item text-muted">Không có thông báo</li>';
+         return;
+       }
+       items.forEach(it => {
+         const item = {
+           id: it.id || ('notif-' + (it.timestamp || it.ts || Date.now())),
+           type: it.type,
+           title: it.title,
+           message: it.message,
+           url: it.url || (it.productId ? '/product-detail.html?id=' + it.productId : null),
+           productId: it.productId || null,
+           ts: it.timestamp || it.ts || Date.now(),
+           read: it.read || false
+         };
+         const li = buildFloatingListItem(item);
+         listEl.appendChild(li);
+       });
+     })
+     .catch(err => {
+       console.warn('Failed to load notifications', err);
+       listEl.innerHTML = '<li class="list-group-item text-danger">Không thể tải thông báo</li>';
+     });
+
+  // close panel when clicking outside
+  function onDocClick(ev) {
+    if (!panel.contains(ev.target) && ev.target !== bell && !bell.contains(ev.target)) {
+      panel.remove();
+      document.removeEventListener('click', onDocClick);
+    }
+  }
+  setTimeout(() => document.addEventListener('click', onDocClick), 50);
+}
+
+// Ensure dropdown exists and return the list element
+function ensureNotificationDropdown() {
+  let listEl = document.getElementById('notification-list');
+  let wrapper = document.getElementById('notification-bell-container');
+  if (!wrapper) {
+    // try to find header container to insert into
+    const container = document.getElementById('header-container') || document.querySelector('.navbar-main .container');
+    wrapper = document.createElement('div');
+    wrapper.id = 'notification-bell-container';
+    wrapper.className = 'notification-bell me-3';
+    wrapper.style.position = 'relative';
+    wrapper.innerHTML = `
+      <a href="#" id="notification-bell" class="me-2">
+        <i class="bi bi-bell" style="font-size: 1.25rem; position: relative"></i>
+        <span class="badge bg-danger" id="notification-badge" style="position: relative; top: -10px; left: -8px">0</span>
+      </a>
+      <div id="notification-dropdown" class="notification-dropdown" style="display:none; position:absolute; right:10px; top:40px; z-index:1050; width:320px;">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Thông báo</strong>
+            <button class="btn btn-sm btn-link" id="mark-all-read">Đánh dấu đã đọc</button>
+          </div>
+          <ul class="list-group list-group-flush" id="notification-list" style="max-height:320px; overflow:auto"></ul>
+          <div class="card-footer text-center"><a href="/notifications.html">Xem tất cả</a></div>
+        </div>
+      </div>
+    `;
+    try {
+      if (container) container.appendChild(wrapper);
+      else document.body.appendChild(wrapper);
+    } catch (e) {
+      document.body.appendChild(wrapper);
+    }
+  }
+
+  // ensure event binding for bell
+  const bell = document.getElementById('notification-bell');
+  if (bell && !bell._notifBound) {
+    bell.addEventListener('click', (ev) => { ev.preventDefault(); toggleNotificationDropdown(); });
+    bell._notifBound = true;
+  }
+
+  // bind mark-all-read button
+  const markBtn = document.getElementById('mark-all-read');
+  if (markBtn && !markBtn._notifBound) {
+    markBtn.addEventListener('click', (ev) => { ev.preventDefault(); markAllRead(); });
+    markBtn._notifBound = true;
+  }
+
+  listEl = document.getElementById('notification-list');
+  return listEl;
+}
+
+// Ensure there's always a delegated click handler so bell clicks work even if script loaded before header
+if (!window.__notifDelegatedClickBound) {
+  document.addEventListener('click', function (ev) {
+    try {
+      const target = ev.target;
+      // find bell element by id or wrapper class
+      const bellEl = target.closest ? target.closest('#notification-bell, .notification-bell, [data-notification-bell]') : null;
+      if (bellEl) {
+        ev.preventDefault();
+        toggleNotificationDropdown();
+      }
+    } catch (e) {}
+  }, true);
+  window.__notifDelegatedClickBound = true;
+}

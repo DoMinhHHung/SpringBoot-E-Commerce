@@ -285,20 +285,89 @@
             }
 
             async function viewPromotionProducts(id) {
+                // Open a modal that lists all products with checkboxes; current promotion products checked
                 try {
-                    const products = await apiClient.getProductsByPromotion(id);
-                    // show quick modal list
-                    let html = '<ul class="list-group">';
-                    products.forEach(p => {
-                        html += `<li class="list-group-item">${p.name} - ${p.price ? formatPrice(p.price) : ''}</li>`;
+                    // create modal if not exists
+                    let modalEl = document.getElementById('promoProductsModal');
+                    if (!modalEl) {
+                        document.body.insertAdjacentHTML('beforeend', `
+                        <div class="modal fade" id="promoProductsModal" tabindex="-1" aria-hidden="true">
+                          <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title">Sản phẩm cho khuyến mãi</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                  <div><strong id="promoProductsTitle"></strong></div>
+                                  <div>
+                                    <button id="promo-assign-selected" class="btn btn-sm btn-primary">Gán sản phẩm đã chọn</button>
+                                    <button id="promo-assign-all" class="btn btn-sm btn-outline-primary ms-2">Gán tất cả sản phẩm</button>
+                                  </div>
+                                </div>
+                                <div style="max-height:400px; overflow:auto;"><table class="table table-sm" id="promo-products-table"><thead><tr><th style="width:40px"></th><th>Tên</th><th>Giá</th></tr></thead><tbody></tbody></table></div>
+                              </div>
+                              <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        `);
+                    }
+
+                    // fetch all products and products already in promotion
+                    const [allProducts, promoProducts] = await Promise.all([
+                        apiClient.getAllProducts(),
+                        apiClient.getProductsByPromotion(id)
+                    ]);
+
+                    const promoIds = new Set((promoProducts || []).map(p => p.id));
+
+                    const tbody = document.querySelector('#promo-products-table tbody');
+                    tbody.innerHTML = '';
+                    (allProducts || []).forEach(p => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td><input type="checkbox" class="promo-prod-checkbox" data-id="${p.id}" ${promoIds.has(p.id) ? 'checked' : ''}></td>
+                            <td>${escapeHtml(p.name || '')}</td>
+                            <td>${p.price ? formatPrice(p.price) : ''}</td>
+                        `;
+                        tbody.appendChild(tr);
                     });
-                    html += '</ul>';
-                    showAlert(html, 'info');
+
+                    // wire buttons
+                    document.getElementById('promoProductsTitle').textContent = 'Khuyến mãi #' + id;
+                    document.getElementById('promo-assign-selected').onclick = async function() {
+                        const boxes = Array.from(document.querySelectorAll('.promo-prod-checkbox'));
+                        const ids = boxes.filter(b => b.checked).map(b => Number(b.dataset.id));
+                        try {
+                            await apiClient.adminAssignProductsToPromotion(Number(id), ids);
+                            showAlert('Gán sản phẩm thành công', 'success');
+                        } catch (err) {
+                            console.error(err);
+                            showAlert('Lỗi gán sản phẩm', 'error');
+                        }
+                    };
+                    document.getElementById('promo-assign-all').onclick = async function() {
+                        if (!confirm('Bạn có chắc muốn gán tất cả sản phẩm vào khuyến mãi này?')) return;
+                        try {
+                            await apiClient.adminAssignAllProductsToPromotion(Number(id));
+                            showAlert('Gán tất cả sản phẩm thành công', 'success');
+                        } catch (err) {
+                            console.error(err);
+                            showAlert('Lỗi gán tất cả sản phẩm', 'error');
+                        }
+                    };
+
+                    const bs = new bootstrap.Modal(document.getElementById('promoProductsModal'));
+                    bs.show();
                 } catch (err) {
                     console.error(err);
-                    showAlert('Lỗi tải sản phẩm khuyến mãi', 'error');
+                    showAlert('Lỗi tải danh sách sản phẩm', 'error');
                 }
-            }
+             }
 
             // initial load
             await loadPromotions();

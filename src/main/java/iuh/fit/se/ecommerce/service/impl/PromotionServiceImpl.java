@@ -10,10 +10,9 @@ import iuh.fit.se.ecommerce.exception.AppException;
 import iuh.fit.se.ecommerce.exception.ErrorCode;
 import iuh.fit.se.ecommerce.repository.ProductRepository;
 import iuh.fit.se.ecommerce.repository.PromotionRepository;
+import iuh.fit.se.ecommerce.service.impl.SiteNotificationService;
 import iuh.fit.se.ecommerce.service.interfaces.PromotionService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -26,23 +25,19 @@ public class PromotionServiceImpl implements PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final ProductRepository productRepository;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final SiteNotificationService siteNotificationService;
 
     @Override
     public PromotionResponse createPromotion(PromotionRequest request) {
         Promotion promotion = PromotionMapper.fromRequest(request);
         Promotion saved = promotionRepository.save(promotion);
-        // Broadcast notification about new promotion
-        try {
-            Map<String, Object> payload = Map.of(
-                    "type", "promotion",
-                    "title", "Khuyến mãi mới: " + saved.getName(),
-                    "message", saved.getDescription() == null ? "" : saved.getDescription(),
-                    "url", "/promotions.html",
-                    "timestamp", System.currentTimeMillis()
-            );
-            messagingTemplate.convertAndSend("/topic/site.notifications", payload);
-        } catch (Exception ignored) {}
+        siteNotificationService.saveAndBroadcast(
+                "promotion",
+                "Khuyến mãi mới: " + saved.getName(),
+                saved.getDescription() == null ? "" : saved.getDescription(),
+                "/promotions.html",
+                null,
+                null);
         return PromotionMapper.toResponse(saved);
     }
 
@@ -72,17 +67,13 @@ public class PromotionServiceImpl implements PromotionService {
         }
 
         Promotion saved = promotionRepository.save(promotion);
-        // Broadcast notification about updated promotion
-        try {
-            Map<String, Object> payload = Map.of(
-                    "type", "promotion",
-                    "title", "Cập nhật khuyến mãi: " + saved.getName(),
-                    "message", saved.getDescription() == null ? "" : saved.getDescription(),
-                    "url", "/promotions.html",
-                    "timestamp", System.currentTimeMillis()
-            );
-            messagingTemplate.convertAndSend("/topic/site.notifications", payload);
-        } catch (Exception ignored) {}
+        siteNotificationService.saveAndBroadcast(
+                "promotion",
+                "Cập nhật khuyến mãi: " + saved.getName(),
+                saved.getDescription() == null ? "" : saved.getDescription(),
+                "/promotions.html",
+                null,
+                null);
         return PromotionMapper.toResponse(saved);
     }
 
@@ -146,6 +137,27 @@ public class PromotionServiceImpl implements PromotionService {
         return productRepository.findByPromotion(promotion).stream()
                 .map(ProductMapper::toProductResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void assignProductsToPromotion(Long promotionId, List<Long> productIds) {
+        Promotion promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Không tìm thấy mã khuyến mãi"));
+        if (productIds == null || productIds.isEmpty())
+            return;
+        List<Long> ids = productIds.stream().distinct().collect(Collectors.toList());
+        List<iuh.fit.se.ecommerce.entity.Product> products = productRepository.findAllById(ids);
+        products.forEach(p -> p.setPromotion(promotion));
+        productRepository.saveAll(products);
+    }
+
+    @Override
+    public void assignAllProductsToPromotion(Long promotionId) {
+        Promotion promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Không tìm thấy mã khuyến mãi"));
+        List<iuh.fit.se.ecommerce.entity.Product> all = productRepository.findAll();
+        all.forEach(p -> p.setPromotion(promotion));
+        productRepository.saveAll(all);
     }
 
 }

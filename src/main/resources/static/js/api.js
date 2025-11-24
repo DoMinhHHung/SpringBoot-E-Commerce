@@ -272,6 +272,20 @@ class ApiClient {
         });
     }
 
+    // Admin assign products to promotion
+    async adminAssignProductsToPromotion(promotionId, productIds) {
+        return this.request(`/promotions/${promotionId}/products`, {
+            method: 'POST',
+            body: JSON.stringify(productIds)
+        });
+    }
+
+    async adminAssignAllProductsToPromotion(promotionId) {
+        return this.request(`/promotions/${promotionId}/products/assign-all`, {
+            method: 'POST'
+        });
+    }
+
     // User APIs
     async getProfile() {
         return this.request('/users/profile', {
