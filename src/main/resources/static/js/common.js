@@ -1102,23 +1102,23 @@ function showCategorySubMenu(category) {
     const menuItems = document.querySelectorAll('.category-menu-item');
     
     if (!subMenuContainer) return;
-    
+
     // Remove active class from all items
     menuItems.forEach(item => item.classList.remove('active'));
-    
+
     // Add active class to current item
     const currentItem = document.querySelector(`[data-category="${category}"]`);
     if (currentItem) {
         currentItem.classList.add('active');
     }
-    
+
     // Get sub-menu data
     const subMenuData = categorySubMenus[category];
     if (!subMenuData) {
         subMenuContainer.innerHTML = '<p class="text-muted">Đang tải...</p>';
         return;
     }
-    
+
     // Render sub-menu
     let html = '';
     subMenuData.sections.forEach(section => {
@@ -1149,18 +1149,18 @@ function initCategoryMenuHover() {
     const menu = document.getElementById('categoryDropdownMenu');
     
     if (!btn || !menu) return;
-    
+
     // Open menu on button hover
     btn.addEventListener('mouseenter', function() {
         clearTimeout(categoryMenuTimeout);
         openCategoryMenu();
     });
-    
+
     // Keep menu open when hovering over menu
     menu.addEventListener('mouseenter', function() {
         clearTimeout(categoryMenuTimeout);
     });
-    
+
     // Close menu when mouse leaves button and menu
     btn.addEventListener('mouseleave', function() {
         categoryMenuTimeout = setTimeout(function() {
@@ -1196,9 +1196,58 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHeader();
     loadFooter();
     loadAuthModal();
-    
+
     // Initialize category menu hover after header is loaded
     setTimeout(function() {
         initCategoryMenuHover();
     }, 500);
 });
+
+function createBuildButton() {
+
+    if (document.getElementById('build-btn')) return;
+
+    // Tạo nút
+    const btn = document.createElement('button');
+    btn.id = 'build-btn';
+    btn.innerHTML = '<i class="bi bi-tools"></i> Build';
+
+    btn.style.position = 'fixed';
+    btn.style.bottom = '100px';
+    btn.style.right = '20px';
+    btn.style.zIndex = '9999';
+    btn.style.padding = '10px 20px';
+    btn.style.backgroundColor = '#0d6efd';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '8px';
+    btn.style.boxShadow = '0 4px 6px rgba(0,0,0,0.2)';
+    btn.style.cursor = 'pointer';
+    btn.style.fontSize = '16px';
+    btn.style.display = 'flex';
+    btn.style.alignItems = 'center';
+    btn.style.gap = '6px';
+
+    // Hover effect
+    btn.addEventListener('mouseenter', () => {
+        btn.style.backgroundColor = '#0b5ed7';
+    });
+    btn.addEventListener('mouseleave', () => {
+        btn.style.backgroundColor = '#0d6efd';
+    });
+
+    // Click event
+    btn.addEventListener('click', () => {
+        {
+            window.location.href = '/build-pc.html';
+        }
+    });
+
+    document.body.appendChild(btn);
+}
+
+// Tạo nút khi DOM sẵn sàng
+document.addEventListener('DOMContentLoaded', function() {
+    createBuildButton();
+});
+

@@ -336,4 +336,21 @@ public class ProductServiceImpl implements ProductService {
             throw new AppException(ErrorCode.INTERNAL_ERROR, "Upload image failed");
         }
     }
+    @Override
+    public List<ProductResponse> getProductsByType(ProductType type) {
+        List<Product> products = productRepository.findByProductType(type);
+        return products.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+    // Mapping từ Product -> ProductResponse
+    private ProductResponse mapToResponse(Product p) {
+        return ProductResponse.builder()
+                .id(p.getId())
+                .name(p.getName())
+                .brand(p.getBrand())
+                .price(p.getPrice())
+                .mainImage(p.getMainImage())
+                .build();
+    }
 }

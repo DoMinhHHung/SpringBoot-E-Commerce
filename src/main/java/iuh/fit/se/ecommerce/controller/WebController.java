@@ -96,4 +96,9 @@ public class WebController {
     public String checkout() {
         return "checkout/checkout";
     }
+
+    @GetMapping("/build-pc.html")
+    public String buildpc() {
+        return "buildPC/build-pc";
+    }
 }

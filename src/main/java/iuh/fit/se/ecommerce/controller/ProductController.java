@@ -3,11 +3,13 @@ package iuh.fit.se.ecommerce.controller;
 import iuh.fit.se.ecommerce.dto.request.ProductRequest;
 import iuh.fit.se.ecommerce.dto.response.ProductDetailResponse;
 import iuh.fit.se.ecommerce.dto.response.ProductResponse;
+import iuh.fit.se.ecommerce.entity.enums.ProductType;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -43,11 +45,22 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
-
     @GetMapping("/type/{type}")
     public ResponseEntity<List<ProductResponse>> getProductsByType(@PathVariable String type) {
-        return ResponseEntity.ok(productService.getProductsByType(type));
+        ProductType productType;
+        try {
+            productType = ProductType.valueOf(type.toUpperCase()); // chuyển thành chữ hoa
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+
+        List<ProductResponse> products = productService.getProductsByType(String.valueOf(productType));
+        return ResponseEntity.ok(products);
     }
+//    @GetMapping("/type/{type}")
+//    public ResponseEntity<List<ProductResponse>> getProductsByType(@PathVariable String type) {
+//        return ResponseEntity.ok(productService.getProductsByType(type));
+//    }
 
     @GetMapping("/hot-sale")
     public ResponseEntity<List<ProductResponse>> getHotSaleProducts(

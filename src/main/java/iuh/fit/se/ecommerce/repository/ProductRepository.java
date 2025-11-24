@@ -20,4 +20,5 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
            "ORDER BY p.promotion.discountPercent DESC")
     List<Product> findHotSaleProducts();
     List<Product> findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(String name, String description);
+
 }

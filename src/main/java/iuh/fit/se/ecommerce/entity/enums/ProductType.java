@@ -7,5 +7,13 @@ public enum ProductType {
     MOUSE,
     MONITOR,
     HEADPHONE,
-    ACCESSORY
+    ACCESSORY,
+    CPU,
+    MAINBOARD,
+    RAM,
+    VGA,
+    CASE,
+    PSU,
+    STORAGE,
+    COOLING
 }

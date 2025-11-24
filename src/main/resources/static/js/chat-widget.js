@@ -44,6 +44,7 @@ class ChatWidget {
                             <i class="bi bi-x"></i>
                         </button>
                     </div>
+                    
                     <div id="chat-active-filters" class="chat-active-filters" style="display:none;padding:8px 12px;background:#f8f9fa;border-bottom:1px solid #e9ecef;">
                         </div>
                     <div id="chat-search-spinner" class="chat-search-spinner" style="display:none;padding:8px 12px;border-bottom:1px solid #e9ecef;color:#6c757d;">

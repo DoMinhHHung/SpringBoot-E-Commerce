@@ -3,8 +3,11 @@ package iuh.fit.se.ecommerce.service.interfaces;
 import iuh.fit.se.ecommerce.dto.request.ProductRequest;
 import iuh.fit.se.ecommerce.dto.response.ProductDetailResponse;
 import iuh.fit.se.ecommerce.dto.response.ProductResponse;
+import iuh.fit.se.ecommerce.entity.Product;
+import iuh.fit.se.ecommerce.entity.enums.ProductType;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public interface ProductService {
     ProductResponse createProduct(ProductRequest request);
@@ -15,4 +18,6 @@ public interface ProductService {
     List<ProductResponse> getProductsByType(String type);
     List<ProductResponse> findByQuery(String query);
     List<ProductResponse> getHotSaleProducts(int limit);
+    List<ProductResponse> getProductsByType(ProductType type);
+
 }
