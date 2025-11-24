@@ -68,6 +68,7 @@ public class SecurityConfig {
                                 "/payment-cancel.html",
                                 "/checkout.html",
                                 "/orders.html",
+                                "/notifications.html",
                                 "/order-detail.html",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
@@ -120,7 +121,8 @@ public class SecurityConfig {
                         
                         // Permissions management: only ADMIN (keep role-based for security)
                         .requestMatchers("/api/admin/permissions/**").hasRole("ADMIN")
-
+                        .requestMatchers("/api/notifications", "/api/notifications/**").permitAll()
+                                               
                         // All other requests require authentication
                         .anyRequest().authenticated())
                                 .formLogin(AbstractHttpConfigurer::disable)

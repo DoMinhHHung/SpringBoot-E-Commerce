@@ -186,6 +186,13 @@
                                 <label class="form-label">Ảnh khác (multiple)</label>
                                 <input id="product-images" type="file" class="form-control" accept="image/*" multiple>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Khuyến mãi</label>
+                                <select id="product-promotion" class="form-select">
+                                    <option value="">-- Không --</option>
+                                </select>
+                                <div class="form-text">Chọn mã khuyến mãi để áp dụng cho sản phẩm này.</div>
+                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
@@ -326,6 +333,7 @@
                 document.getElementById('product-id').value = '';
                 document.getElementById('productModalTitle').textContent = 'Thêm sản phẩm';
                 setSpecsInUI([]);
+                populatePromotionOptions();
                 modal.show();
             }
 
@@ -354,12 +362,29 @@
                     } else {
                         setSpecsInUI([]);
                     }
+                    await populatePromotionOptions(detail.promotion ? detail.promotion.id : null);
                     document.getElementById('productModalTitle').textContent = 'Chỉnh sửa sản phẩm';
                     modal.show();
                 } catch (err) {
                     console.error(err);
                     showAlert('Lỗi tải chi tiết sản phẩm', 'error');
                 }
+            }
+
+            async function populatePromotionOptions(selectedId) {
+                try {
+                    const promotions = await apiClient.getAllPromotions();
+                    const sel = document.getElementById('product-promotion');
+                    if (!sel) return;
+                    sel.innerHTML = '<option value="">-- Không --</option>';
+                    (promotions || []).forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `${p.name} (${p.discountPercent != null ? p.discountPercent + '%' : ' - '})`;
+                        if (selectedId && Number(selectedId) === Number(p.id)) opt.selected = true;
+                        sel.appendChild(opt);
+                    });
+                } catch (e) { console.warn('Could not load promotions for product modal', e); }
             }
 
             async function submitProductForm(modal) {
@@ -395,6 +420,11 @@
                         formData.append('images', imagesInput.files[i]);
                     }
                 }
+                // include promotion id if selected
+                try {
+                    const promoSel = document.getElementById('product-promotion');
+                    if (promoSel && promoSel.value) formData.append('promotionId', promoSel.value);
+                } catch (e) {}
 
                 try {
                     document.getElementById('product-save-btn').disabled = true;
@@ -405,7 +435,9 @@
                         await apiClient.adminCreateProduct(formData);
                         showAlert('Tạo sản phẩm thành công', 'success');
                     }
-                    modal.hide();
+                    // close modal
+                    const bs = bootstrap.Modal.getInstance(document.getElementById('productModal'));
+                    if (bs) bs.hide();
                     await loadProducts();
                 } catch (err) {
                     console.error(err);
@@ -415,20 +447,6 @@
                 }
             }
 
-            async function deleteProduct(id) {
-                if (!confirm('Bạn có chắc muốn xóa sản phẩm #' + id + '?')) return;
-                try {
-                    await apiClient.request(`/products/${id}`, { method: 'DELETE' });
-                    showAlert('Xóa sản phẩm thành công', 'success');
-                    await loadProducts();
-                } catch (err) {
-                    console.error(err);
-                    showAlert('Lỗi xóa sản phẩm: ' + (err.message || err), 'error');
-                }
-            }
-
-            // initial load
-            await loadProducts();
         });
     </script>
 </body>

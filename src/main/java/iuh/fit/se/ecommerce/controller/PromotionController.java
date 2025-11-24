@@ -64,4 +64,18 @@ public class PromotionController {
         return ResponseEntity.ok(promotionService.getProductsByActivePromotion(id));
     }
 
+    // Assign selected products to promotion
+    @PostMapping("/{id}/products")
+    public ResponseEntity<?> assignProducts(@PathVariable Long id, @RequestBody List<Long> productIds) {
+        promotionService.assignProductsToPromotion(id, productIds);
+        return ResponseEntity.ok(Map.of("message", "Assigned products to promotion"));
+    }
+
+    // Assign all products to promotion
+    @PostMapping("/{id}/products/assign-all")
+    public ResponseEntity<?> assignAllProducts(@PathVariable Long id) {
+        promotionService.assignAllProductsToPromotion(id);
+        return ResponseEntity.ok(Map.of("message", "Assigned all products to promotion"));
+    }
+
 }

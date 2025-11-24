@@ -17,4 +17,8 @@ public interface PromotionService {
     List<PromotionResponse> getExpiredPromotions();
     List<PromotionResponse> getUpcomingPromotions();
     List<ProductResponse> getProductsByActivePromotion(Long promotionId);
+
+    // new methods
+    void assignProductsToPromotion(Long promotionId, List<Long> productIds);
+    void assignAllProductsToPromotion(Long promotionId);
 }

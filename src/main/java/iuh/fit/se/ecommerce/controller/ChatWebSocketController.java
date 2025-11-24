@@ -7,11 +7,15 @@ import iuh.fit.se.ecommerce.dto.response.ProductDetailResponse;
 import iuh.fit.se.ecommerce.service.interfaces.GeminiService;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
+import iuh.fit.se.ecommerce.config.SupportSessionRegistry;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -21,6 +25,7 @@ public class ChatWebSocketController {
     private final ProductService productService;
     private final SimpMessagingTemplate messagingTemplate;
     private final GeminiService geminiService;
+    private final SupportSessionRegistry registry;
 
     private static final String GREETING_RESPONSE = "Xin chào! Tôi là trợ lý AI, chuyên hỗ trợ bạn tìm kiếm các sản phẩm Laptop và Phụ kiện. Bạn cần tìm sản phẩm gì ạ? Hãy mô tả yêu cầu của bạn!";
     private static final String CONTEXT_QUESTION_RESPONSE = "Bạn đang muốn hỏi về sản phẩm nào? Vui lòng cung cấp thêm thông tin chi tiết (tên model, mã sản phẩm...) hoặc cho tôi biết bạn đang xem sản phẩm nào để tôi hỗ trợ chính xác nhất.";
@@ -38,6 +43,38 @@ public class ChatWebSocketController {
 
     @MessageMapping("/chat")
     public void handleChatMessage(ChatMessage message) {
+        // Handle special CALL_HUMAN request: register pending support and notify admins
+        if (message != null && message.getText() != null && "CALL_HUMAN".equalsIgnoreCase(message.getText().trim())) {
+            try {
+                String sid = message.getSessionId();
+                registry.registerPending(sid, null, message.getProductId());
+                // notify the user that request was received
+                messagingTemplate.convertAndSend("/topic/replies." + sid,
+                        new ChatResponse("Yêu cầu liên hệ kỹ thuật đã được ghi nhận. Chúng tôi sẽ chuyển tới kỹ thuật viên.", java.util.List.of(), java.util.List.of()));
+            } catch (Exception ex) {
+                // best-effort: log to console (avoid failing the whole flow)
+                System.err.println("Failed to register CALL_HUMAN request: " + ex.getMessage());
+            }
+            return;
+        }
+        // If this session is already assigned to an admin, forward user's messages to admin
+        try {
+            String sid = message == null ? null : message.getSessionId();
+            String raw = message == null || message.getText() == null ? "" : message.getText();
+            if (sid != null && registry.isAssigned(sid)) {
+                // ignore empty initial greeting when assigned
+                if (raw.trim().isEmpty()) return;
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("sessionId", sid);
+                payload.put("adminId", null);
+                payload.put("text", raw);
+                payload.put("timestamp", Instant.now().toEpochMilli());
+                messagingTemplate.convertAndSend("/topic/admin.session." + sid, payload);
+                return;
+            }
+        } catch (Exception ex) {
+            System.err.println("Error forwarding message to admin: " + ex.getMessage());
+        }
         ChatResponse response;
 
         String rawText = message.getText();
