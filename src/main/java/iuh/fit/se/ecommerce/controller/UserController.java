@@ -34,8 +34,11 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<UserResponse> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
         UserResponse resp = userService.getByEmail(userDetails.getUsername());
+        if (resp.isBanned()) {
+            return ResponseEntity.status(403).body(Map.of("message", "Tài khoản của bạn đã bị chặn"));
+        }
         return ResponseEntity.ok(resp);
     }
 }

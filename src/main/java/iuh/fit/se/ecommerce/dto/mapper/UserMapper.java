@@ -15,6 +15,7 @@ public interface UserMapper {
     User toEntity(RegisterRequest req);
 
     @Mapping(target = "avatar", source = "avatar")
+    @Mapping(target = "banned", source = "banned")
     UserResponse toResponse(User user);
 
     @Named("toLocalDate")
