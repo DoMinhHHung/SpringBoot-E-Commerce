@@ -1,9 +1,11 @@
 package iuh.fit.se.ecommerce.service.impl;
 
 import iuh.fit.se.ecommerce.entity.User;
+import iuh.fit.se.ecommerce.entity.Permission;
 import iuh.fit.se.ecommerce.repository.PermissionRepository;
 import iuh.fit.se.ecommerce.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,7 +15,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
@@ -22,8 +26,16 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.info("CustomUserDetailsService: Loading user by username: {}", username);
+
         User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + username));
+                .orElseThrow(() -> {
+                    log.error("CustomUserDetailsService: User not found with email: {}", username);
+                    return new UsernameNotFoundException("User not found with email: " + username);
+                });
+
+        log.info("CustomUserDetailsService: User found - email={}, role={}, enabled={}",
+            user.getEmail(), user.getRole(), user.isEnabled());
 
         // Lấy permissions từ role của user
         Set<GrantedAuthority> authorities = new HashSet<>();
@@ -50,9 +62,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .password(password)
                 .authorities(authorities)
                 .disabled(!user.isEnabled())
-                // if user.isBanned() is true then accountLocked should be true to prevent login
-                .accountLocked(user.isBanned())
                 .accountExpired(false)
+                .accountLocked(false)
                 .credentialsExpired(false)
                 .build();
     }

@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/orders")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class AdminOrderController {
 
     private final OrderService orderService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('ORDER_VIEW')")
     public ResponseEntity<Page<OrderResponse>> getAllOrders(
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -36,12 +36,14 @@ public class AdminOrderController {
     }
 
     @GetMapping("/{orderCode}")
+    @PreAuthorize("hasAuthority('ORDER_VIEW')")
     public ResponseEntity<OrderDetailResponse> getOrderDetail(@PathVariable Long orderCode) {
         OrderDetailResponse orderDetail = orderService.getOrderDetailForAdmin(orderCode);
         return ResponseEntity.ok(orderDetail);
     }
 
     @PutMapping("/{orderCode}/status")
+    @PreAuthorize("hasAuthority('ORDER_UPDATE')")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long orderCode,
             @Valid @RequestBody OrderUpdateRequest request

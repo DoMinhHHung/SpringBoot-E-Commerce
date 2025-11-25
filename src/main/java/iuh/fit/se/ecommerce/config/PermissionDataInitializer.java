@@ -6,6 +6,7 @@ import iuh.fit.se.ecommerce.entity.enums.Role;
 import iuh.fit.se.ecommerce.repository.PermissionRepository;
 import iuh.fit.se.ecommerce.repository.RolePermissionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -14,9 +15,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Order(1) // Run after DataInitializer
+@Order(1)
 public class PermissionDataInitializer implements CommandLineRunner {
     
     private final PermissionRepository permissionRepository;
@@ -24,39 +26,29 @@ public class PermissionDataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // 1. Tạo Permissions
         createPermissions();
         
-        // 2. Gán permissions cho ADMIN role
         assignPermissionsToAdmin();
         
-        // 3. Gán permissions cho EDITOR role (có thể chỉnh sửa products, promotions)
         assignPermissionsToEditor();
-        
-        // 4. USER role không có permissions đặc biệt (chỉ xem)
     }
 
     private void createPermissions() {
-        // Product permissions
         createPermissionIfNotExists("PRODUCT_CREATE", "Create Product", "PRODUCT", "CREATE");
         createPermissionIfNotExists("PRODUCT_UPDATE", "Update Product", "PRODUCT", "UPDATE");
         createPermissionIfNotExists("PRODUCT_DELETE", "Delete Product", "PRODUCT", "DELETE");
         createPermissionIfNotExists("PRODUCT_VIEW", "View Product", "PRODUCT", "VIEW");
         
-        // Order permissions
         createPermissionIfNotExists("ORDER_VIEW", "View Orders", "ORDER", "VIEW");
         createPermissionIfNotExists("ORDER_UPDATE", "Update Order Status", "ORDER", "UPDATE");
         
-        // Transaction permissions
         createPermissionIfNotExists("TRANSACTION_VIEW", "View Transactions", "TRANSACTION", "VIEW");
         createPermissionIfNotExists("TRANSACTION_SUMMARY", "View Transaction Summary", "TRANSACTION", "SUMMARY");
         
-        // Promotion permissions
         createPermissionIfNotExists("PROMOTION_CREATE", "Create Promotion", "PROMOTION", "CREATE");
         createPermissionIfNotExists("PROMOTION_UPDATE", "Update Promotion", "PROMOTION", "UPDATE");
         createPermissionIfNotExists("PROMOTION_DELETE", "Delete Promotion", "PROMOTION", "DELETE");
         
-        // Support permissions
         createPermissionIfNotExists("SUPPORT_VIEW_PENDING", "View Pending Support", "SUPPORT", "VIEW_PENDING");
         createPermissionIfNotExists("SUPPORT_JOIN", "Join Support Session", "SUPPORT", "JOIN");
         createPermissionIfNotExists("SUPPORT_SEND", "Send Support Message", "SUPPORT", "SEND");
@@ -77,8 +69,11 @@ public class PermissionDataInitializer implements CommandLineRunner {
     }
 
     private void assignPermissionsToAdmin() {
-        // ADMIN có tất cả permissions
         Set<Permission> allPermissions = new HashSet<>(permissionRepository.findAll());
+        log.info("PermissionDataInitializer: Found {} total permissions", allPermissions.size());
+        
+        int assignedCount = 0;
+        int existingCount = 0;
         
         for (Permission permission : allPermissions) {
             if (!rolePermissionRepository.existsByRoleAndPermission(Role.ADMIN, permission)) {
@@ -87,12 +82,20 @@ public class PermissionDataInitializer implements CommandLineRunner {
                         .permission(permission)
                         .build();
                 rolePermissionRepository.save(rolePermission);
+                assignedCount++;
+                log.debug("PermissionDataInitializer: Assigned permission {} to ADMIN role", permission.getCode());
+            } else {
+                existingCount++;
             }
         }
+        
+        log.info("PermissionDataInitializer: ADMIN role - {} new permissions assigned, {} already existed", 
+            assignedCount, existingCount);
+        log.info("PermissionDataInitializer: ADMIN role now has {} total permissions", 
+            rolePermissionRepository.findByRole(Role.ADMIN).size());
     }
 
     private void assignPermissionsToEditor() {
-        // EDITOR có quyền quản lý products và promotions
         Set<String> editorPermissionCodes = Set.of(
                 "PRODUCT_CREATE", "PRODUCT_UPDATE", "PRODUCT_DELETE", "PRODUCT_VIEW",
                 "PROMOTION_CREATE", "PROMOTION_UPDATE", "PROMOTION_DELETE"
@@ -102,6 +105,11 @@ public class PermissionDataInitializer implements CommandLineRunner {
                 .filter(p -> editorPermissionCodes.contains(p.getCode()))
                 .collect(Collectors.toSet());
         
+        log.info("PermissionDataInitializer: Found {} permissions for EDITOR role", editorPermissions.size());
+        
+        int assignedCount = 0;
+        int existingCount = 0;
+        
         for (Permission permission : editorPermissions) {
             if (!rolePermissionRepository.existsByRoleAndPermission(Role.EDITOR, permission)) {
                 RolePermission rolePermission = RolePermission.builder()
@@ -109,8 +117,17 @@ public class PermissionDataInitializer implements CommandLineRunner {
                         .permission(permission)
                         .build();
                 rolePermissionRepository.save(rolePermission);
+                assignedCount++;
+                log.debug("PermissionDataInitializer: Assigned permission {} to EDITOR role", permission.getCode());
+            } else {
+                existingCount++;
             }
         }
+        
+        log.info("PermissionDataInitializer: EDITOR role - {} new permissions assigned, {} already existed", 
+            assignedCount, existingCount);
+        log.info("PermissionDataInitializer: EDITOR role now has {} total permissions", 
+            rolePermissionRepository.findByRole(Role.EDITOR).size());
     }
 }
 
