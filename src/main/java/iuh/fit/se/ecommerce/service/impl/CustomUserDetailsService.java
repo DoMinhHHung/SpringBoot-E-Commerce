@@ -84,9 +84,11 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .username(user.getEmail())
                 .password(password)
                 .authorities(authorities)
+                .disabled(!user.isEnabled())
+                // if user.isBanned() is true then accountLocked should be true to prevent login
+                .accountLocked(user.isBanned())
                 .disabled(isDisabled)
                 .accountExpired(false)
-                .accountLocked(false)
                 .credentialsExpired(false)
                 .build();
         

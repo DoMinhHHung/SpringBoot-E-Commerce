@@ -58,6 +58,14 @@ class ApiClient {
 
     async handleResponse(response) {
         if (!response.ok) {
+            try {
+                if (response.status === 403) {
+                    try { this.clearAuth(); } catch (e) {}
+                    window.location.href = '/banned.html';
+                    return null;
+                }
+            } catch (e) {}
+
             let errorObj = { message: response.statusText || 'An error occurred' };
             try {
                 const text = await response.text();
@@ -66,6 +74,18 @@ class ApiClient {
                 }
             } catch (e) {
             }
+
+            try {
+                if (response.status === 403) {
+                    const msg = (errorObj && errorObj.message) ? errorObj.message.toString().toLowerCase() : '';
+                    if (msg.includes('bị chặn') || msg.includes('blocked') || msg.includes('banned')) {
+                        this.clearAuth();
+                        window.location.href = '/banned.html';
+                        return null;
+                    }
+                }
+            } catch (e) {}
+
             const err = new Error(errorObj.message || `HTTP error! status: ${response.status}`);
             err.status = response.status;
             throw err;
@@ -100,7 +120,6 @@ class ApiClient {
 
             if (error && error.status === 401) {
                 console.warn('apiClient.request: received 401 for', url, 'attempting refresh if possible');
-                 // Try to refresh token
                  const refreshToken = this.getRefreshToken();
                  if (refreshToken) {
                      try {
@@ -288,10 +307,24 @@ class ApiClient {
 
     // User APIs
     async getProfile() {
-        return this.request('/users/profile', {
+        const resp = await this.request('/users/profile', {
             method: 'GET',
             noAuthRedirect: true
         });
+        // if server returned HTML (e.g., login page) or a string, treat as unauthenticated or banned
+        try {
+            if (!resp) return null;
+            if (typeof resp === 'string') {
+                const s = resp.trim().toLowerCase();
+                if (s.startsWith('<!doctype') || s.startsWith('<html')) {
+                    // clear auth and redirect to login
+                    try { this.clearAuth(); } catch (e) {}
+                    window.location.href = '/login.html';
+                    return null;
+                }
+            }
+        } catch (e) {}
+        return resp;
     }
 
     async getMyPermissions() {

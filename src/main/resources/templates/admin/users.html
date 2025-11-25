@@ -148,14 +148,41 @@
                             <span class="badge ${user.enabled ? 'bg-success' : 'bg-danger'}">
                                 ${user.enabled ? 'Kích hoạt' : 'Chưa kích hoạt'}
                             </span>
+                            ${user.banned ? '<span class="badge bg-warning text-dark ms-1">Bị chặn</span>' : ''}
                         </td>
                         <td>
                             <a href="/admin/permissions.html" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-shield-lock"></i> Phân quyền
                             </a>
+                            <button class="btn btn-sm ms-1 ${user.banned ? 'btn-outline-success' : 'btn-outline-danger'} toggle-ban-btn" data-user-id="${user.id}">
+                                <i class="bi ${user.banned ? 'bi-unlock' : 'bi-slash-circle'}"></i> ${user.banned ? 'Mở chặn' : 'Chặn'}
+                            </button>
                         </td>
                     </tr>
                 `).join('');
+
+                // attach handlers
+                document.querySelectorAll('.toggle-ban-btn').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const userId = this.getAttribute('data-user-id');
+                        try {
+                            if (this.textContent.trim().includes('Mở chặn')) {
+                                await apiClient.request(`/admin/users/${userId}/unban`, { method: 'POST' });
+                                showAlert('Mở chặn người dùng thành công', 'success');
+                            } else {
+                                // prompt reason
+                                const reason = prompt('Lý do chặn (tùy chọn):');
+                                await apiClient.request(`/admin/users/${userId}/ban?reason=` + encodeURIComponent(reason || ''), { method: 'POST' });
+                                showAlert('Chặn người dùng thành công', 'success');
+                            }
+                            // reload users
+                            await loadUsers();
+                        } catch (e) {
+                            console.error(e);
+                            showAlert('Lỗi khi thay đổi trạng thái chặn: ' + (e.message || e), 'error');
+                        }
+                    });
+                });
             }
             
             await loadUsers();

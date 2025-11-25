@@ -12,6 +12,7 @@ import iuh.fit.se.ecommerce.entity.enums.Role;
 import iuh.fit.se.ecommerce.exception.AppException;
 import iuh.fit.se.ecommerce.exception.ErrorCode;
 import iuh.fit.se.ecommerce.repository.UserRepository;
+import iuh.fit.se.ecommerce.service.interfaces.EmailService;
 import iuh.fit.se.ecommerce.service.interfaces.PermissionService;
 import iuh.fit.se.ecommerce.service.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final PermissionService permissionService;
     private final PermissionMapper permissionMapper;
+    private final EmailService emailService;
 
 
     @Override
@@ -131,5 +133,44 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         user.setRole(role);
         userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void banUser(Long userId, Long adminId, String reason) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (user.isBanned()) return;
+        user.setBanned(true);
+        userRepository.save(user);
+
+        try {
+            String subject = "[E-Commerce] Tài khoản của bạn đã bị chặn";
+            String body = "Xin chào " + (user.getFullName() == null ? "người dùng" : user.getFullName()) + ",\n\n"
+                    + "Tài khoản của bạn đã bị chặn bởi quản trị viên." + (reason != null && !reason.isBlank() ? " Lý do: " + reason : "")
+                    + "\n\nNếu bạn cho rằng đây là sai lầm, vui lòng liên hệ hỗ trợ.";
+            emailService.sendEmail(user.getEmail(), subject, body);
+        } catch (Exception ex) {
+            System.err.println("Failed to send ban email: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unbanUser(Long userId, Long adminId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        if (!user.isBanned()) return; // already not banned
+        user.setBanned(false);
+        userRepository.save(user);
+
+        try {
+            String subject = "[E-Commerce] Tài khoản của bạn đã được mở lại";
+            String body = "Xin chào " + (user.getFullName() == null ? "người dùng" : user.getFullName()) + ",\n\n"
+                    + "Tài khoản của bạn đã được mở lại bởi quản trị viên.";
+            emailService.sendEmail(user.getEmail(), subject, body);
+        } catch (Exception ex) {
+            System.err.println("Failed to send unban email: " + ex.getMessage());
+        }
     }
 }
