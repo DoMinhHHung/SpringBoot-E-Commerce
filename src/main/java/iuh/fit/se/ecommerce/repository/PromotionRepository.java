@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface PromotionRepository extends JpaRepository<Promotion, Long> {
-    List<Promotion> findByStartDateBeforeAndEndDateAfter(LocalDate now1, LocalDate now2);
+    List<Promotion> findByStartDateLessThanEqualAndEndDateGreaterThanEqual(LocalDate start, LocalDate end);
 }

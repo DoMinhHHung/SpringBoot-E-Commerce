@@ -101,7 +101,7 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public List<PromotionResponse> getActivePromotions() {
         LocalDate now = LocalDate.now();
-        return promotionRepository.findByStartDateBeforeAndEndDateAfter(now, now).stream()
+        return promotionRepository.findByStartDateLessThanEqualAndEndDateGreaterThanEqual(now, now).stream()
                 .map(PromotionMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -110,7 +110,7 @@ public class PromotionServiceImpl implements PromotionService {
     public List<PromotionResponse> getExpiredPromotions() {
         LocalDate now = LocalDate.now();
         return promotionRepository.findAll().stream()
-                .filter(p -> p.getEndDate().isBefore(now))
+                .filter(p -> p.getEndDate() != null && p.getEndDate().isBefore(now))
                 .map(PromotionMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -119,7 +119,7 @@ public class PromotionServiceImpl implements PromotionService {
     public List<PromotionResponse> getUpcomingPromotions() {
         LocalDate now = LocalDate.now();
         return promotionRepository.findAll().stream()
-                .filter(p -> p.getStartDate().isAfter(now))
+                .filter(p -> p.getStartDate() != null && p.getStartDate().isAfter(now))
                 .map(PromotionMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -127,10 +127,12 @@ public class PromotionServiceImpl implements PromotionService {
     @Override
     public List<ProductResponse> getProductsByActivePromotion(Long promotionId) {
         Promotion promotion = promotionRepository.findById(promotionId)
-                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Không tìm thấy mã khuyễn mãi"));
+                .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Không tìm thấy mã khuyến mãi"));
 
         LocalDate now = LocalDate.now();
-        if (promotion.getStartDate().isAfter(now) || promotion.getEndDate().isBefore(now)) {
+        // If either date is null or outside range, promotion is not active
+        if (promotion.getStartDate() == null || promotion.getEndDate() == null
+                || promotion.getStartDate().isAfter(now) || promotion.getEndDate().isBefore(now)) {
             throw new AppException(ErrorCode.BAD_REQUEST, "Mã khuyến mãi chưa được kích hoạt");
         }
 
