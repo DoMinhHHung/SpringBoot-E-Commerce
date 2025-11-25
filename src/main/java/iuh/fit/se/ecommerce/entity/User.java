@@ -43,6 +43,7 @@ public class User {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
+    @Column(length = 50)
     private Role role = Role.USER;
 
     private boolean enabled = false;

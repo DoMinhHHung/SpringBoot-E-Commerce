@@ -2,7 +2,11 @@ package iuh.fit.se.ecommerce.controller;
 
 import iuh.fit.se.ecommerce.dto.request.ChangePasswordRequest;
 import iuh.fit.se.ecommerce.dto.request.UpdateProfileRequest;
+import iuh.fit.se.ecommerce.dto.response.PermissionResponse;
 import iuh.fit.se.ecommerce.dto.response.UserResponse;
+import iuh.fit.se.ecommerce.exception.AppException;
+import iuh.fit.se.ecommerce.exception.ErrorCode;
+import iuh.fit.se.ecommerce.repository.UserRepository;
 import iuh.fit.se.ecommerce.service.interfaces.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,12 +16,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(@AuthenticationPrincipal UserDetails userDetails,
@@ -40,5 +46,13 @@ public class UserController {
             return ResponseEntity.status(403).body(Map.of("message", "Tài khoản của bạn đã bị chặn"));
         }
         return ResponseEntity.ok(resp);
+    }
+
+    @GetMapping("/permissions")
+    public ResponseEntity<Set<PermissionResponse>> getMyPermissions(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        var user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        return ResponseEntity.ok(userService.getUserPermissions(user.getId()));
     }
 }

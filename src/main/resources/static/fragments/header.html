@@ -26,224 +26,140 @@
 
 <!-- Navbar Main -->
 <nav class="navbar navbar-expand-lg navbar-main">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="/index.html">E-COMMERCE</a>
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#navbarNav"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="/index.html">Trang chủ</a>
-        </li>
-        <li class="nav-item dropdown">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            data-bs-toggle="dropdown"
-          >
-            Sản phẩm
-          </a>
-          <ul class="dropdown-menu">
-            <li>
-              <a class="dropdown-item" href="/index.html?type=PC">PC Gaming</a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="/index.html?type=LAPTOP">Laptop</a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="/index.html?type=KEYBOARD"
-                >Bàn phím</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/index.html?type=MOUSE">Chuột</a>
-            </li>
-            <li>
-              <a class="dropdown-item" href="/index.html?type=MONITOR"
-                >Màn hình</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/index.html?type=HEADPHONE"
-                >Tai nghe</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/index.html?type=ACCESSORY"
-                >Phụ kiện</a
-              >
-            </li>
-          </ul>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/promotions.html">Khuyến mãi</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/profile.html">Tài khoản</a>
-        </li>
-        <!-- Admin Menu (hidden by default; shown via JS when role === 'ADMIN') -->
-        <li id="admin-menu" class="nav-item dropdown d-none">
-          <a
-            class="nav-link dropdown-toggle"
-            href="#"
-            role="button"
-            data-bs-toggle="dropdown"
-          >
-            Admin
-          </a>
-          <ul class="dropdown-menu">
-            <li>
-              <a class="dropdown-item" href="/admin/dashboard.html"
-                >Dashboard</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/products.html"
-                >Quản lý sản phẩm</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/promotions.html"
-                >Quản lý khuyến mãi</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/users.html"
-                >Quản lý người dùng</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/permissions.html"
-                >Quản lý phân quyền</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/orders.html"
-                >Quản lý đơn hàng</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/transactions.html"
-                >Lịch sử giao dịch</a
-              >
-            </li>
-            <li>
-              <a class="dropdown-item" href="/admin/support.html"
-                >Hỗ trợ trực tuyến</a
-              >
-            </li>
-          </ul>
-        </li>
-      </ul>
-      <div class="search-box me-3">
-        <input
-          type="text"
-          class="form-control"
-          id="search-input"
-          placeholder="Tìm kiếm sản phẩm..."
-        />
-        <button type="button" onclick="handleSearch()">
-          <i class="bi bi-search"></i>
-        </button>
-      </div>
-      <a href="#" class="cart-icon me-3" onclick="showCart()">
-        <i class="bi bi-cart3"></i>
-        <span class="badge" id="cart-badge">0</span>
-      </a>
-      <!-- Notification bell -->
-      <div class="notification-bell me-3" id="notification-bell-container">
-        <a
-          href="#"
-          id="notification-bell"
-          class="me-2"
-          onclick="toggleNotificationDropdown(event)"
-        >
-          <i
-            class="bi bi-bell"
-            style="font-size: 1.25rem; position: relative"
-          ></i>
-          <span
-            class="badge bg-danger"
-            id="notification-badge"
-            style="position: relative; top: -10px; left: -8px"
-            >0</span
-          >
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/index.html">
+            <img src="/logo/logo_main.png" alt="Logo" class="logo-img">
         </a>
-        <div
-          id="notification-dropdown"
-          class="notification-dropdown"
-          style="
-            display: none;
-            position: absolute;
-            right: 10px;
-            top: 60px;
-            z-index: 1050;
-            width: 320px;
-          "
-        >
-          <div class="card">
-            <div
-              class="card-header d-flex justify-content-between align-items-center"
-            >
-              <strong>Thông báo</strong>
-              <button class="btn btn-sm btn-link" id="mark-all-read">
-                Đánh dấu đã đọc
-              </button>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/index.html">Trang chủ</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Sản phẩm
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/index.html?type=PC">PC Gaming</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=LAPTOP">Laptop</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=KEYBOARD">Bàn phím</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=MOUSE">Chuột</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=MONITOR">Màn hình</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=HEADPHONE">Tai nghe</a></li>
+                        <li><a class="dropdown-item" href="/index.html?type=ACCESSORY">Phụ kiện</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/promotions.html">Khuyến mãi</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/profile.html">Tài khoản</a>
+                </li>
+                <!-- Admin Menu (hidden by default; shown via JS when role === 'ADMIN') -->
+                <li id="admin-menu" class="nav-item dropdown d-none">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        Admin
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/admin/dashboard.html">Dashboard</a></li>
+                        <li><a class="dropdown-item" href="/admin/products.html">Quản lý sản phẩm</a></li>
+                        <li><a class="dropdown-item" href="/admin/promotions.html">Quản lý khuyến mãi</a></li>
+                        <li><a class="dropdown-item" href="/admin/users.html">Quản lý người dùng</a></li>
+                        <li><a class="dropdown-item" href="/admin/permissions.html">Quản lý phân quyền</a></li>
+                        <li><a class="dropdown-item" href="/admin/orders.html">Quản lý đơn hàng</a></li>
+                        <li><a class="dropdown-item" href="/admin/transactions.html">Lịch sử giao dịch</a></li>
+                        <li><a class="dropdown-item" href="/admin/support.html">Hỗ trợ trực tuyến</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="search-box me-3">
+                <input type="text" class="form-control" id="search-input" placeholder="Tìm kiếm sản phẩm...">
+                <button type="button" onclick="handleSearch()"><i class="bi bi-search"></i></button>
             </div>
-            <ul
-              class="list-group list-group-flush"
-              id="notification-list"
-              style="max-height: 320px; overflow: auto"
-            ></ul>
-            <div class="card-footer text-center">
-              <a href="/notifications.html">Xem tất cả</a>
+            <a href="#" class="cart-icon me-3" onclick="showCart()">
+                <i class="bi bi-cart3"></i>
+                <span class="badge" id="cart-badge">0</span>
+            </a>
+            <!-- Notification bell -->
+            <div class="notification-bell me-3" id="notification-bell-container">
+                <a
+                href="#"
+                id="notification-bell"
+                class="me-2"
+                onclick="toggleNotificationDropdown(event)"
+                >
+                <i
+                    class="bi bi-bell"
+                    style="font-size: 1.25rem; position: relative"
+                ></i>
+                <span
+                    class="badge bg-danger"
+                    id="notification-badge"
+                    style="position: relative; top: -10px; left: -8px"
+                    >0</span
+                >
+                </a>
+                <div
+                id="notification-dropdown"
+                class="notification-dropdown"
+                style="
+                    display: none;
+                    position: absolute;
+                    right: 10px;
+                    top: 60px;
+                    z-index: 1050;
+                    width: 320px;
+                "
+                >
+                <div class="card">
+                    <div
+                    class="card-header d-flex justify-content-between align-items-center"
+                    >
+                    <strong>Thông báo</strong>
+                    <button class="btn btn-sm btn-link" id="mark-all-read">
+                        Đánh dấu đã đọc
+                    </button>
+                    </div>
+                    <ul
+                    class="list-group list-group-flush"
+                    id="notification-list"
+                    style="max-height: 320px; overflow: auto"
+                    ></ul>
+                    <div class="card-footer text-center">
+                    <a href="/notifications.html">Xem tất cả</a>
+                    </div>
+                </div>
+                </div>
             </div>
-          </div>
+            <!-- User Avatar Dropdown -->
+            <div id="user-avatar-dropdown" class="user-avatar-dropdown d-none">
+                <div class="user-avatar-wrapper" id="user-avatar-wrapper">
+                    <img src="" alt="User Avatar" id="user-avatar-img" class="user-avatar-img">
+                </div>
+                <div class="user-dropdown-menu" id="user-dropdown-menu">
+                    <a href="/profile.html" class="dropdown-item">
+                        <i class="bi bi-person"></i> Thông tin người dùng
+                    </a>
+                    <a href="/admin/dashboard.html" class="dropdown-item d-none" id="admin-menu-item">
+                        <i class="bi bi-gear"></i> Quản lý
+                    </a>
+                    <a href="/admin/dashboard.html" class="dropdown-item d-none" id="editor-menu-item">
+                        <i class="bi bi-pencil-square"></i> Editor
+                    </a>
+                    <a href="#" class="dropdown-item" onclick="showOrders(); return false;">
+                        <i class="bi bi-box-seam"></i> Tra cứu đơn hàng
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="#" class="dropdown-item" onclick="logout(); return false;">
+                        <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                    </a>
+                </div>
+            </div>
         </div>
-      </div>
-      <!-- User Avatar Dropdown -->
-      <div id="user-avatar-dropdown" class="user-avatar-dropdown d-none">
-        <div class="user-avatar-wrapper" id="user-avatar-wrapper">
-          <img
-            src=""
-            alt="User Avatar"
-            id="user-avatar-img"
-            class="user-avatar-img"
-          />
-        </div>
-        <div class="user-dropdown-menu" id="user-dropdown-menu">
-          <a href="/profile.html" class="dropdown-item">
-            <i class="bi bi-person"></i> Thông tin người dùng
-          </a>
-          <a
-            href="/admin/dashboard.html"
-            class="dropdown-item d-none"
-            id="admin-menu-item"
-          >
-            <i class="bi bi-gear"></i> Quản lý
-          </a>
-          <a
-            href="#"
-            class="dropdown-item"
-            onclick="showOrders(); return false;"
-          >
-            <i class="bi bi-box-seam"></i> Tra cứu đơn hàng
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item" onclick="logout(); return false;">
-            <i class="bi bi-box-arrow-right"></i> Đăng xuất
-          </a>
-        </div>
-      </div>
     </div>
-  </div>
 </nav>
 
 <!-- Fixed Category Menu Button -->

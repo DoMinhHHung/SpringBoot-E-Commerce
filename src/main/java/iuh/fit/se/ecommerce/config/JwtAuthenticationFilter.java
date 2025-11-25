@@ -55,11 +55,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             log.info("Received JWT token (len={})", token.length());
 
-            if (jwtTokenProvider.validateToken(token)
-                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+            boolean isValidToken = jwtTokenProvider.validateToken(token);
+            boolean hasExistingAuth = SecurityContextHolder.getContext().getAuthentication() != null;
+            
+            log.info("JWT token validation: valid={}, hasExistingAuth={}", isValidToken, hasExistingAuth);
 
+            if (isValidToken && !hasExistingAuth) {
                 String email = jwtTokenProvider.getEmailFromToken(token);
+                log.info("JWT token valid, loading user details for email: {}", email);
+                
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                
+                log.info("User details loaded - username={}, authorities count={}, authorities={}", 
+                    userDetails.getUsername(), 
+                    userDetails.getAuthorities().size(),
+                    userDetails.getAuthorities());
 
                 // If account is locked (banned), reject with 403
                 try {
@@ -85,7 +95,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("JWT authenticated for user: {}", email);
+                log.info("JWT authenticated successfully for user: {} with authorities: {}", 
+                    email, userDetails.getAuthorities());
+            } else {
+                if (!isValidToken) {
+                    log.warn("JWT token validation failed for request: {}", request.getRequestURI());
+                }
+                if (hasExistingAuth) {
+                    log.debug("User already authenticated, skipping JWT processing");
+                }
             }
 
         } catch (Exception e) {
