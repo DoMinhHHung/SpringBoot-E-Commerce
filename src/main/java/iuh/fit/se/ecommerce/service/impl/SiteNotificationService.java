@@ -1,8 +1,9 @@
 package iuh.fit.se.ecommerce.service.impl;
 
 import iuh.fit.se.ecommerce.entity.NotificationEntity;
-import iuh.fit.se.ecommerce.repository.NotificationRepository;
+import iuh.fit.se.ecommerce.repository.SiteNotificationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +13,10 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SiteNotificationService {
 
-    private final NotificationRepository notificationRepository;
+    private final SiteNotificationRepository notificationRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     public NotificationEntity saveAndBroadcast(String type,
@@ -32,7 +34,9 @@ public class SiteNotificationService {
                 .timestamp(timestampMillis != null ? Instant.ofEpochMilli(timestampMillis) : Instant.now())
                 .readFlag(false)
                 .build();
-        NotificationEntity saved = notificationRepository.save(entity);
+        // use raw CrudRepository to avoid generic inference issues from conflicting Notification repo types
+        NotificationEntity saved = (NotificationEntity) ((org.springframework.data.repository.CrudRepository) notificationRepository).save(entity);
+        log.info("SiteNotification saved id={} type={} title={}", saved.getId(), saved.getType(), saved.getTitle());
         broadcastEntity(saved);
         return saved;
     }
@@ -51,8 +55,10 @@ public class SiteNotificationService {
             payload.put("timestamp",
                     saved.getTimestamp() == null ? System.currentTimeMillis() : saved.getTimestamp().toEpochMilli());
             payload.put("read", saved.getReadFlag());
+            log.info("Broadcasting site notification id={} topic=/topic/site.notifications payload={}", saved.getId(), payload);
             messagingTemplate.convertAndSend("/topic/site.notifications", payload);
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            log.error("Error broadcasting site notification: {}", ex.getMessage(), ex);
         }
     }
 }

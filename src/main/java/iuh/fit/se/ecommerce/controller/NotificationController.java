@@ -1,88 +1,70 @@
 package iuh.fit.se.ecommerce.controller;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import iuh.fit.se.ecommerce.dto.NotificationDTO;
+import iuh.fit.se.ecommerce.entity.User;
+import iuh.fit.se.ecommerce.repository.UserRepository;
+import iuh.fit.se.ecommerce.service.interfaces.NotificationService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import iuh.fit.se.ecommerce.entity.NotificationEntity;
-import iuh.fit.se.ecommerce.repository.NotificationRepository;
-import iuh.fit.se.ecommerce.service.impl.SiteNotificationService;
-
+import java.security.Principal;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
-@RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationRepository notificationRepository;
-    private final SiteNotificationService siteNotificationService;
+    private final NotificationService service;
+    private final UserRepository userRepository;
 
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class NotificationDto {
-        private String id;
-        private String type; // product|promotion|info
-        private String title;
-        private String message;
-        private String url;
-        private Long productId;
-        private Long timestamp;
-        private Boolean read;
-    }
-
-    @PostMapping("/broadcast")
-    public NotificationDto broadcast(@RequestBody NotificationDto dto) {
-        if (dto == null)
-            return null;
-        NotificationEntity saved = siteNotificationService.saveAndBroadcast(
-                dto.getType(),
-                dto.getTitle(),
-                dto.getMessage(),
-                dto.getUrl(),
-                dto.getProductId(),
-                dto.getTimestamp());
-        if (saved != null) {
-            dto.setId(String.valueOf(saved.getId()));
-            dto.setTimestamp(saved.getTimestamp() == null ? dto.getTimestamp() : saved.getTimestamp().toEpochMilli());
-            dto.setRead(false);
-        }
-        return dto;
+    public NotificationController(NotificationService service, UserRepository userRepository) {
+        this.service = service;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
-    public List<NotificationDto> listRecent() {
-        List<NotificationEntity> list = notificationRepository.findTop50ByOrderByTimestampDesc();
-        return list.stream().map(e -> new NotificationDto(
-                String.valueOf(e.getId()),
-                e.getType(),
-                e.getTitle(),
-                e.getMessage(),
-                e.getUrl(),
-                e.getProductId(),
-                e.getTimestamp() == null ? null : e.getTimestamp().toEpochMilli(),
-                e.getReadFlag() == null ? false : e.getReadFlag())).collect(Collectors.toList());
+    public ResponseEntity<?> rootNotifications() {
+        return ResponseEntity.badRequest().body(Map.of("error", "Missing userId. Use /api/notifications/{userId} or /api/notifications/me"));
     }
 
-    @PutMapping("/{id}/read")
-    public NotificationDto markRead(@PathVariable Long id) {
-        NotificationEntity e = notificationRepository.findById(id).orElse(null);
-        if (e == null)
-            return null;
-        e.setReadFlag(true);
-        notificationRepository.save(e);
-        return new NotificationDto(String.valueOf(e.getId()), e.getType(), e.getTitle(), e.getMessage(), e.getUrl(),
-                e.getProductId(), e.getTimestamp() == null ? null : e.getTimestamp().toEpochMilli(), e.getReadFlag());
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyNotifications(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthenticated"));
+        }
+        String email = principal.getName();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
+        List<NotificationDTO> list = service.getNotifications(user.getId());
+        return ResponseEntity.ok(list);
     }
 
-    @PutMapping("/read-all")
-    public void markAllRead() {
-        List<NotificationEntity> list = notificationRepository.findTop50ByOrderByTimestampDesc();
-        list.forEach(n -> n.setReadFlag(true));
-        notificationRepository.saveAll(list);
+    @GetMapping("/{userId}")
+    public List<NotificationDTO> getNotifications(@PathVariable Long userId) {
+        return service.getNotifications(userId);
+    }
+
+    @GetMapping("/me/unreadCount")
+    public ResponseEntity<?> getMyUnreadCount(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthenticated"));
+        }
+        String email = principal.getName();
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
+        long c = service.countUnread(user.getId());
+        return ResponseEntity.ok(Map.of("unreadCount", c));
+    }
+
+    @GetMapping("/{userId}/unreadCount")
+    public long getUnreadCount(@PathVariable Long userId) {
+        return service.countUnread(userId);
+    }
+
+    @PostMapping("/markRead/{id}")
+    public void markRead(@PathVariable Long id) {
+        service.markRead(id);
     }
 }
