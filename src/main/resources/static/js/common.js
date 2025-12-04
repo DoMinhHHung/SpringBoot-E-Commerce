@@ -43,7 +43,6 @@ function loadFooter() {
     })
     .catch((error) => {
       console.error("Error loading footer:", error);
-      // Fallback: create simple footer
       createSimpleFooter();
     });
 }

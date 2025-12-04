@@ -2,11 +2,8 @@ package iuh.fit.se.ecommerce.controller;
 
 
 import iuh.fit.se.ecommerce.dto.request.AddItemRequest;
-import iuh.fit.se.ecommerce.dto.request.RemoveItemRequest;
 import iuh.fit.se.ecommerce.dto.response.CartResponse;
-import iuh.fit.se.ecommerce.entity.User;
 import iuh.fit.se.ecommerce.service.interfaces.CartService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -54,5 +51,3 @@ public class CartController {
         cartService.clearCart(userId);
     }
 }
-
-

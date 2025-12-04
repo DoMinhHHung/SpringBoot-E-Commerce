@@ -97,11 +97,13 @@
             try {
                 await apiClient.login(email, password);
                 showAlert('Đăng nhập thành công!', 'success');
-                
+
                 // Get user profile
                 const user = await apiClient.getProfile();
+                // If profile is null, apiClient likely redirected (e.g. banned) — stop further actions
+                if (!user) return;
                 apiClient.setUser(user);
-                
+
                 // Redirect
                 const urlParams = new URLSearchParams(window.location.search);
                 const redirect = urlParams.get('redirect') || '/index.html';
@@ -123,4 +125,3 @@
     </script>
 </body>
 </html>
-

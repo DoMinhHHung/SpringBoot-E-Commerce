@@ -1,4 +1,21 @@
 <!-- Header Top -->
+<script>
+// Fallback toggle function to avoid ReferenceError if notifications.js isn't loaded yet
+window.toggleNotificationDropdown = window.toggleNotificationDropdown || function (event) {
+    if (event && event.preventDefault) event.preventDefault();
+    const dropdown = document.getElementById('notification-dropdown') || document.getElementById('notif-dropdown');
+    if (!dropdown) return;
+    const isVisible = dropdown.style.display === 'block' || dropdown.classList.contains('show');
+    if (isVisible) {
+        dropdown.style.display = 'none';
+        dropdown.classList.remove('show');
+    } else {
+        dropdown.style.display = 'block';
+        dropdown.classList.add('show');
+    }
+};
+</script>
+
 <div class="header-top">
   <div class="container">
     <div class="row align-items-center">

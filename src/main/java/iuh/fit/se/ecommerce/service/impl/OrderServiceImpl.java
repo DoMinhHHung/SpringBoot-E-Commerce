@@ -7,7 +7,6 @@ import iuh.fit.se.ecommerce.dto.response.OrderItemResponse;
 import iuh.fit.se.ecommerce.dto.response.OrderResponse;
 import iuh.fit.se.ecommerce.entity.*;
 import iuh.fit.se.ecommerce.entity.enums.OrderStatus;
-import iuh.fit.se.ecommerce.entity.enums.PaymentStatus;
 import iuh.fit.se.ecommerce.exception.AppException;
 import iuh.fit.se.ecommerce.exception.ErrorCode;
 import iuh.fit.se.ecommerce.repository.*;
@@ -36,6 +35,7 @@ public class OrderServiceImpl implements OrderService {
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
+    private final OrderStatusPublisher orderStatusPublisher;
 
     @Override
     @Transactional
@@ -159,6 +159,13 @@ public class OrderServiceImpl implements OrderService {
         Order confirmedOrder = orderRepository.save(order);
         log.info("Confirmed order: {}", orderCode);
 
+        // publish notification about status change
+        try {
+            orderStatusPublisher.publish(confirmedOrder.getOrderCode(), confirmedOrder.getUser().getId(), OrderStatus.CONFIRMED.name());
+        } catch (Exception ex) {
+            log.warn("Failed to publish order status notification: {}", ex.getMessage());
+        }
+
         return confirmedOrder;
     }
 
@@ -253,6 +260,13 @@ public class OrderServiceImpl implements OrderService {
 
         Order updatedOrder = orderRepository.save(order);
         log.info("Updated order {} status from {} to {}", orderCode, currentStatus, newStatus);
+
+        // publish notification about status change
+        try {
+            orderStatusPublisher.publish(updatedOrder.getOrderCode(), updatedOrder.getUser().getId(), newStatus.name());
+        } catch (Exception ex) {
+            log.warn("Failed to publish order status notification: {}", ex.getMessage());
+        }
 
         return mapToOrderResponse(updatedOrder);
     }
@@ -408,4 +422,3 @@ public class OrderServiceImpl implements OrderService {
         return timestamp % 10000000000L;
     }
 }
-

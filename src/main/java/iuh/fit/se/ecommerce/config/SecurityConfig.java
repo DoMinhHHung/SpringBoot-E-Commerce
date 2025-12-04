@@ -90,7 +90,10 @@ public class SecurityConfig {
                         // Promotions: allow GET to public
                         .requestMatchers(HttpMethod.GET, "/api/promotions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/promotions").permitAll()
-                        
+
+                        // Site-wide public notifications (e.g., new product announcements)
+                        .requestMatchers(HttpMethod.GET, "/api/site-notifications", "/api/site-notifications/**").permitAll()
+
                         // Payment endpoints (authenticated)
                         .requestMatchers(HttpMethod.POST, "/api/payments/create").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/payments/status/**").authenticated()

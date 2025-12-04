@@ -79,32 +79,83 @@
             const emptyRefreshBtn = document.getElementById('empty-refresh');
             const markAllBtn = document.getElementById('mark-all-notifications');
 
+            async function getCurrentUserId() {
+                // prefer apiClient cached user
+                try {
+                    if (window.apiClient && typeof apiClient.getUser === 'function') {
+                        const u = apiClient.getUser();
+                        console.debug('getCurrentUserId: cached user from localStorage', u);
+                        if (u && u.id) return u.id;
+                    }
+                } catch (e) { console.warn('getCurrentUserId: error reading cached user', e); }
+                // fallback to profile request via apiClient.getProfile()
+                try {
+                    if (window.apiClient && typeof apiClient.getProfile === 'function') {
+                        const profile = await apiClient.getProfile();
+                        console.debug('getCurrentUserId: profile from apiClient.getProfile()', profile);
+                        if (profile && profile.id) {
+                            apiClient.setUser && apiClient.setUser(profile);
+                            return profile.id;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('getCurrentUserId: apiClient.getProfile failed', e);
+                }
+                return null;
+            }
+
             async function fetchNotifications() {
                 showState('loading');
                 try {
-                    const headers = {};
-                    try {
-                        const token = apiClient && typeof apiClient.getAuthToken === 'function'
-                            ? apiClient.getAuthToken()
-                            : null;
-                        if (token) headers['Authorization'] = 'Bearer ' + token;
-                    } catch (e) {}
-
-                    const response = await fetch('/api/notifications', {
-                        credentials: 'same-origin',
-                        headers
-                    });
-
-                    const contentType = (response.headers.get('content-type') || '').toLowerCase();
-                    if (!response.ok || !contentType.includes('application/json')) {
-                        const body = await response.text();
-                        const isLogin = body && body.toLowerCase().includes('đăng nhập');
-                        throw new Error(isLogin ? 'Vui lòng đăng nhập để xem thông báo.' : 'Không thể tải danh sách thông báo.');
+                    let data = null;
+                    const userId = await getCurrentUserId();
+                    if (userId) {
+                        data = await apiClient.request(`/notifications/${encodeURIComponent(userId)}`, { method: 'GET' });
+                    } else {
+                        // fallback to /api/notifications/me which uses Principal on server
+                        data = await apiClient.request('/notifications/me', { method: 'GET' });
                     }
 
-                    const data = await response.json();
-                    renderNotifications(Array.isArray(data) ? data : []);
+                    // Ensure both user-specific notifications and public site notifications are shown
+                    let userNotifs = Array.isArray(data) ? data : [];
+                    let siteNotifs = [];
+                    try {
+                        // site notifications are public and don't require auth
+                        siteNotifs = await apiClient.request('/site-notifications', { method: 'GET', skipAuth: true });
+                        if (!Array.isArray(siteNotifs)) siteNotifs = [];
+                    } catch (e) {
+                        // ignore site fetch errors
+                        console.warn('Failed to fetch site notifications', e);
+                        siteNotifs = [];
+                    }
+
+                    // normalize and merge, dedupe by id or refId
+                    const map = new Map();
+                    const pushNormalized = (it) => {
+                        if (!it) return;
+                        const id = it.id || ('site-' + (it.productId || it.refId || Math.random()));
+                        if (map.has(id)) return;
+                        // normalize shape to expected fields: id,title,message,read,createdAt,type,refId
+                        const normalized = {
+                            id: it.id || id,
+                            title: it.title || it.type || 'Thông báo',
+                            message: it.message || '',
+                            read: typeof it.read !== 'undefined' ? it.read : (it.readFlag || false),
+                            createdAt: it.createdAt || (it.timestamp ? new Date(it.timestamp).toISOString() : new Date().toISOString()),
+                            type: (it.type || (it.url ? 'SITE' : null) || 'SITE').toUpperCase(),
+                            refId: it.refId || it.productId || null,
+                            url: it.url || null
+                        };
+                        map.set(id, normalized);
+                    };
+
+                    userNotifs.forEach(pushNormalized);
+                    siteNotifs.forEach(pushNormalized);
+
+                    const merged = Array.from(map.values()).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    renderNotifications(merged);
                 } catch (err) {
+                    console.error('fetchNotifications error', err);
                     showState('error', err.message || 'Đã xảy ra lỗi, vui lòng thử lại.');
                 }
             }
@@ -116,8 +167,8 @@
                 }
 
                 items.sort((a, b) => {
-                    const tsA = a.timestamp || 0;
-                    const tsB = b.timestamp || 0;
+                    const tsA = a.createdAt ? new Date(a.createdAt).getTime() : (a.timestamp || 0);
+                    const tsB = b.createdAt ? new Date(b.createdAt).getTime() : (b.timestamp || 0);
                     return tsB - tsA;
                 });
 
@@ -129,6 +180,22 @@
                 showState('list');
             }
 
+            window.formatTime = function (ts) {
+                if (!ts) return '';
+                try {
+                    const d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
+                    return d.toLocaleString('vi-VN');
+                } catch (e) { return String(ts); }
+            };
+
+            window.escapeHtml = function (s) {
+                return String(s || '').replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; });
+            };
+
+            window.escapeAttribute = function (s) {
+                return window.escapeHtml(s).replace(/"/g, '&quot;');
+            };
+
             function buildNotificationItem(item) {
                 const li = document.createElement('li');
                 li.className = 'list-group-item d-flex justify-content-between align-items-start';
@@ -137,13 +204,13 @@
                     li.classList.add('list-group-item-secondary');
                 }
 
-                const timestamp = formatTime(item.timestamp);
+                const timestamp = formatTime(item.createdAt ? new Date(item.createdAt).getTime() : (item.timestamp || 0));
                 li.innerHTML = `
                     <div class="ms-2 me-auto">
                         <div class="fw-bold">${escapeHtml(item.title || 'Thông báo')}</div>
                         <div class="text-muted small mb-2">${escapeHtml(item.message || '')}</div>
                         <div class="d-flex gap-2 flex-wrap">
-                            ${item.url ? `<a href="${escapeAttribute(item.url)}" class="btn btn-sm btn-outline-primary">
+                            ${item.refId || item.url ? `<a href="${escapeAttribute(item.url || ('/notifications.html'))}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-box-arrow-up-right"></i> Xem chi tiết
                             </a>` : ''}
                             <button class="btn btn-sm btn-outline-secondary mark-read-btn">
@@ -166,8 +233,8 @@
             async function markNotificationRead(id) {
                 if (!id) return;
                 try {
-                    await fetch('/api/notifications/' + encodeURIComponent(id) + '/read', {
-                        method: 'PUT',
+                    await fetch('/api/notifications/markRead/' + encodeURIComponent(id), {
+                        method: 'POST',
                         credentials: 'same-origin'
                     });
                 } catch (e) {
@@ -177,10 +244,8 @@
 
             async function markAllNotifications() {
                 try {
-                    await fetch('/api/notifications/read-all', {
-                        method: 'PUT',
-                        credentials: 'same-origin'
-                    });
+                    const ids = Array.from(document.querySelectorAll('#notifications-list .list-group-item')).map(li => li.dataset.id).filter(Boolean);
+                    await Promise.all(ids.map(id => markNotificationRead(id)));
                     document.querySelectorAll('#notifications-list .list-group-item').forEach(li => {
                         li.classList.add('list-group-item-secondary');
                     });
@@ -202,39 +267,13 @@
                 }
             }
 
-            function formatTime(ts) {
-                if (!ts) return '';
-                try {
-                    const date = new Date(ts);
-                    return date.toLocaleString('vi-VN');
-                } catch (e) {
-                    return ts;
-                }
-            }
-
-            function escapeHtml(str) {
-                return String(str || '').replace(/[&<>"']/g, (m) => ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#39;'
-                }[m]));
-            }
-
-            function escapeAttribute(str) {
-                return escapeHtml(str).replace(/"/g, '&quot;');
-            }
-
             reloadBtn.addEventListener('click', fetchNotifications);
             emptyRefreshBtn.addEventListener('click', fetchNotifications);
-            markAllBtn.addEventListener('click', async () => {
-                await markAllNotifications();
-            });
+            markAllBtn.addEventListener('click', markAllNotifications);
 
+            // initial load
             fetchNotifications();
-        });
-    </script>
-</body>
-</html>
-
+         });
+     </script>
+ </body>
+ </html>

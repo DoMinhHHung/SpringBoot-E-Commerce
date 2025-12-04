@@ -22,4 +22,8 @@ public interface UserService {
     List<RolePermissionResponse> getUserRoles(Long userId);
     Set<PermissionResponse> getUserPermissions(Long userId);
     void assignRoleToUser(Long userId, Role role);
+
+    // New: ban/unban
+    void banUser(Long userId, Long adminId, String reason);
+    void unbanUser(Long userId, Long adminId);
 }

@@ -48,6 +48,9 @@ public class User {
 
     private boolean enabled = false;
 
+    @Builder.Default
+    private boolean banned = false;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     @JsonManagedReference

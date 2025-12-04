@@ -20,4 +20,5 @@ public class UserResponse {
     private AuthProvider authProvider;
     private Role role;
     private boolean enabled;
+    private boolean banned;
 }

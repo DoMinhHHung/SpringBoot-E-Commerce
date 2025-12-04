@@ -6,6 +6,7 @@ import iuh.fit.se.ecommerce.dto.response.PromotionResponse;
 import iuh.fit.se.ecommerce.service.interfaces.PromotionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -60,6 +61,7 @@ public class PromotionController {
     }
 
     @GetMapping("/{id}/products")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ProductResponse>> getProductsByActivePromotion(@PathVariable Long id) {
         return ResponseEntity.ok(promotionService.getProductsByActivePromotion(id));
     }
