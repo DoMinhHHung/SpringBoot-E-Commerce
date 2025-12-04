@@ -198,6 +198,20 @@ class ApiClient {
         });
     }
 
+    async searchAutocomplete(query, limit = 5) {
+        return this.request(`/products/search/autocomplete?q=${encodeURIComponent(query)}&limit=${limit}`, {
+            method: 'GET',
+            skipAuth: true
+        });
+    }
+
+    async searchProducts(query, page = 0, size = 20, sort = 'default') {
+        return this.request(`/products/search?q=${encodeURIComponent(query)}&page=${page}&size=${size}&sort=${sort}`, {
+            method: 'GET',
+            skipAuth: true
+        });
+    }
+
     // Admin/Product modification APIs (use FormData because backend expects @ModelAttribute with files)
     async adminCreateProduct(formData) {
         const url = `${this.baseURL}/products`;

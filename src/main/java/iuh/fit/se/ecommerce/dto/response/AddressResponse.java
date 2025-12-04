@@ -11,14 +11,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AddressResponse {
     private Long id;
+    private String label;
     private String receiverName;
     private String receiverPhone;
     private String receiverEmail;
     private String country;
     private String province;
-    private String district;
     private String ward;
     private String addressDetail;
     private boolean isDefault;
+    private Double latitude;   // Vĩ độ (có thể null)
+    private Double longitude;  // Kinh độ (có thể null)
 }
 

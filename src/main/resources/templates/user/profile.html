@@ -34,6 +34,11 @@
                                     <i class="bi bi-lock"></i> Đổi mật khẩu
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="pill" href="#addresses" id="addresses-tab">
+                                    <i class="bi bi-geo-alt"></i> Địa chỉ giao hàng
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -138,6 +143,23 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Addresses Tab -->
+                        <div class="tab-pane fade" id="addresses">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Địa chỉ giao hàng</h5>
+                                    <button class="btn btn-primary btn-sm" onclick="showAddressModal()">
+                                        <i class="bi bi-plus-circle"></i> Thêm địa chỉ
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div id="addresses-list">
+                                        <!-- Addresses will be loaded here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -147,12 +169,21 @@
     <!-- Footer -->
     <div id="footer-container"></div>
 
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Common JS -->
     <script src="/js/common.js"></script>
     <!-- API Client -->
     <script src="/js/api.js"></script>
+    <!-- Map Picker -->
+    <script src="/js/map-picker.js"></script>
+    <!-- Address Form -->
+    <script src="/js/address-form.js"></script>
     <!-- Page Script -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -252,6 +283,109 @@
                 submitBtn.innerHTML = originalText;
             }
         });
+
+        // Address management functions
+        async function loadAddresses() {
+            try {
+                const response = await apiClient.request('/addresses', { method: 'GET' });
+                console.log('response address: ', response);
+                userAddresses = Array.isArray(response) ? response : [];
+                renderAddresses(userAddresses);
+            } catch (error) {
+                console.error('Error loading addresses:', error);
+                showAlert('Không thể tải danh sách địa chỉ: ' + error.message, 'error');
+                userAddresses = [];
+            }
+        }
+
+        function renderAddresses(addresses) {
+            const container = document.getElementById('addresses-list');
+            if (!container) return;
+            
+            if (!addresses || addresses.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3">Bạn chưa có địa chỉ nào</p>
+                        <button class="btn btn-primary" onclick="showAddressModal()">
+                            <i class="bi bi-plus-circle"></i> Thêm địa chỉ đầu tiên
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = addresses.map(addr => `
+                <div class="card mb-3 address-item ${addr.isDefault ? 'border-warning border-2 bg-warning bg-opacity-10' : ''}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    ${addr.isDefault ? '<i class="bi bi-star-fill text-warning me-2 fs-5" title="Địa chỉ mặc định"></i>' : ''}
+                                    <strong>${addr.receiverName}</strong>
+                                    ${addr.label ? `<span class="badge bg-secondary ms-2">${addr.label}</span>` : ''}
+                                    ${addr.isDefault ? '<span class="badge bg-warning text-dark ms-2"><i class="bi bi-star-fill"></i> Mặc định</span>' : ''}
+                                </div>
+                                <p class="mb-1 text-muted">${addr.receiverPhone}</p>
+                                <p class="mb-0">${addr.addressDetail}, ${addr.ward}, ${addr.province}</p>
+                                ${addr.latitude && addr.longitude ? `
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt"></i> 
+                                        <a href="https://maps.google.com/?q=${addr.latitude},${addr.longitude}" 
+                                           target="_blank">Xem trên bản đồ</a>
+                                    </small>
+                                ` : ''}
+                            </div>
+                            <div class="ms-3">
+                                <button class="btn btn-sm btn-outline-primary" onclick="showAddressModal(${addr.id})">
+                                    <i class="bi bi-pencil"></i> Sửa
+                                </button>
+                                ${!addr.isDefault ? `
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="setDefaultAddress(${addr.id})">
+                                        Đặt mặc định
+                                    </button>
+                                ` : ''}
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${addr.id})">
+                                    <i class="bi bi-trash"></i> Xóa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function setDefaultAddress(addressId) {
+            try {
+                await apiClient.request(`/addresses/${addressId}/set-default`, { method: 'PUT' });
+                await loadAddresses();
+                showAlert('Đã đặt làm địa chỉ mặc định', 'success');
+            } catch (error) {
+                showAlert('Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteAddress(addressId) {
+            if (!confirm('Bạn có chắc muốn xóa địa chỉ này?')) return;
+            
+            try {
+                await apiClient.request(`/addresses/${addressId}`, { method: 'DELETE' });
+                await loadAddresses();
+                showAlert('Đã xóa địa chỉ', 'success');
+            } catch (error) {
+                showAlert('Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        // Load addresses when addresses tab is shown
+        document.getElementById('addresses-tab')?.addEventListener('shown.bs.tab', function() {
+            loadAddresses();
+        });
+
+        // Load addresses if hash is #addresses
+        if (window.location.hash === '#addresses') {
+            document.getElementById('addresses-tab')?.click();
+        }
     </script>
 </body>
 </html>

@@ -253,6 +253,9 @@ function initializeHeader() {
       badge.textContent = "0";
     }
   }
+  
+  // Initialize search autocomplete
+  initSearchAutocomplete();
 }
 
 function updateUserMenu() {
@@ -459,11 +462,173 @@ function showOrders() {
 function handleSearch() {
   const searchInput = document.getElementById("search-input");
   if (searchInput) {
-    const query = searchInput.value;
-    if (query.trim()) {
-      window.location.href = `/index.html?search=${encodeURIComponent(query)}`;
+    const query = searchInput.value.trim();
+    if (query) {
+      // Hide dropdown if open
+      hideSearchDropdown();
+      // Navigate to search results page
+      window.location.href = `/search-results.html?q=${encodeURIComponent(query)}`;
     }
   }
+}
+
+// Search Autocomplete Functions
+let searchTimeout = null;
+let searchDropdown = null;
+
+function initSearchAutocomplete() {
+    const searchInput = document.getElementById('search-input');
+    if (!searchInput) return;
+    
+    // Create dropdown container
+    createSearchDropdown();
+    
+    // Event listeners
+    searchInput.addEventListener('input', handleSearchInput);
+    searchInput.addEventListener('focus', handleSearchFocus);
+    searchInput.addEventListener('keydown', handleSearchKeydown);
+    
+    // Click outside to close dropdown
+    document.addEventListener('click', handleClickOutside);
+}
+
+function createSearchDropdown() {
+    const searchBox = document.querySelector('.search-box');
+    if (!searchBox || document.getElementById('search-dropdown')) return;
+    
+    searchDropdown = document.createElement('div');
+    searchDropdown.id = 'search-dropdown';
+    searchDropdown.className = 'search-dropdown';
+    searchBox.style.position = 'relative';
+    searchBox.appendChild(searchDropdown);
+}
+
+async function handleSearchInput(e) {
+    const query = e.target.value.trim();
+    
+    clearTimeout(searchTimeout);
+    
+    if (query.length < 2) {
+        hideSearchDropdown();
+        return;
+    }
+    
+    searchTimeout = setTimeout(async () => {
+        await loadSearchAutocomplete(query);
+    }, 300);
+}
+
+function handleSearchFocus(e) {
+    const query = e.target.value.trim();
+    if (query.length >= 2) {
+        loadSearchAutocomplete(query);
+    }
+}
+
+function handleSearchKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSearch();
+    } else if (e.key === 'Escape') {
+        hideSearchDropdown();
+    }
+}
+
+function handleClickOutside(e) {
+    const searchBox = document.querySelector('.search-box');
+    if (searchBox && !searchBox.contains(e.target)) {
+        hideSearchDropdown();
+    }
+}
+
+async function loadSearchAutocomplete(query) {
+    if (!searchDropdown) return;
+    
+    try {
+        const response = await apiClient.searchAutocomplete(query, 5);
+        const { products, totalCount } = response;
+        
+        displaySearchDropdown(products, totalCount, query);
+    } catch (error) {
+        console.error('Search autocomplete error:', error);
+        hideSearchDropdown();
+    }
+}
+
+function displaySearchDropdown(products, totalCount, query) {
+    if (!searchDropdown) return;
+    
+    if (products.length === 0 && totalCount === 0) {
+        searchDropdown.innerHTML = `
+            <div class="search-dropdown-empty">
+                <p class="text-muted p-3 mb-0">Không tìm thấy sản phẩm nào</p>
+            </div>
+        `;
+        searchDropdown.classList.add('show');
+        return;
+    }
+    
+    let html = '';
+    
+    // Display products (max 5)
+    products.forEach(product => {
+        const discountPercent = product.priceAfterDiscount && product.priceAfterDiscount < product.price
+            ? Math.round((1 - product.priceAfterDiscount / product.price) * 100)
+            : 0;
+        
+        // Get short description (first 80 characters)
+        const shortDesc = product.description 
+            ? (product.description.length > 80 ? product.description.substring(0, 80) + '...' : product.description)
+            : '';
+        
+        html += `
+            <div class="search-dropdown-item" onclick="navigateToProduct(${product.id})">
+                <img src="${product.mainImage}" alt="${product.name}" class="search-dropdown-item-image">
+                <div class="search-dropdown-item-content">
+                    ${product.brand ? `<div class="search-dropdown-item-brand">${product.brand}</div>` : ''}
+                    <div class="search-dropdown-item-name">${product.name}</div>
+                    ${shortDesc ? `<div class="search-dropdown-item-desc text-muted" style="font-size: 0.8rem; line-height: 1.3;">${shortDesc}</div>` : ''}
+                    <div class="search-dropdown-item-price">
+                        ${discountPercent > 0 ? `<span class="search-dropdown-item-discount">-${discountPercent}%</span>` : ''}
+                        ${product.priceAfterDiscount && product.priceAfterDiscount < product.price
+                            ? `<span class="price-old">${formatPrice(product.price)}</span>
+                               <span class="price-new">${formatPrice(product.priceAfterDiscount)}</span>`
+                            : `<span class="price-new">${formatPrice(product.price)}</span>`
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    // Show "View more" button if there are more products
+    const remainingCount = totalCount - products.length;
+    if (remainingCount > 0) {
+        html += `
+            <div class="search-dropdown-view-more" onclick="navigateToSearchResults('${query.replace(/'/g, "\\'")}')">
+                Xem thêm ${remainingCount} sản phẩm
+            </div>
+        `;
+    }
+    
+    searchDropdown.innerHTML = html;
+    searchDropdown.classList.add('show');
+}
+
+function hideSearchDropdown() {
+    if (searchDropdown) {
+        searchDropdown.classList.remove('show');
+    }
+}
+
+function navigateToProduct(productId) {
+    hideSearchDropdown();
+    window.location.href = `/product-detail.html?id=${productId}`;
+}
+
+function navigateToSearchResults(query) {
+    hideSearchDropdown();
+    window.location.href = `/search-results.html?q=${encodeURIComponent(query)}`;
 }
 
 function showLoginModal() {

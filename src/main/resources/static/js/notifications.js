@@ -16,14 +16,14 @@ function initializeNotifications() {
       try {
         if (!document.getElementById("notification-bell-container")) {
           const wrapper = document.createElement("div");
-          wrapper.className = "notification-bell me-3";
+          wrapper.className = "notification-bell-container me-3";
           wrapper.id = "notification-bell-container";
           wrapper.style.position = 'relative';
 
           wrapper.innerHTML = `
-            <a href="#" id="notification-bell" class="me-2">
-              <i class="bi bi-bell" style="font-size: 1.25rem; position: relative"></i>
-              <span class="badge bg-danger" id="notification-badge" style="position: relative; top: -10px; left: -8px">0</span>
+            <a href="#" id="notification-bell" class="notification-icon">
+              <i class="bi bi-bell"></i>
+              <span class="badge" id="notification-badge">0</span>
             </a>
             <div id="notification-dropdown" class="notification-dropdown" style="display:none; position:absolute; right:10px; top:40px; z-index:1050; width:320px;">
               <div class="card">
@@ -540,12 +540,12 @@ function ensureNotificationDropdown() {
     const container = document.getElementById('header-container') || document.querySelector('.navbar-main .container');
     wrapper = document.createElement('div');
     wrapper.id = 'notification-bell-container';
-    wrapper.className = 'notification-bell me-3';
+    wrapper.className = 'notification-bell-container me-3';
     wrapper.style.position = 'relative';
     wrapper.innerHTML = `
-      <a href="#" id="notification-bell" class="me-2">
-        <i class="bi bi-bell" style="font-size: 1.25rem; position: relative"></i>
-        <span class="badge bg-danger" id="notification-badge" style="position: relative; top: -10px; left: -8px">0</span>
+      <a href="#" id="notification-bell" class="notification-icon">
+        <i class="bi bi-bell"></i>
+        <span class="badge" id="notification-badge">0</span>
       </a>
       <div id="notification-dropdown" class="notification-dropdown" style="display:none; position:absolute; right:10px; top:40px; z-index:1050; width:320px;">
         <div class="card">

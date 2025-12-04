@@ -328,7 +328,6 @@ public class OrderServiceImpl implements OrderService {
                     .receiverEmail(null) // Address entity doesn't have email
                     .country("Vietnam")
                     .province(addr.getProvince())
-                    .district(addr.getDistrict())
                     .ward(addr.getWard())
                     .addressDetail(addr.getDetail())
                     .isDefault(addr.isDefault())

@@ -5,6 +5,7 @@ import iuh.fit.se.ecommerce.dto.response.ProductDetailResponse;
 import iuh.fit.se.ecommerce.dto.response.ProductResponse;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,5 +54,21 @@ public class ProductController {
     public ResponseEntity<List<ProductResponse>> getHotSaleProducts(
             @RequestParam(required = false, defaultValue = "6") int limit) {
         return ResponseEntity.ok(productService.getHotSaleProducts(limit));
+    }
+
+    @GetMapping("/search/autocomplete")
+    public ResponseEntity<Map<String, Object>> searchAutocomplete(
+            @RequestParam String q,
+            @RequestParam(required = false, defaultValue = "5") int limit) {
+        return ResponseEntity.ok(productService.searchAutocomplete(q, limit));
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<ProductResponse>> searchProducts(
+            @RequestParam String q,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "20") int size,
+            @RequestParam(required = false, defaultValue = "default") String sort) {
+        return ResponseEntity.ok(productService.searchProducts(q, page, size, sort));
     }
 }
