@@ -384,4 +384,61 @@ INSERT INTO product (name, brand, description, price, stock, main_image, product
 -- 7. This script creates comprehensive test data for all product types
 -- 8. Total products: ~150+ items across all categories
 -- =====================================================
+-- DỮ LIỆU DEMO THỐNG KÊ
+-- Chạy trên DB đang dùng cho dự án (MariaDB/MySQL)
 
+START TRANSACTION;
+
+-- Bật/tắt khóa ngoại tùy nhu cầu (mở comment nếu cần)
+-- SET FOREIGN_KEY_CHECKS = 0;
+
+-- 1) Thêm user demo (mật khẩu đã băm BCrypt cho chuỗi 'Password123!')
+-- Lưu ý: role = 'USER', enabled = 1 để tính “tài khoản mới đăng ký”
+INSERT INTO users (full_name, email, phone, password, avatar, gender, dob,
+                   auth_provider, role, enabled, created_at)
+VALUES
+    ('Nguyen Van A', 'user.a@example.com', '0900000001',
+     '$2a$10$DowSDw.pCh2.WBnpqWqfseGOSj9uQWGWpZJYG1ChcxrFAuo0xO0jy', NULL, 'M', '1995-01-01',
+     'LOCAL', 'USER', 1, NOW() - INTERVAL 1 DAY),
+    ('Tran Thi B', 'user.b@example.com', '0900000002',
+     '$2a$10$DowSDw.pCh2.WBnpqWqfseGOSj9uQWGWpZJYG1ChcxrFAuo0xO0jy', NULL, 'F', '1994-02-02',
+     'LOCAL', 'USER', 1, NOW() - INTERVAL 10 DAY),
+    ('Le Van C', 'user.c@example.com', '0900000003',
+     '$2a$10$DowSDw.pCh2.WBnpqWqfseGOSj9uQWGWpZJYG1ChcxrFAuo0xO0jy', NULL, 'M', '1990-03-03',
+     'LOCAL', 'USER', 1, NOW() - INTERVAL 80 DAY);
+
+-- 2) Thêm đơn hàng demo (status thuộc nhóm thành công để được tính doanh số)
+-- Chú ý: cập nhật product_id theo dữ liệu của bạn (ở đây dùng tạm 1,2,3,5,8)
+-- order_code phải unique
+INSERT INTO orders (order_code, user_id, status, subtotal, discount_amount, shipping_fee,
+                    total_amount, notes, created_at, updated_at)
+VALUES
+    (1700001001, 1, 'CONFIRMED', 32990000, 0, 0, 32990000, 'Đơn trong ngày',         NOW()                    , NOW()),
+    (1700001002, 1, 'DELIVERED', 21990000, 0, 0, 21990000, 'Đơn trong tuần',        NOW() - INTERVAL 3 DAY   , NOW() - INTERVAL 3 DAY),
+    (1700001003, 2, 'DELIVERED', 45990000, 0, 0, 45990000, 'Đơn trong tháng',       NOW() - INTERVAL 15 DAY  , NOW() - INTERVAL 15 DAY),
+    (1700001004, 3, 'SHIPPED',   26990000, 0, 0, 26990000, 'Đơn trong quý',         NOW() - INTERVAL 55 DAY  , NOW() - INTERVAL 55 DAY),
+    (1700001005, 2, 'PROCESSING',10990000, 0, 0, 10990000, 'Đơn trong năm',         NOW() - INTERVAL 200 DAY , NOW() - INTERVAL 200 DAY);
+
+-- 3) Thêm items cho từng đơn (cập nhật product_id/đơn giá cho khớp thực tế)
+-- Đơn 1: MacBook Air 14 (product_id=1)
+INSERT INTO order_items (order_id, product_id, quantity, unit_price, discount_amount, total_price)
+VALUES ( (SELECT id FROM orders WHERE order_code = 1700001001), 1, 1, 32990000, 0, 32990000);
+
+-- Đơn 2: ASUS TUF (product_id=5) x1
+INSERT INTO order_items (order_id, product_id, quantity, unit_price, discount_amount, total_price)
+VALUES ( (SELECT id FROM orders WHERE order_code = 1700001002), 5, 1, 21990000, 0, 21990000);
+
+-- Đơn 3: MacBook Pro 16 (product_id=2) x1
+INSERT INTO order_items (order_id, product_id, quantity, unit_price, discount_amount, total_price)
+VALUES ( (SELECT id FROM orders WHERE order_code = 1700001003), 2, 1, 45990000, 0, 45990000);
+
+-- Đơn 4: Acer Predator Helios (product_id=12) x1  (đổi ID nếu khác)
+INSERT INTO order_items (order_id, product_id, quantity, unit_price, discount_amount, total_price)
+VALUES ( (SELECT id FROM orders WHERE order_code = 1700001004), 12, 1, 26990000, 0, 26990000);
+
+-- Đơn 5: Acer Aspire 5 (product_id=13) x1  (đổi ID nếu khác)
+INSERT INTO order_items (order_id, product_id, quantity, unit_price, discount_amount, total_price)
+VALUES ( (SELECT id FROM orders WHERE order_code = 1700001005), 13, 1, 10990000, 0, 10990000);
+
+-- SET FOREIGN_KEY_CHECKS = 1;
+COMMIT;

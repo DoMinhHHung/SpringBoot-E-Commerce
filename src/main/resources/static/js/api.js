@@ -45,14 +45,14 @@ class ApiClient {
         const headers = {
             'Content-Type': 'application/json'
         };
-        
+
         if (includeAuth) {
             const token = this.getAuthToken();
             if (token) {
                 headers['Authorization'] = `Bearer ${token}`;
             }
         }
-        
+
         return headers;
     }
 
@@ -100,34 +100,34 @@ class ApiClient {
 
             if (error && error.status === 401) {
                 console.warn('apiClient.request: received 401 for', url, 'attempting refresh if possible');
-                 // Try to refresh token
-                 const refreshToken = this.getRefreshToken();
-                 if (refreshToken) {
-                     try {
-                         const refreshResponse = await fetch(`${this.baseURL}/auth/refresh-token?token=${refreshToken}`, {
-                             method: 'POST',
-                             headers: this.getHeaders(false)
-                         });
-                         const data = await this.handleResponse(refreshResponse);
-                         this.setAuthToken(data.accessToken);
-                         this.setRefreshToken(data.refreshToken);
+                // Try to refresh token
+                const refreshToken = this.getRefreshToken();
+                if (refreshToken) {
+                    try {
+                        const refreshResponse = await fetch(`${this.baseURL}/auth/refresh-token?token=${refreshToken}`, {
+                            method: 'POST',
+                            headers: this.getHeaders(false)
+                        });
+                        const data = await this.handleResponse(refreshResponse);
+                        this.setAuthToken(data.accessToken);
+                        this.setRefreshToken(data.refreshToken);
 
                         config.headers = this.getHeaders(true);
                         const retryResponse = await fetch(url, config);
                         return await this.handleResponse(retryResponse);
-                     } catch (refreshError) {
+                    } catch (refreshError) {
                         this.clearAuth();
                         throw refreshError;
-                     }
-                 } else {
+                    }
+                } else {
                     this.clearAuth();
                     throw error;
-                 }
-             }
-             console.warn('apiClient.request: throwing error for', url, error);
-             throw error;
-         }
-     }
+                }
+            }
+            console.warn('apiClient.request: throwing error for', url, error);
+            throw error;
+        }
+    }
 
     async login(email, password) {
         const response = await this.request('/auth/login', {
@@ -294,6 +294,12 @@ class ApiClient {
         });
     }
 
+    async getAdminStatistics(period = 'day') {
+        return this.request(`/admin/statistics?period=${period}`, {
+            method: 'GET'
+        });
+    }
+
     logout() {
         this.clearAuth();
         window.location.href = '/index.html';
@@ -330,7 +336,7 @@ function showAlert(message, type = 'info') {
         alertContainer.id = 'alert-container';
         document.body.appendChild(alertContainer);
     }
-    
+
     // Create alert element
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert alert-${type === 'error' ? 'danger' : type} alert-custom alert-dismissible fade show`;
@@ -338,10 +344,10 @@ function showAlert(message, type = 'info') {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     `;
-    
+
     // Append to alert container (shows from top to bottom)
     alertContainer.appendChild(alertDiv);
-    
+
     // Auto remove after 5 seconds
     setTimeout(() => {
         if (alertDiv.parentNode) {
