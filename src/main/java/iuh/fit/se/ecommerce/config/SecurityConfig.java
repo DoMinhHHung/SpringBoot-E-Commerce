@@ -63,6 +63,7 @@ public class SecurityConfig {
                                 "/profile.html",
                                 "/promotions.html",
                                 "/products.html",
+                                "/search-results.html",
                                 "/forgot-password.html",
                                 "/payment-success.html",
                                 "/payment-cancel.html",
@@ -96,6 +97,12 @@ public class SecurityConfig {
                         // Payment endpoints (authenticated)
                         .requestMatchers(HttpMethod.POST, "/api/payments/create").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/payments/status/**").authenticated()
+
+                        // Address endpoints (authenticated)
+                        .requestMatchers("/api/addresses/**").authenticated()
+                        
+                        // Geocoding endpoints (authenticated)
+                        .requestMatchers(HttpMethod.GET, "/api/geocoding/**").authenticated()
 
                         // Admin endpoints (require roles for page access)
                         .requestMatchers(HttpMethod.GET, "/admin/**").hasAnyRole("ADMIN", "EDITOR")

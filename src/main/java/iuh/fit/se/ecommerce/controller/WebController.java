@@ -46,6 +46,11 @@ public class WebController {
         return "products";
     }
 
+    @GetMapping("/search-results.html")
+    public String searchResults() {
+        return "search-results";
+    }
+
     @GetMapping("/oauth2/callback")
     public String oauth2Callback() {
         return "auth/oauth2-callback";

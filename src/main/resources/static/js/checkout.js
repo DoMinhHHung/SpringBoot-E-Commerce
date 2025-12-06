@@ -1,13 +1,11 @@
-// checkout.js - handles checkout page logic
+let cart = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
-    // Check if apiClient is available
     if (typeof apiClient === 'undefined') {
         console.error('apiClient not found. Make sure /js/api.js is loaded before /js/checkout.js');
         return;
     }
 
-    // Check authentication
     if (!apiClient.isAuthenticated()) {
         document.getElementById('login-banner').classList.remove('d-none');
         showAlert('Vui lòng đăng nhập để thanh toán', 'warning');
@@ -16,9 +14,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     let currentUser = apiClient.getUser();
     let userId = null;
-    let cart = null;
 
-    // Get user info
     if (currentUser && currentUser.id) {
         userId = currentUser.id;
     } else {
@@ -44,17 +40,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Load cart
     await loadCart(userId);
 
-    // Populate user info if available
     if (currentUser) {
         populateUserInfo(currentUser);
     }
 
-    // Setup event listeners
     setupEventListeners();
 });
+
 
 async function loadCart(userId) {
     try {
@@ -85,6 +79,7 @@ async function loadCart(userId) {
         }
     }
 }
+
 
 function renderCartItems(items) {
     const container = document.getElementById('cart-items-list');
@@ -136,14 +131,14 @@ function updateOrderSummary(cart) {
 }
 
 function populateUserInfo(user) {
+    if (user.email) {
+        document.getElementById('receiverEmail').value = user.email;
+    }
     if (user.fullName) {
         document.getElementById('receiverName').value = user.fullName;
     }
     if (user.phone) {
         document.getElementById('receiverPhone').value = user.phone;
-    }
-    if (user.email) {
-        document.getElementById('receiverEmail').value = user.email;
     }
 }
 
@@ -180,15 +175,38 @@ async function handlePlaceOrder() {
     btn.textContent = 'Đang xử lý...';
 
     try {
-        // Validate form
         if (!validateShippingForm()) {
             btn.disabled = false;
             btn.textContent = originalText;
             return;
         }
 
-        // Get selected payment method
         const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+        const addressData = {
+            receiverName: document.getElementById('receiverName').value.trim(),
+            receiverPhone: document.getElementById('receiverPhone').value.trim(),
+            province: document.getElementById('province').value.trim(),
+            ward: document.getElementById('ward').value.trim(),
+            detail: document.getElementById('addressDetail').value.trim(),
+            isDefault: false
+        };
+
+        let shippingAddressId = null;
+        
+        try {
+            const newAddress = await apiClient.request('/addresses', {
+                method: 'POST',
+                body: JSON.stringify(addressData)
+            });
+            shippingAddressId = newAddress.id;
+        } catch (error) {
+            console.error('Error creating address:', error);
+            showAlert('Cảnh báo: Không thể tạo địa chỉ. Vui lòng thử lại.', 'warning');
+            btn.disabled = false;
+            btn.textContent = originalText;
+            return;
+        }
 
         // Build payment request
         const paymentRequest = {
@@ -200,7 +218,7 @@ async function handlePlaceOrder() {
             })),
             paymentMethod: paymentMethod,
             notes: document.getElementById('orderNotes').value || null,
-            shippingAddressId: null // TODO: Save address and use ID
+            shippingAddressId: shippingAddressId
         };
 
         // Create payment
@@ -234,37 +252,52 @@ async function handlePlaceOrder() {
 }
 
 function validateShippingForm() {
-    const requiredFields = ['receiverName', 'receiverPhone', 'receiverEmail', 'addressDetail', 'province', 'district', 'ward'];
+    // Helper để validate field
+    const validateField = (fieldId, isRequired = true) => {
+        const field = document.getElementById(fieldId);
+        if (!field) return false;
+        
+        const value = field.value.trim();
+        if (isRequired && !value) {
+            field.classList.add('is-invalid');
+            return false;
+        }
+        field.classList.remove('is-invalid');
+        return true;
+    };
+    
+    // Validate thông tin người nhận và địa chỉ
+    const requiredFields = ['receiverName', 'receiverPhone', 'receiverEmail', 'addressDetail', 'ward', 'province'];
     let isValid = true;
 
     requiredFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (!field.value.trim()) {
-            field.classList.add('is-invalid');
+        if (!validateField(fieldId, true)) {
             isValid = false;
-        } else {
-            field.classList.remove('is-invalid');
         }
     });
 
     // Validate email format
-    const email = document.getElementById('receiverEmail').value;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (email && !emailRegex.test(email)) {
-        document.getElementById('receiverEmail').classList.add('is-invalid');
-        isValid = false;
+    const emailField = document.getElementById('receiverEmail');
+    if (emailField && emailField.value.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailField.value.trim())) {
+            emailField.classList.add('is-invalid');
+            isValid = false;
+        }
     }
 
     // Validate phone format (Vietnamese phone)
-    const phone = document.getElementById('receiverPhone').value;
-    const phoneRegex = /^(0|\+84)[3-9]\d{8}$/;
-    if (phone && !phoneRegex.test(phone.replace(/\s/g, ''))) {
-        document.getElementById('receiverPhone').classList.add('is-invalid');
-        isValid = false;
+    const phoneField = document.getElementById('receiverPhone');
+    if (phoneField && phoneField.value.trim()) {
+        const phoneRegex = /^(0|\+84)[3-9]\d{8}$/;
+        if (!phoneRegex.test(phoneField.value.replace(/\s/g, ''))) {
+            phoneField.classList.add('is-invalid');
+            isValid = false;
+        }
     }
 
     if (!isValid) {
-        showAlert('Vui lòng điền đầy đủ và đúng định dạng thông tin bắt buộc', 'error');
+        showAlert('Vui lòng điền đầy đủ và đúng định dạng thông tin giao hàng', 'error');
     }
 
     return isValid;

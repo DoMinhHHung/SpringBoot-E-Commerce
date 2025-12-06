@@ -134,7 +134,7 @@ function renderShippingAddress(address) {
         <p class="mb-1"><strong>${address.receiverName}</strong></p>
         <p class="mb-1">${address.receiverPhone}</p>
         <p class="mb-1">${address.addressDetail}</p>
-        <p class="mb-0">${address.ward}, ${address.district}, ${address.province}</p>
+        <p class="mb-0">${address.ward}, ${address.province}</p>
     `;
 }
 
