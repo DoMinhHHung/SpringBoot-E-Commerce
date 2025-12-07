@@ -15,6 +15,10 @@ public interface ProductService {
     ProductDetailResponse getProductById(Long id);
     List<ProductResponse> getAllProducts();
     List<ProductResponse> getProductsByType(String type);
+    List<ProductResponse> getProductsByTypeWithFilters(String type, String cpu, String screenSize,
+                                                         String switchType, String connection, String dpi,
+                                                         String resolution, String refreshRate, String usage,
+                                                         String accessoryType, String size, String typeFilter);
     List<ProductResponse> findByQuery(String query);
     List<ProductResponse> getHotSaleProducts(int limit);
     Map<String, Object> searchAutocomplete(String query, int limit);

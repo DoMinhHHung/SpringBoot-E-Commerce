@@ -945,12 +945,78 @@ function closeCategoryMenu() {
   if (btn) btn.classList.remove("active");
 }
 
-function navigateToCategory(type, brand = null) {
+// Map categorySubMenu section types to API filter parameter names
+const filterTypeMap = {
+  'brand': 'brand',
+  'chip': 'cpu',
+  'screen': 'screenSize',
+  'switch': 'switchType',
+  'connection': 'connection',
+  'dpi': 'dpi',
+  'resolution': 'resolution',
+  'refresh': 'refreshRate',
+  'usage': 'usage',
+  'pc-usage': 'usage',
+  'monitor-usage': 'usage',
+  'type': 'typeFilter',
+  'size': 'size',
+  'components': null, // PC components - handled differently
+  'monitor-brand': 'brand'
+};
+
+// Extract filter value from item name (e.g., "Laptop Core i5" -> "Core i5")
+function extractFilterValue(itemName, filterType) {
+  if (filterType === 'chip' || filterType === 'cpu') {
+    // Remove "Laptop" prefix if exists
+    return itemName.replace(/^Laptop\s+/i, '').trim();
+  }
+  if (filterType === 'screen') {
+    // Extract size (e.g., "Laptop 15.6 inch" -> "15.6 inch")
+    const match = itemName.match(/(\d+(?:\.\d+)?\s*inch)/i);
+    return match ? match[1] : itemName.replace(/^Laptop\s+/i, '').trim();
+  }
+  if (filterType === 'dpi') {
+    // Extract DPI range (e.g., "Dưới 8000 DPI" -> "8000")
+    const match = itemName.match(/(\d+)/);
+    return match ? match[1] : itemName;
+  }
+  if (filterType === 'refresh') {
+    // Extract Hz (e.g., "144Hz" -> "144Hz")
+    const match = itemName.match(/(\d+Hz)/i);
+    return match ? match[1] : itemName;
+  }
+  if (filterType === 'resolution') {
+    // Extract resolution (e.g., "Full HD (1920x1080)" -> "1920x1080")
+    const match = itemName.match(/\((\d+x\d+)\)/);
+    return match ? match[1] : itemName;
+  }
+  if (filterType === 'size') {
+    // Extract size (e.g., "27 inch" -> "27 inch")
+    const match = itemName.match(/(\d+(?:\.\d+)?\s*inch)/i);
+    return match ? match[1] : itemName;
+  }
+  // For other types, return as is
+  return itemName;
+}
+
+function navigateToCategory(type, filterValue = null, filterType = 'brand') {
   closeCategoryMenu();
   let url = `/products.html?type=${type}`;
-  if (brand) {
-    url += `&brand=${encodeURIComponent(brand)}`;
+  
+  if (filterValue) {
+    // Map filterType from categorySubMenu to API parameter name
+    const apiParamName = filterTypeMap[filterType] || filterType;
+    
+    // Extract actual filter value from item name
+    const extractedValue = extractFilterValue(filterValue, filterType);
+    
+    if (apiParamName === 'brand') {
+      url += `&brand=${encodeURIComponent(extractedValue)}`;
+    } else if (apiParamName) {
+      url += `&${apiParamName}=${encodeURIComponent(extractedValue)}`;
+    }
   }
+  
   window.location.href = url;
 }
 
@@ -974,20 +1040,6 @@ const categorySubMenus = {
           { name: "Masstel", icon: "bi-laptop" },
           { name: "Samsung", icon: "bi-laptop" },
           { name: "Microsoft", icon: "bi-laptop" },
-        ],
-      },
-      {
-        title: "Nhu cầu sử dụng",
-        type: "usage",
-        items: [
-          { name: "Văn phòng", icon: "bi-briefcase" },
-          { name: "Gaming", icon: "bi-controller" },
-          { name: "Mỏng nhẹ", icon: "bi-laptop" },
-          { name: "Đồ họa - kỹ thuật", icon: "bi-palette" },
-          { name: "Sinh viên", icon: "bi-mortarboard" },
-          { name: "Cảm ứng", icon: "bi-hand-index" },
-          { name: "Laptop AI", icon: "bi-cpu", badge: "Hot" },
-          { name: "Mac CTO", icon: "bi-gear" },
         ],
       },
       {
@@ -1033,16 +1085,6 @@ const categorySubMenus = {
   },
   PC: {
     sections: [
-      {
-        title: "Loại PC",
-        type: "pc-type",
-        items: [
-          { name: "Build PC", icon: "bi-tools" },
-          { name: "Cấu hình sẵn", icon: "bi-pc-display" },
-          { name: "All In One", icon: "bi-display" },
-          { name: "PC bộ", icon: "bi-cpu" },
-        ],
-      },
       {
         title: "Chọn PC theo nhu cầu",
         type: "pc-usage",
@@ -1094,26 +1136,6 @@ const categorySubMenus = {
           { name: "Lập trình", icon: "bi-code-square" },
           { name: "Màn hình di động", icon: "bi-display" },
           { name: "Arm màn hình", icon: "bi-display" },
-        ],
-      },
-      {
-        title: "Gaming Gear",
-        type: "gaming",
-        items: [
-          { name: "PlayStation", icon: "bi-controller" },
-          { name: "ROG Ally", icon: "bi-controller" },
-          { name: "Bàn phím Gaming", icon: "bi-keyboard" },
-          { name: "Chuột chơi game", icon: "bi-mouse" },
-          { name: "Tai nghe Gaming", icon: "bi-headphones" },
-          { name: "Tay cầm chơi Game", icon: "bi-controller" },
-        ],
-      },
-      {
-        title: "Thiết bị văn phòng",
-        type: "office",
-        items: [
-          { name: "Máy in", icon: "bi-printer" },
-          { name: "Phần mềm", icon: "bi-file-earmark-code" },
         ],
       },
     ],
@@ -1215,7 +1237,6 @@ const categorySubMenus = {
         items: [
           { name: "Gaming", icon: "bi-controller" },
           { name: "Văn phòng", icon: "bi-briefcase" },
-          { name: "Ergonomic", icon: "bi-hand-index" },
         ],
       },
       {
@@ -1281,8 +1302,8 @@ const categorySubMenus = {
         ],
       },
       {
-        title: "Nhu cầu sử dụng",
-        type: "usage",
+        title: "Loại",
+        type: "type",
         items: [
           { name: "Gaming", icon: "bi-controller" },
           { name: "Văn phòng", icon: "bi-briefcase" },
@@ -1427,6 +1448,7 @@ function showCategorySubMenu(category) {
   // Render sub-menu
   let html = "";
   subMenuData.sections.forEach((section) => {
+    const filterType = section.type || 'brand';
     html += `
             <div class="sub-menu-section">
                 <h6 class="sub-menu-title">${section.title}</h6>
@@ -1436,7 +1458,7 @@ function showCategorySubMenu(category) {
                         (item) => `
                         <div class="sub-menu-item" onclick="navigateToCategory('${category}', '${
                           item.name
-                        }')">
+                        }', '${filterType}')">
                             <i class="bi ${item.icon} sub-menu-icon"></i>
                             <span class="sub-menu-item-text">
                                 ${item.name}
