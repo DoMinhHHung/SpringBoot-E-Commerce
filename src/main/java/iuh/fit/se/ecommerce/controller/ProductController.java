@@ -46,7 +46,28 @@ public class ProductController {
     }
 
     @GetMapping("/type/{type}")
-    public ResponseEntity<List<ProductResponse>> getProductsByType(@PathVariable String type) {
+    public ResponseEntity<List<ProductResponse>> getProductsByType(
+            @PathVariable String type,
+            @RequestParam(required = false) String cpu,
+            @RequestParam(required = false) String screenSize,
+            @RequestParam(required = false) String switchType,
+            @RequestParam(required = false) String connection,
+            @RequestParam(required = false) String dpi,
+            @RequestParam(required = false) String resolution,
+            @RequestParam(required = false) String refreshRate,
+            @RequestParam(required = false) String usage,
+            @RequestParam(required = false) String accessoryType,
+            @RequestParam(required = false) String size,
+            @RequestParam(required = false) String typeFilter) {
+        // If any filter is provided, use the new method with filters
+        if (cpu != null || screenSize != null || switchType != null || connection != null ||
+            dpi != null || resolution != null || refreshRate != null || usage != null ||
+            accessoryType != null || size != null || typeFilter != null) {
+            return ResponseEntity.ok(productService.getProductsByTypeWithFilters(
+                    type, cpu, screenSize, switchType, connection, dpi, resolution,
+                    refreshRate, usage, accessoryType, size, typeFilter));
+        }
+        // Otherwise, use the original method
         return ResponseEntity.ok(productService.getProductsByType(type));
     }
 

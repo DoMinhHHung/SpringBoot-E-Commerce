@@ -108,6 +108,119 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    public List<ProductResponse> getProductsByTypeWithFilters(String type, String cpu, String screenSize,
+                                                               String switchType, String connection, String dpi,
+                                                               String resolution, String refreshRate, String usage,
+                                                               String accessoryType, String size, String typeFilter) {
+        ProductType productType;
+        try {
+            productType = ProductType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.BAD_REQUEST, "Loai sản phẩm không hợp lệ");
+        }
+        
+        List<Product> products = productRepository.findByProductType(productType);
+        
+        // Filter by CPU (for LAPTOP, PC)
+        if (cpu != null && !cpu.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "CPU", cpu))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Screen Size (for LAPTOP, MONITOR)
+        if (screenSize != null && !screenSize.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Screen Size", screenSize) || hasSpec(p, "Màn hình", screenSize))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Switch Type (for KEYBOARD)
+        if (switchType != null && !switchType.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Switch Type", switchType) || hasSpec(p, "Loại switch", switchType))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Connection (for KEYBOARD, MOUSE, HEADPHONE)
+        if (connection != null && !connection.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Connection", connection) || hasSpec(p, "Kết nối", connection))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by DPI (for MOUSE)
+        if (dpi != null && !dpi.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "DPI", dpi))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Resolution (for MONITOR)
+        if (resolution != null && !resolution.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Resolution", resolution) || hasSpec(p, "Độ phân giải", resolution))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Refresh Rate (for MONITOR)
+        if (refreshRate != null && !refreshRate.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Refresh Rate", refreshRate) || hasSpec(p, "Tần số quét", refreshRate))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Usage (for PC, HEADPHONE)
+        if (usage != null && !usage.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Usage", usage) || hasSpec(p, "Nhu cầu", usage) || 
+                               hasSpec(p, "Nhu cầu sử dụng", usage))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Accessory Type (for ACCESSORY)
+        if (accessoryType != null && !accessoryType.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Type", accessoryType) || hasSpec(p, "Loại phụ kiện", accessoryType))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Size (for KEYBOARD, MONITOR)
+        if (size != null && !size.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Size", size) || hasSpec(p, "Kích thước", size))
+                    .collect(Collectors.toList());
+        }
+        
+        // Filter by Type (for MOUSE, MONITOR, HEADPHONE)
+        if (typeFilter != null && !typeFilter.isBlank()) {
+            products = products.stream()
+                    .filter(p -> hasSpec(p, "Type", typeFilter) || hasSpec(p, "Loại", typeFilter))
+                    .collect(Collectors.toList());
+        }
+        
+        return products.stream()
+                .map(ProductMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+    
+    private boolean hasSpec(Product product, String specName, String specValue) {
+        if (product.getSpecifications() == null || product.getSpecifications().isEmpty()) {
+            return false;
+        }
+        String lowerSpecValue = specValue.toLowerCase();
+        return product.getSpecifications().stream()
+                .anyMatch(spec -> {
+                    String specNameLower = spec.getSpecName() != null ? spec.getSpecName().toLowerCase() : "";
+                    String specValueLower = spec.getSpecValue() != null ? spec.getSpecValue().toLowerCase() : "";
+                    return (specNameLower.contains(specName.toLowerCase()) || 
+                           specName.toLowerCase().contains(specNameLower)) &&
+                           (specValueLower.contains(lowerSpecValue) || 
+                            lowerSpecValue.contains(specValueLower));
+                });
+    }
+
+    @Override
     public List<ProductResponse> getHotSaleProducts(int limit) {
         List<Product> hotSaleProducts = productRepository.findHotSaleProducts();
         return hotSaleProducts.stream()

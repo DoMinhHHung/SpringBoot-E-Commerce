@@ -52,6 +52,8 @@ public class SecurityConfig {
                                 "/reset/**",
                                 "/css/**",
                                 "/js/**",
+                                "/logo/**",
+                                "/images/**",
                                 "/fragments/**",
                                 "/",
                                 "/index.html",

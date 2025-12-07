@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadProducts();
         loadBrands();
         updatePageTitle();
+        updateFilterSidebar();
     } else {
         showError('Vui lòng chọn loại sản phẩm');
     }
@@ -35,7 +36,42 @@ async function loadProducts() {
     if (emptyState) emptyState.classList.add('d-none');
     
     try {
-        allProducts = await apiClient.getProductsByType(currentType);
+        // Read filter parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const cpu = urlParams.get('cpu');
+        const screenSize = urlParams.get('screenSize');
+        const switchType = urlParams.get('switchType');
+        const connection = urlParams.get('connection');
+        const dpi = urlParams.get('dpi');
+        const resolution = urlParams.get('resolution');
+        const refreshRate = urlParams.get('refreshRate');
+        const usage = urlParams.get('usage');
+        const accessoryType = urlParams.get('accessoryType');
+        const size = urlParams.get('size');
+        const typeFilter = urlParams.get('typeFilter');
+        const brand = urlParams.get('brand');
+        
+        // Build query string with filters
+        let queryParams = `type=${currentType}`;
+        if (cpu) queryParams += `&cpu=${encodeURIComponent(cpu)}`;
+        if (screenSize) queryParams += `&screenSize=${encodeURIComponent(screenSize)}`;
+        if (switchType) queryParams += `&switchType=${encodeURIComponent(switchType)}`;
+        if (connection) queryParams += `&connection=${encodeURIComponent(connection)}`;
+        if (dpi) queryParams += `&dpi=${encodeURIComponent(dpi)}`;
+        if (resolution) queryParams += `&resolution=${encodeURIComponent(resolution)}`;
+        if (refreshRate) queryParams += `&refreshRate=${encodeURIComponent(refreshRate)}`;
+        if (usage) queryParams += `&usage=${encodeURIComponent(usage)}`;
+        if (accessoryType) queryParams += `&accessoryType=${encodeURIComponent(accessoryType)}`;
+        if (size) queryParams += `&size=${encodeURIComponent(size)}`;
+        if (typeFilter) queryParams += `&typeFilter=${encodeURIComponent(typeFilter)}`;
+        if (brand) queryParams += `&brand=${encodeURIComponent(brand)}`;
+        
+        // Call API with filters
+        allProducts = await apiClient.request(`/products/type/${currentType}?${queryParams}`, {
+            method: 'GET',
+            skipAuth: true
+        });
+        
         applyFilters();
     } catch (error) {
         console.error('Error loading products:', error);
@@ -49,6 +85,18 @@ async function loadProducts() {
 async function loadBrands() {
     const brandFilter = document.getElementById('brand-filter');
     if (!brandFilter) return;
+    
+    // Hide brand filter for PC category
+    const brandSection = brandFilter.closest('.filter-section');
+    if (currentType === 'PC' && brandSection) {
+        brandSection.style.display = 'none';
+        return;
+    }
+    
+    // Show brand filter for other categories
+    if (brandSection) {
+        brandSection.style.display = 'block';
+    }
     
     try {
         // Get unique brands from products
@@ -70,6 +118,16 @@ async function loadBrands() {
     } catch (error) {
         console.error('Error loading brands:', error);
         brandFilter.innerHTML = '<p class="text-muted small">Không thể tải thương hiệu</p>';
+    }
+}
+
+function updateFilterSidebar() {
+    // Hide brand filter section for PC
+    const brandSection = document.querySelector('#brand-filter')?.closest('.filter-section');
+    if (currentType === 'PC' && brandSection) {
+        brandSection.style.display = 'none';
+    } else if (brandSection) {
+        brandSection.style.display = 'block';
     }
 }
 
