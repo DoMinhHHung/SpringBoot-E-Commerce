@@ -59,22 +59,39 @@
                                        placeholder="Nhập email" required>
                             </div>
                             
-                            <h6 class="mb-3 mt-4">Địa chỉ giao hàng</h6>
-                            <div class="mb-3">
-                                <label for="addressDetail" class="form-label">Địa chỉ chi tiết <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="addressDetail" name="addressDetail" 
-                                       placeholder="Số nhà, tên đường" required>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="ward" class="form-label">Phường/Xã <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="ward" name="ward" 
-                                           placeholder="Nhập phường/xã" required>
+                            <div class="mb-3 mt-4">
+                                <label class="form-label">Chọn địa chỉ giao hàng</label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="window.location.href='/profile.html#addresses?returnTo=checkout'">
+                                        <i class="bi bi-plus-circle"></i> Thêm địa chỉ mới
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="toggle-address-form" onclick="toggleAddressForm()">
+                                        <i class="bi bi-pencil"></i> Nhập địa chỉ mới
+                                    </button>
                                 </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="province" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="province" name="province" 
-                                           placeholder="Nhập tỉnh/thành phố" required>
+                                
+                                <div id="saved-addresses-list" class="mb-3">
+                                </div>
+                                
+                                <div id="manual-address-form" class="d-none">
+                                    <h6 class="mb-3">Địa chỉ giao hàng</h6>
+                                    <div class="mb-3">
+                                        <label for="addressDetail" class="form-label">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="addressDetail" name="addressDetail" 
+                                               placeholder="Số nhà, tên đường" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="ward" class="form-label">Phường/Xã <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="ward" name="ward" 
+                                                   placeholder="Nhập phường/xã" required>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="province" class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="province" name="province" 
+                                                   placeholder="Nhập tỉnh/thành phố" required>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </form>

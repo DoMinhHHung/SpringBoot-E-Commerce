@@ -16,9 +16,11 @@ import iuh.fit.se.ecommerce.exception.ErrorCode;
 import iuh.fit.se.ecommerce.repository.OtpRepository;
 import iuh.fit.se.ecommerce.repository.UserRepository;
 import iuh.fit.se.ecommerce.repository.VerificationTokenRepository;
+import iuh.fit.se.ecommerce.event.UserRegisteredEvent;
 import iuh.fit.se.ecommerce.service.interfaces.AuthService;
 import iuh.fit.se.ecommerce.service.interfaces.EmailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -42,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final OtpRepository otpRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     @Override
@@ -54,6 +57,14 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(false);
         user = userRepository.save(user);
+
+        // Publish event for statistics audit
+        try {
+            eventPublisher.publishEvent(new UserRegisteredEvent(this, user));
+        } catch (Exception ex) {
+            // Log but don't fail registration
+            System.err.println("Failed to publish user registered event: " + ex.getMessage());
+        }
 
         String token = UUID.randomUUID().toString();
         VerificationToken vToken = VerificationToken.builder()
