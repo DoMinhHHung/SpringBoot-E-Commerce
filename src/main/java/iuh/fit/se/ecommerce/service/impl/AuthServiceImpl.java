@@ -74,7 +74,7 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         tokenRepository.save(vToken);
 
-        String verifyUrl = "http://localhost:8080/api/auth/verify?token=" + token;
+        String verifyUrl = "https://gigatech-umxz.onrender.com/api/auth/verify?token=" + token;
         String subject = "Xác thực tài khoản E-Commerce";
         String body = "Chào " + user.getFullName() + ",\n\n"
                 + "Click vào link dưới đây để kích hoạt tài khoản của bạn:\n"
