@@ -316,15 +316,15 @@
             }
             
             container.innerHTML = addresses.map(addr => `
-                <div class="card mb-3 address-item ${addr.isDefault ? 'border-warning border-2 bg-warning bg-opacity-10' : ''}">
+                <div class="card mb-3 address-item ${addr.default ? 'border-warning border-2 bg-warning bg-opacity-10' : ''}">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
                                 <div class="d-flex align-items-center mb-2">
-                                    ${addr.isDefault ? '<i class="bi bi-star-fill text-warning me-2 fs-5" title="Địa chỉ mặc định"></i>' : ''}
+                                    ${addr.default ? '<i class="bi bi-star-fill text-warning me-2 fs-5" title="Địa chỉ mặc định"></i>' : ''}
                                     <strong>${addr.receiverName}</strong>
                                     ${addr.label ? `<span class="badge bg-secondary ms-2">${addr.label}</span>` : ''}
-                                    ${addr.isDefault ? '<span class="badge bg-warning text-dark ms-2"><i class="bi bi-star-fill"></i> Mặc định</span>' : ''}
+                                    ${addr.default ? '<span class="badge bg-warning text-dark ms-2"><i class="bi bi-star-fill"></i> Mặc định</span>' : ''}
                                 </div>
                                 <p class="mb-1 text-muted">${addr.receiverPhone}</p>
                                 <p class="mb-0">${addr.addressDetail}, ${addr.ward}, ${addr.province}</p>
@@ -340,7 +340,7 @@
                                 <button class="btn btn-sm btn-outline-primary" onclick="showAddressModal(${addr.id})">
                                     <i class="bi bi-pencil"></i> Sửa
                                 </button>
-                                ${!addr.isDefault ? `
+                                ${!addr.default ? `
                                     <button class="btn btn-sm btn-outline-secondary" onclick="setDefaultAddress(${addr.id})">
                                         Đặt mặc định
                                     </button>

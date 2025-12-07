@@ -1,4 +1,6 @@
 let cart = null;
+let userAddresses = [];
+let selectedAddressId = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
     if (typeof apiClient === 'undefined') {
@@ -45,6 +47,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (currentUser) {
         populateUserInfo(currentUser);
     }
+    
+    await loadUserAddresses();
 
     setupEventListeners();
 });
@@ -142,6 +146,116 @@ function populateUserInfo(user) {
     }
 }
 
+async function loadUserAddresses() {
+    try {
+        const response = await apiClient.request('/addresses', { method: 'GET' });
+        console.log('Address data checkout:', response);
+        userAddresses = Array.isArray(response) ? response : [];
+        renderAddressesList(userAddresses);
+        
+        if (userAddresses.length > 0) {
+            const defaultAddress = userAddresses.find(addr => addr.default) || userAddresses[0];
+            selectAddress(defaultAddress.id);
+        } else {
+            showManualAddressForm();
+        }
+    } catch (error) {
+        console.error('Error loading addresses:', error);
+        userAddresses = [];
+        showManualAddressForm();
+    }
+}
+
+function renderAddressesList(addresses) {
+    const container = document.getElementById('saved-addresses-list');
+    if (!container) return;
+    
+    if (!addresses || addresses.length === 0) {
+        container.innerHTML = '<p class="text-muted small">Bạn chưa có địa chỉ nào. Vui lòng thêm địa chỉ mới.</p>';
+        return;
+    }
+    
+    container.innerHTML = addresses.map(addr => `
+        <div class="card mb-2 address-option ${selectedAddressId === addr.id ? 'border-primary border-2' : ''}" 
+             onclick="selectAddress(${addr.id})" style="cursor: pointer;">
+            <div class="card-body p-2">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="selectedAddress" 
+                           id="address-${addr.id}" value="${addr.id}" 
+                           ${selectedAddressId === addr.id ? 'checked' : ''}
+                           onchange="selectAddress(${addr.id})">
+                    <label class="form-check-label w-100" for="address-${addr.id}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    <strong>${addr.receiverName}</strong>
+                                    ${addr.default ? '<span class="badge bg-warning text-dark ms-2">Mặc định</span>' : ''}
+                                    ${addr.label ? `<span class="badge bg-secondary ms-2">${addr.label}</span>` : ''}
+                                </div>
+                                <small class="text-muted d-block">${addr.receiverPhone}</small>
+                                <small class="text-muted d-block">${addr.addressDetail || addr.detail}, ${addr.ward}, ${addr.province}</small>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function selectAddress(addressId) {
+    const address = userAddresses.find(addr => addr.id === addressId);
+    if (!address) return;
+    
+    selectedAddressId = addressId;
+    
+    document.getElementById('receiverName').value = address.receiverName || '';
+    document.getElementById('receiverPhone').value = address.receiverPhone || '';
+    document.getElementById('addressDetail').value = address.addressDetail || address.detail || '';
+    document.getElementById('ward').value = address.ward || '';
+    document.getElementById('province').value = address.province || '';
+    
+    hideManualAddressForm();
+    
+    renderAddressesList(userAddresses);
+}
+
+function showManualAddressForm() {
+    selectedAddressId = null;
+    const form = document.getElementById('manual-address-form');
+    if (form) {
+        form.classList.remove('d-none');
+    }
+    document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
+        radio.checked = false;
+    });
+}
+
+function hideManualAddressForm() {
+    const form = document.getElementById('manual-address-form');
+    if (form) {
+        form.classList.add('d-none');
+    }
+}
+
+function toggleAddressForm() {
+    const form = document.getElementById('manual-address-form');
+    if (form.classList.contains('d-none')) {
+        selectedAddressId = null;
+        document.querySelectorAll('input[name="selectedAddress"]').forEach(radio => {
+            radio.checked = false;
+        });
+        renderAddressesList(userAddresses);
+        form.classList.remove('d-none');
+    } else {
+        form.classList.add('d-none');
+        if (userAddresses.length > 0) {
+            const defaultAddress = userAddresses.find(addr => addr.default) || userAddresses[0];
+            selectAddress(defaultAddress.id);
+        }
+    }
+}
+
 function setupEventListeners() {
     // Payment method selection
     document.querySelectorAll('.payment-method-option').forEach(option => {
@@ -183,29 +297,33 @@ async function handlePlaceOrder() {
 
         const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
 
-        const addressData = {
-            receiverName: document.getElementById('receiverName').value.trim(),
-            receiverPhone: document.getElementById('receiverPhone').value.trim(),
-            province: document.getElementById('province').value.trim(),
-            ward: document.getElementById('ward').value.trim(),
-            detail: document.getElementById('addressDetail').value.trim(),
-            isDefault: false
-        };
-
         let shippingAddressId = null;
         
-        try {
-            const newAddress = await apiClient.request('/addresses', {
-                method: 'POST',
-                body: JSON.stringify(addressData)
-            });
-            shippingAddressId = newAddress.id;
-        } catch (error) {
-            console.error('Error creating address:', error);
-            showAlert('Cảnh báo: Không thể tạo địa chỉ. Vui lòng thử lại.', 'warning');
-            btn.disabled = false;
-            btn.textContent = originalText;
-            return;
+        if (selectedAddressId) {
+            shippingAddressId = selectedAddressId;
+        } else {
+            const addressData = {
+                receiverName: document.getElementById('receiverName').value.trim(),
+                receiverPhone: document.getElementById('receiverPhone').value.trim(),
+                province: document.getElementById('province').value.trim(),
+                ward: document.getElementById('ward').value.trim(),
+                detail: document.getElementById('addressDetail').value.trim(),
+                isDefault: false
+            };
+            
+            try {
+                const newAddress = await apiClient.request('/addresses', {
+                    method: 'POST',
+                    body: JSON.stringify(addressData)
+                });
+                shippingAddressId = newAddress.id;
+            } catch (error) {
+                console.error('Error creating address:', error);
+                showAlert('Cảnh báo: Không thể tạo địa chỉ. Vui lòng thử lại.', 'warning');
+                btn.disabled = false;
+                btn.textContent = originalText;
+                return;
+            }
         }
 
         // Build payment request

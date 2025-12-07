@@ -9,10 +9,12 @@ import iuh.fit.se.ecommerce.entity.*;
 import iuh.fit.se.ecommerce.entity.enums.OrderStatus;
 import iuh.fit.se.ecommerce.exception.AppException;
 import iuh.fit.se.ecommerce.exception.ErrorCode;
+import iuh.fit.se.ecommerce.event.OrderConfirmedEvent;
 import iuh.fit.se.ecommerce.repository.*;
 import iuh.fit.se.ecommerce.service.interfaces.OrderService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final PaymentRepository paymentRepository;
     private final OrderStatusPublisher orderStatusPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -143,15 +146,19 @@ public class OrderServiceImpl implements OrderService {
             throw new AppException(ErrorCode.BAD_REQUEST, "Đơn hàng đã được xử lý");
         }
 
-        // Deduct stock
+        // Deduct stock atomically - chỉ update khi stock >= quantity
         for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
-            if (product.getStock() < item.getQuantity()) {
+            int updatedRows = productRepository.deductStock(product.getId(), item.getQuantity());
+            if (updatedRows == 0) {
+                // Stock không đủ hoặc đã bị thay đổi bởi transaction khác
+                // Reload product để lấy thông tin mới nhất
+                Product currentProduct = productRepository.findById(product.getId())
+                        .orElseThrow(() -> new AppException(ErrorCode.BAD_REQUEST, "Sản phẩm không tồn tại"));
                 throw new AppException(ErrorCode.BAD_REQUEST, 
-                    String.format("Sản phẩm %s không đủ tồn kho", product.getName()));
+                    String.format("Sản phẩm %s không đủ tồn kho. Hiện tại còn %d sản phẩm", 
+                        currentProduct.getName(), currentProduct.getStock()));
             }
-            product.setStock(product.getStock() - item.getQuantity());
-            productRepository.save(product);
         }
 
         // Update order status
@@ -164,6 +171,13 @@ public class OrderServiceImpl implements OrderService {
             orderStatusPublisher.publish(confirmedOrder.getOrderCode(), confirmedOrder.getUser().getId(), OrderStatus.CONFIRMED.name());
         } catch (Exception ex) {
             log.warn("Failed to publish order status notification: {}", ex.getMessage());
+        }
+
+        // Publish event for statistics audit
+        try {
+            eventPublisher.publishEvent(new OrderConfirmedEvent(this, confirmedOrder));
+        } catch (Exception ex) {
+            log.warn("Failed to publish order confirmed event: {}", ex.getMessage());
         }
 
         return confirmedOrder;

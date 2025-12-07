@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,5 +45,27 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            "ORDER BY o.createdAt DESC")
     Page<Order> searchUserOrdersByStatus(@Param("user") User user, @Param("status") OrderStatus status, 
                                           @Param("search") String search, Pageable pageable);
+
+    @Query("""
+            SELECT COALESCE(SUM(o.totalAmount), 0)
+            FROM Order o
+            WHERE o.status IN :statuses
+              AND o.createdAt >= :start
+              AND o.createdAt < :end
+            """)
+    BigDecimal sumTotalAmountByStatusAndCreatedAtBetween(List<OrderStatus> statuses,
+                                                         LocalDateTime start,
+                                                         LocalDateTime end);
+
+    @Query("""
+            SELECT COUNT(DISTINCT o.user.id)
+            FROM Order o
+            WHERE o.status IN :statuses
+              AND o.createdAt >= :start
+              AND o.createdAt < :end
+            """)
+    Long countDistinctUserByStatusAndCreatedAtBetween(List<OrderStatus> statuses,
+                                                      LocalDateTime start,
+                                                      LocalDateTime end);
 }
 

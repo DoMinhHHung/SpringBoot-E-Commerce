@@ -361,6 +361,38 @@ class ApiClient {
         });
     }
 
+    async getAdminStatistics(period = 'day') {
+        return this.request(`/admin/statistics?period=${period}`, {
+            method: 'GET'
+        });
+    }
+
+    async getAdminStatisticsCustom(startDate, endDate) {
+        // Format dates to ISO string
+        const start = new Date(startDate + 'T00:00:00').toISOString();
+        const end = new Date(endDate + 'T23:59:59').toISOString();
+        
+        return this.request(`/admin/statistics?startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`, {
+            method: 'GET'
+        });
+    }
+
+    async getAdminStatisticsDetail(period = 'day') {
+        return this.request(`/admin/statistics/detail?period=${period}`, {
+            method: 'GET'
+        });
+    }
+
+    async getAdminStatisticsDetailCustom(startDate, endDate) {
+        // Format dates to ISO string
+        const start = new Date(startDate + 'T00:00:00').toISOString();
+        const end = new Date(endDate + 'T23:59:59').toISOString();
+        
+        return this.request(`/admin/statistics/detail?startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`, {
+            method: 'GET'
+        });
+    }
+
     logout() {
         this.clearAuth();
         window.location.href = '/index.html';

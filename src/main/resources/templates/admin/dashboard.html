@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="/css/style.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <!-- Admin Navbar -->
@@ -80,28 +82,99 @@
                     <h1><i class="bi bi-speedometer2"></i> Tổng quan</h1>
                 </div>
 
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <div class="card admin-stats-card">
+                <!-- Filter Section -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3">
+                                <label class="form-label">Lọc theo thời gian</label>
+                                <select id="period-select" class="form-select">
+                                    <option value="TODAY">Hôm nay</option>
+                                    <option value="DAY" selected>Ngày</option>
+                                    <option value="WEEK">Tuần</option>
+                                    <option value="MONTH">Tháng</option>
+                                    <option value="YEAR">Năm</option>
+                                    <option value="CUSTOM">Tùy chọn</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3" id="custom-date-range" style="display: none;">
+                                <label class="form-label">Từ ngày</label>
+                                <input type="date" id="start-date" class="form-control">
+                            </div>
+                            <div class="col-md-3" id="custom-date-range-end" style="display: none;">
+                                <label class="form-label">Đến ngày</label>
+                                <input type="date" id="end-date" class="form-control">
+                            </div>
+                            <div class="col-md-2">
+                                <button id="btn-apply-filter" class="btn btn-primary w-100">
+                                    <i class="bi bi-funnel"></i> Áp dụng
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted" id="stat-range">-</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="card admin-stats-card h-100">
                             <div class="card-body">
-                                <h5 class="card-title">Sản phẩm</h5>
-                                <p class="card-text"><span id="stat-products">-</span></p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="text-muted">Doanh số</span>
+                                        <h4 id="stat-revenue" class="mt-2 mb-0">-</h4>
+                                    </div>
+                                    <span class="badge bg-success">VND</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card admin-stats-card">
+                    <div class="col-md-3 mb-3">
+                        <div class="card admin-stats-card h-100">
                             <div class="card-body">
-                                <h5 class="card-title">Người dùng</h5>
-                                <p class="card-text"><span id="stat-users">-</span></p>
+                                <span class="text-muted">Số lượng người mua</span>
+                                <h4 id="stat-buyers" class="mt-2 mb-0">-</h4>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <div class="card admin-stats-card">
+                    <div class="col-md-3 mb-3">
+                        <div class="card admin-stats-card h-100">
                             <div class="card-body">
-                                <h5 class="card-title">Đơn hàng</h5>
-                                <p class="card-text"><span id="stat-orders">-</span></p>
+                                <span class="text-muted">Tài khoản mới</span>
+                                <h4 id="stat-new-customers" class="mt-2 mb-0">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="card admin-stats-card h-100">
+                            <div class="card-body">
+                                <span class="text-muted">Sản phẩm đã bán</span>
+                                <h4 id="stat-products-sold" class="mt-2 mb-0">-</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Alert -->
+                <div id="stat-error" class="alert alert-danger" style="display: none;"></div>
+
+                <!-- Charts Section -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Biểu đồ thống kê</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="charts-container">
+                            <div class="row">
+                                <div class="col-12 mb-4">
+                                    <h6 class="text-center mb-3">Tổng quan chỉ số</h6>
+                                    <div style="height: 400px; position: relative;">
+                                        <canvas id="combined-chart"></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -115,15 +188,308 @@
     <script src="/js/common.js"></script>
     <script src="/js/admin-common.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Load stats
+        // Chart instance storage - chỉ còn 1 chart
+        let combinedChart = null;
+        let chartData = [];
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            if (!apiClient || !apiClient.isAuthenticated()) {
+                window.location.href =
+                    "/login.html?redirect=" +
+                    encodeURIComponent(window.location.pathname);
+                return;
+            }
+
             try {
-                // TODO: Load statistics from API
-                document.getElementById('stat-products').textContent = '0';
-                document.getElementById('stat-users').textContent = '0';
-                document.getElementById('stat-orders').textContent = '0';
+                const user = await apiClient.getProfile();
+                if (!user) {
+                    window.location.href = "/login.html";
+                    return;
+                }
+                
+                const roles = Array.isArray(user.role) ? user.role : (typeof user.role === 'string' ? [user.role] : []);
+                const isAdmin = roles.indexOf('ADMIN') !== -1 || roles.indexOf('ROLE_ADMIN') !== -1 || user.role === 'ADMIN';
+                const isEditor = roles.indexOf('EDITOR') !== -1 || roles.indexOf('ROLE_EDITOR') !== -1 || user.role === 'EDITOR';
+                
+                if (!isAdmin && !isEditor) {
+                    alert("Không có quyền truy cập trang quản trị");
+                    window.location.href = "/index.html";
+                    return;
+                }
+
+                // Setup UI elements
+                const periodSelect = document.getElementById("period-select");
+                const customDateRange = document.getElementById("custom-date-range");
+                const customDateRangeEnd = document.getElementById("custom-date-range-end");
+                const startDateInput = document.getElementById("start-date");
+                const endDateInput = document.getElementById("end-date");
+                const btnApplyFilter = document.getElementById("btn-apply-filter");
+                const statRevenue = document.getElementById("stat-revenue");
+                const statBuyers = document.getElementById("stat-buyers");
+                const statNewCustomers = document.getElementById("stat-new-customers");
+                const statProductsSold = document.getElementById("stat-products-sold");
+                const statRange = document.getElementById("stat-range");
+                const statError = document.getElementById("stat-error");
+
+                // Handle period select change
+                periodSelect.addEventListener("change", function() {
+                    if (this.value === "CUSTOM") {
+                        customDateRange.style.display = "block";
+                        customDateRangeEnd.style.display = "block";
+                        // Set default dates (last 7 days)
+                        const endDate = new Date();
+                        const startDate = new Date();
+                        startDate.setDate(startDate.getDate() - 7);
+                        startDateInput.value = startDate.toISOString().split('T')[0];
+                        endDateInput.value = endDate.toISOString().split('T')[0];
+                    } else {
+                        customDateRange.style.display = "none";
+                        customDateRangeEnd.style.display = "none";
+                    }
+                });
+
+                function setLoadingState() {
+                    [statRevenue, statBuyers, statNewCustomers, statProductsSold].forEach(el => {
+                        if (el) el.textContent = "Đang tải...";
+                    });
+                    statError.style.display = "none";
+                }
+
+                function formatRange(start, end) {
+                    if (!start || !end) return "-";
+                    const startDate = new Date(start);
+                    const endDate = new Date(end);
+                    const startStr = startDate.toLocaleDateString("vi-VN");
+                    const endStr = endDate.toLocaleDateString("vi-VN");
+                    return `${startStr} - ${endStr}`;
+                }
+
+                async function loadStatistics() {
+                    try {
+                        setLoadingState();
+                        const period = periodSelect.value;
+                        let detailData; // Dữ liệu chi tiết
+
+                        if (period === "CUSTOM") {
+                            const startDate = startDateInput.value;
+                            const endDate = endDateInput.value;
+                            
+                            if (!startDate || !endDate) {
+                                showAlert("Vui lòng chọn khoảng thời gian", "error");
+                                return;
+                            }
+
+                            if (new Date(startDate) > new Date(endDate)) {
+                                showAlert("Ngày bắt đầu phải nhỏ hơn ngày kết thúc", "error");
+                                return;
+                            }
+
+                            // Call API với dữ liệu chi tiết
+                            detailData = await apiClient.getAdminStatisticsDetailCustom(startDate, endDate);
+                        } else {
+                            // Map TODAY to DAY for backend
+                            const periodParam = period === "TODAY" ? "DAY" : period;
+                            detailData = await apiClient.getAdminStatisticsDetail(periodParam.toLowerCase());
+                        }
+
+                        // Tính tổng cho cards từ dataPoints
+                        if (detailData && detailData.dataPoints && detailData.dataPoints.length > 0) {
+                            const totalRevenue = detailData.dataPoints.reduce((sum, p) => 
+                                sum + parseFloat(p.revenue || 0), 0);
+                            const totalBuyers = detailData.dataPoints.reduce((sum, p) => 
+                                sum + (p.buyerCount || 0), 0);
+                            const totalNewCustomers = detailData.dataPoints.reduce((sum, p) => 
+                                sum + (p.newCustomers || 0), 0);
+                            const totalProductsSold = detailData.dataPoints.reduce((sum, p) => 
+                                sum + (p.productsSold || 0), 0);
+
+                            // Update cards
+                            statRevenue.textContent = formatPrice(totalRevenue);
+                            statBuyers.textContent = formatNumber(totalBuyers);
+                            statNewCustomers.textContent = formatNumber(totalNewCustomers);
+                            statProductsSold.textContent = formatNumber(totalProductsSold);
+                        } else {
+                            // Fallback nếu không có dataPoints
+                            statRevenue.textContent = formatPrice(0);
+                            statBuyers.textContent = formatNumber(0);
+                            statNewCustomers.textContent = formatNumber(0);
+                            statProductsSold.textContent = formatNumber(0);
+                        }
+                        
+                        statRange.textContent = formatRange(detailData?.startDate, detailData?.endDate);
+
+                        // Update charts với dữ liệu chi tiết
+                        updateCharts(detailData);
+
+                        statError.style.display = "none";
+                    } catch (err) {
+                        console.error(err);
+                        const errorMsg = "Không thể tải thống kê: " + (err.message || err);
+                        statError.textContent = errorMsg;
+                        statError.style.display = "block";
+                        showAlert(errorMsg, "error");
+                    }
+                }
+
+                function formatNumber(num) {
+                    return new Intl.NumberFormat('vi-VN').format(num);
+                }
+
+                function updateCharts(detailResponse) {
+                    if (!detailResponse || !detailResponse.dataPoints) return;
+
+                    // Sử dụng trực tiếp dataPoints từ response
+                    chartData = detailResponse.dataPoints.map(point => ({
+                        label: point.label,
+                        revenue: parseFloat(point.revenue || 0),
+                        buyers: point.buyerCount || 0,
+                        newCustomers: point.newCustomers || 0,
+                        productsSold: point.productsSold || 0
+                    }));
+
+                    // Render charts using Chart.js
+                    renderCharts();
+                }
+
+                function renderCharts() {
+                    if (!window.Chart || chartData.length === 0) {
+                        return;
+                    }
+
+                    const labels = chartData.map(d => d.label);
+                    const revenueData = chartData.map(d => d.revenue);
+                    const buyersData = chartData.map(d => d.buyers);
+                    const customersData = chartData.map(d => d.newCustomers);
+                    const productsData = chartData.map(d => d.productsSold);
+
+                    const ctx = document.getElementById('combined-chart').getContext('2d');
+                    
+                    // Destroy existing chart if exists
+                    if (combinedChart) {
+                        combinedChart.destroy();
+                    }
+
+                    combinedChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Doanh số (VND)',
+                                    data: revenueData,
+                                    borderColor: 'rgb(40, 167, 69)', // Green
+                                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    yAxisID: 'yRevenue', // Use a separate Y-axis for revenue
+                                },
+                                {
+                                    label: 'Số lượng người mua',
+                                    data: buyersData,
+                                    borderColor: 'rgb(0, 123, 255)', // Blue
+                                    backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    yAxisID: 'yCount', // Use a separate Y-axis for counts
+                                },
+                                {
+                                    label: 'Tài khoản mới',
+                                    data: customersData,
+                                    borderColor: 'rgb(255, 193, 7)', // Yellow
+                                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    yAxisID: 'yCount', // Use a separate Y-axis for counts
+                                },
+                                {
+                                    label: 'Sản phẩm đã bán',
+                                    data: productsData,
+                                    borderColor: 'rgb(220, 53, 69)', // Red
+                                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                    tension: 0.4,
+                                    fill: true,
+                                    yAxisID: 'yCount', // Use a separate Y-axis for counts
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false, // Set to false to allow custom height
+                            animation: {
+                                duration: 0 // Disable animation to prevent infinite resize
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top'
+                                },
+                                tooltip: {
+                                    mode: 'index',
+                                    intersect: false,
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            if (context.dataset.label === 'Doanh số (VND)') {
+                                                label += formatPrice(context.parsed.y);
+                                            } else {
+                                                label += formatNumber(context.parsed.y);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true
+                                },
+                                yRevenue: { // Y-axis for Revenue
+                                    type: 'linear',
+                                    position: 'left',
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Doanh số (VND)'
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return formatPrice(value).replace('₫', '').trim(); // Remove currency symbol for cleaner axis
+                                        }
+                                    }
+                                },
+                                yCount: { // Y-axis for Counts (Buyers, New Customers, Products Sold)
+                                    type: 'linear',
+                                    position: 'right',
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Số lượng'
+                                    },
+                                    grid: {
+                                        drawOnChartArea: false // Only draw grid lines for the left Y-axis
+                                    },
+                                    ticks: {
+                                        callback: function(value) {
+                                            return formatNumber(value);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Event listeners
+                btnApplyFilter.addEventListener("click", loadStatistics);
+                
+                // Load initial data
+                await loadStatistics();
             } catch (err) {
-                console.error('Error loading stats:', err);
+                console.error(err);
+                alert("Lỗi tải dữ liệu: " + (err.message || err));
             }
         });
     </script>
