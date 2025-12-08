@@ -112,40 +112,59 @@ function renderSelectedRow(type, product) {
 }
 
 // MODAL
+// --- LOGIC MODAL & API SẢN PHẨM ---
 async function openModal(type) {
     if (!productModal) return;
     currentSelectingType = type;
     document.getElementById('modalTitle').innerText = `Chọn ${componentMeta[type].title}`;
 
-    //filter
+    // Reset bộ lọc
     const searchInput = document.getElementById('modal-search-input');
     const sortSelect = document.getElementById('modal-sort-select');
     if(searchInput) searchInput.value = '';
     if(sortSelect) sortSelect.value = 'default';
-    currentProductList = [];
+    currentProductList = []; // Xóa danh sách cũ
 
-    // loading
+    // Hiển thị Loading
     const modalBody = document.getElementById('modal-product-list');
     modalBody.innerHTML = '<div class="text-center w-100 py-5"><div class="spinner-border text-primary"></div><p>Đang tải sản phẩm...</p></div>';
 
     productModal.show();
 
     try {
-        const res = await fetch(`/api/products/type/${type}`);
-        if (!res.ok) throw new Error('API Error');
+        let apiUrl = '';
+        if (type === 'MONITOR') {
+            apiUrl = `/api/products/type/MONITOR`;
+        } else {
+            apiUrl = `/api/products/components/accessory/${type}`;
+        }
+
+        console.log(`Đang gọi API: ${apiUrl}`); // Log kiểm tra
+        const res = await fetch(apiUrl);
+        // ---------------------------------
+
+        if (!res.ok) {
+            throw new Error(`Lỗi kết nối API: ${res.status}`);
+        }
+
         const products = await res.json();
 
+        // Kiểm tra nếu danh sách rỗng
         if (!products || products.length === 0) {
-            modalBody.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không tìm thấy sản phẩm nào.</div>';
+            modalBody.innerHTML = '<div class="col-12 text-center py-4 text-muted">Không tìm thấy sản phẩm nào phù hợp.</div>';
             return;
         }
 
+        // Lưu dữ liệu vào biến toàn cục và render ra màn hình
         currentProductList = products;
         renderProductsToModal(currentProductList, type);
 
     } catch (err) {
-        console.error(err);
-        modalBody.innerHTML = '<div class="text-danger text-center w-100 py-4">Lỗi tải dữ liệu hoặc không có kết nối.</div>';
+        console.error("Lỗi tải sản phẩm:", err);
+        modalBody.innerHTML = `<div class="text-danger text-center w-100 py-4">
+            <i class="bi bi-exclamation-triangle"></i> Có lỗi xảy ra khi tải dữ liệu.<br>
+            <small>${err.message}</small>
+        </div>`;
     }
 }
 

@@ -30,4 +30,13 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
     @Modifying
     @Query("UPDATE Product p SET p.stock = p.stock - :quantity WHERE p.id = :productId AND p.stock >= :quantity")
     int deductStock(@Param("productId") Long productId, @Param("quantity") Integer quantity);
+
+    //filter theo Spec
+    @Query("SELECT s.product FROM Specification s " +
+            "WHERE s.product.productType = :pType " +
+            "AND s.specName = :specName")
+    List<Product> findComponentsBySpecAndType(
+            @Param("pType") ProductType pType,
+            @Param("specName") String specName
+    );
 }

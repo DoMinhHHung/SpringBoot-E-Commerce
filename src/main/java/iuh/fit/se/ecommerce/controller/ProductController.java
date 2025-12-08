@@ -3,8 +3,12 @@ package iuh.fit.se.ecommerce.controller;
 import iuh.fit.se.ecommerce.dto.request.ProductRequest;
 import iuh.fit.se.ecommerce.dto.response.ProductDetailResponse;
 import iuh.fit.se.ecommerce.dto.response.ProductResponse;
+import iuh.fit.se.ecommerce.entity.Product;
+import iuh.fit.se.ecommerce.entity.enums.ProductType;
+import iuh.fit.se.ecommerce.repository.ProductRepository;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProductController {
     private final ProductService productService;
-
+    @Autowired
+    private ProductRepository productRepository;
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@ModelAttribute ProductRequest request) {
         return ResponseEntity.ok(productService.createProduct(request));
@@ -91,5 +96,11 @@ public class ProductController {
             @RequestParam(required = false, defaultValue = "20") int size,
             @RequestParam(required = false, defaultValue = "default") String sort) {
         return ResponseEntity.ok(productService.searchProducts(q, page, size, sort));
+    }
+
+    //api filter theo spec
+    @GetMapping("/components/accessory/{specName}")
+    public List<Product> getAccessoryComponents(@PathVariable String specName) {
+        return productRepository.findComponentsBySpecAndType(ProductType.ACCESSORY, specName);
     }
 }
