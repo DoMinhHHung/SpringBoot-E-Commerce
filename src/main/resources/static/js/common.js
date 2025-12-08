@@ -103,6 +103,7 @@ function createSimpleHeader() {
                         <input type="text" class="form-control" id="search-input" placeholder="Tìm kiếm sản phẩm...">
                         <button type="button" onclick="handleSearch()"><i class="bi bi-search"></i></button>
                     </div>
+              
                     <a href="#" class="cart-icon me-3" onclick="showCart()">
                         <i class="bi bi-cart3"></i>
                         <span class="badge" id="cart-badge">0</span>

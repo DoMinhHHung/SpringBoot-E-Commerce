@@ -122,4 +122,9 @@ public class WebController {
     public String orderDetail() {
         return "order/order-detail";
     }
+
+    @GetMapping("/build-pc.html")
+    public String buildPC() {
+        return "buildPC/build-pc";
+    }
 }
