@@ -139,6 +139,33 @@ body {
     background-color: #fff5f5;
 }
 
+.list-group-item {
+    transition: background-color 0.2s;
+    border-radius: 8px !important;
+    margin-bottom: 10px;
+    padding: 15px !important;
+}
+
+.list-group-item.list-group-item-secondary,
+.list-group-item[data-read='true'] {
+    background-color: #ffffff !important;
+    color: #6c757d; /* Chữ xám */
+    border-left: 5px solid #e9ecef;
+    box-shadow: none;
+}
+
+.list-group-item:not(.list-group-item-secondary):not(.list-group-item-action) {
+    background-color: #f0f7ff !important;
+    color: #333; /* Chữ đen/đậm */
+    border-left: 5px solid #007bff;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.list-group-item.list-group-item-secondary:hover {
+    background-color: #f8f9fa !important;
+}
+
 .notification-dropdown .notif-item strong {
     display: block;
     font-size: 0.95rem;
@@ -2908,4 +2935,136 @@ body {
 #address-map {
     border-radius: 8px;
 }
+/* ================================================= */
+/* === TWEAKS: NOTIFICATION DROPDOWN (FINAL UX) === */
+/* ================================================= */
 
+/* Khung Dropdown chính */
+.notification-dropdown {
+    width: 360px !important;
+    max-width: 90vw;
+    z-index: 1050;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Card tổng thể */
+.notification-dropdown .card {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+/* Header (Thông báo | Đánh dấu đã đọc) */
+.notification-dropdown .card-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #e9ecef;
+    background-color: #fff;
+}
+
+.notification-dropdown .card-header strong {
+    font-size: 1rem;
+    color: var(--text-dark);
+}
+
+/* Nút đánh dấu đã đọc (chuyển hướng về trang noti để Mark All) */
+.notification-dropdown .card-header .btn-link {
+    font-size: 0.8rem;
+    color: #007bff;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+/* Khung danh sách */
+.notification-dropdown .list-group {
+    max-height: 400px;
+    overflow-y: auto;
+    border-top: none;
+}
+
+/* Item thông báo (Base style) */
+.notification-dropdown .notification-item {
+    padding: 10px 5px !important;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-left 0.2s ease;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    text-decoration: none;
+}
+
+/* ** MÀU NỀN CHO CHƯA ĐỌC (UNREAD) ** */
+.notification-dropdown .notification-item.unread {
+    background-color: #fffaf0; /* Nền vàng nhạt/cam nhạt */
+    border-left: 4px solid #ffd939; /* Dải màu Primary */
+    font-weight: 600;
+}
+
+.notification-dropdown .notification-item.unread:hover {
+    background-color: #fff5e0;
+}
+
+/* MÀU NỀN ĐÃ ĐỌC (IS-READ) */
+.notification-dropdown .notification-item.is-read {
+    background-color: #f8f9fa; /* Nền xám nhạt */
+    border-left: 4px solid transparent;
+    font-weight: 400;
+    color: #6c757d;
+}
+
+/* Cột LEFT: Nội dung */
+.notification-dropdown .notification-item > div:first-child {
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Icon */
+.notification-dropdown .notification-item .notif-type-icon {
+    font-size: 1.1rem;
+    margin-right: 8px;
+    color: #dc3545;
+}
+
+/* Tiêu đề (fw-bold) */
+.notification-dropdown .notification-item .fw-bold {
+    font-size: 0.9rem;
+    font-weight: inherit !important; /* Kế thừa từ unread/is-read */
+    color: #333;
+    /*display: flex;*/
+    align-items: center;
+    line-height: 1.3;
+    white-space: nowrap;
+    /*overflow: hidden;*/
+    text-overflow: ellipsis;
+}
+
+/* Tin nhắn phụ (small text-muted) */
+.notification-dropdown .notification-item .small {
+    font-size: 0.8rem;
+    color: #6c757d;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Cột RIGHT: Timestamp (Căn xuống góc phải) */
+.notification-dropdown .notification-item > div:last-child {
+    font-size: 0.75rem;
+    color: #999;
+    flex-shrink: 0;
+    text-align: right;
+    align-self: flex-end; /* CĂN XUỐNG DƯỚI GÓC PHẢI */
+}
+
+/* Footer (Xem tất cả) */
+.notification-dropdown .card-footer {
+    padding: 8px 15px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}

@@ -12,7 +12,6 @@ function initNotifications(userId) {
         fetchNotifications(userId);
         fetchUnreadCount(userId);
     } else {
-        // still fetch site notifications on notifications page if present
         try { fetchSiteNotifications(); } catch(e) {}
     }
 }
@@ -29,11 +28,19 @@ window.initializeNotifications = function () {
     } catch (e) {
     }
 
-    // always connect socket (to receive site-wide notifications)
     connectSocket(userId || null);
 
     if (userId) {
         initNotifications(userId);
+    }
+
+    // GÁN SỰ KIỆN CHO NÚT MARK ALL READ (Fixing Mark All button)
+    const markAllBtn = document.getElementById('mark-all-read');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            markAllNotifications();
+        });
     }
 };
 
@@ -49,13 +56,11 @@ window.toggleNotificationDropdown = function (event) {
     } else {
         dropdown.style.display = 'block';
         dropdown.classList.add('show');
-        // refresh content when opening
         const userId = currentUserId || window.currentUserId || (document.body && document.body.dataset && document.body.dataset.userId);
         if (userId) {
             fetchNotifications(userId);
             fetchUnreadCount(userId);
         } else {
-            // fetch site notifications as fallback
             fetchSiteNotifications();
         }
     }
@@ -63,7 +68,6 @@ window.toggleNotificationDropdown = function (event) {
 
 function connectSocket(userId) {
     if (socketConnected) {
-        // already connected; if userId changed and is now present, subscribe to user topic
         if (stompClient && userId) {
             try { stompClient.subscribe('/topic/notifications/' + userId, function(message) { let dto; try{dto=JSON.parse(message.body);}catch(e){return;} pushNotificationToUI(dto); }); } catch(e){}
         }
@@ -73,9 +77,12 @@ function connectSocket(userId) {
     try {
         const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
+
+        // Disable debug logging
+        this.stompClient.debug = null;
+
         stompClient.connect({}, function () {
             socketConnected = true;
-            // always subscribe to site notifications
             stompClient.subscribe('/topic/site.notifications', function (message) {
                 let dto;
                 try {
@@ -87,7 +94,6 @@ function connectSocket(userId) {
                 pushSiteNotificationToUI(dto);
             });
 
-            // subscribe to user-specific if provided
             if (userId) {
                 stompClient.subscribe('/topic/notifications/' + userId, function (message) {
                     let dto;
@@ -109,7 +115,6 @@ function connectSocket(userId) {
 }
 
 function fetchSiteNotifications() {
-    // public site notifications list
     fetch('/api/site-notifications')
         .then(async res => {
             if (!res.ok) throw new Error('Site notifications fetch failed: ' + res.status);
@@ -121,7 +126,6 @@ function fetchSiteNotifications() {
             return res.json();
         })
         .then(list => {
-            // render into notifications dropdown if present
             const listEl = document.getElementById('notif-list') || document.getElementById('notification-list');
             if (!listEl) return;
             list.forEach(n => {
@@ -159,7 +163,7 @@ function fetchUnreadCount(userId) {
             if (!res.ok) throw new Error('Network response was not ok');
             return res.json();
         })
-        .then(count => updateBellCount(count))
+        .then(count => updateBellCount(count.unreadCount || 0))
         .catch(err => console.error('Failed to load unread count', err));
 }
 
@@ -176,7 +180,6 @@ function pushNotificationToUI(dto) {
 }
 
 function pushSiteNotificationToUI(dto) {
-    // site notifications don't increment user unread count, but we show them in list
     const listEl = document.getElementById('notif-list') || document.getElementById('notification-list');
     if (listEl) {
         const normalized = normalizeNotification(dto);
@@ -197,16 +200,14 @@ function renderNotificationList(list) {
 }
 
 function normalizeNotification(n) {
-    // Accept either {id,title,message,read,createdAt,type,refId}
-    // or {id,type,title,message,url,productId,timestamp}
+    // ... (logic normalization giữ nguyên)
     const out = {};
     out.id = n.id || n.id;
-    out.title = n.title || n.title || '';
+    out.title = n.title || n.type || 'Thông báo';
     out.message = n.message || n.message || '';
     out.read = (typeof n.read !== 'undefined') ? n.read : (n.readFlag || false);
     out.type = n.type || (n.url ? 'SITE' : null) || n.type;
     out.refId = n.refId || n.productId || n.refId;
-    // createdAt: prefer ISO, else epoch millis
     if (n.createdAt) out.createdAt = n.createdAt;
     else if (n.timestamp) out.createdAt = new Date(n.timestamp).toISOString();
     else out.createdAt = new Date().toISOString();
@@ -216,30 +217,121 @@ function normalizeNotification(n) {
 function buildNotificationItem(n) {
     const li = document.createElement('li');
     li.className = 'notification-item dropdown-item d-flex justify-content-between align-items-start';
+    li.dataset.id = n.id || '';
+
+    // Thêm class 'unread'/'is-read'
+    if (!n.read) {
+        li.classList.add('unread');
+    } else {
+        li.classList.add('is-read');
+    }
+
+    const iconClass = getNotificationIcon(n.type);
+    const targetUrl = getNotificationUrl(n); // **LẤY URL CHI TIẾT**
+
+    // LEFT COLUMN (Nội dung)
     const left = document.createElement('div');
-    left.innerHTML = `<div class="fw-bold">${escapeHtml(n.title || '')}</div><div class="small text-muted">${escapeHtml(n.message || '')}</div>`;
+    left.className = 'ms-2 me-auto notif-content-wrapper';
+
+    // ... (HTML structure for title and message remains the same)
+    left.innerHTML = `
+        <div class="notif-item-title d-flex align-items-center">
+            <i class="${iconClass} notif-type-icon"></i>
+            <span class="fw-bold">${escapeHtml(n.title || 'Thông báo')}</span>
+        </div>
+        <div class="small text-muted notif-item-message">
+            ${escapeHtml(n.message || '')}
+        </div>
+    `;
     li.appendChild(left);
 
+    // RIGHT COLUMN (Timestamp)
     const right = document.createElement('div');
-    right.className = 'text-end small text-muted';
+    right.className = 'text-end small text-muted text-nowrap ms-2';
     right.innerText = formatTimestamp(n.createdAt);
     li.appendChild(right);
 
-    // click behavior: if type == ORDER and has refId, open order detail
+    // 2. Xử lý sự kiện click: ĐIỀU HƯỚNG BẮT BUỘC VÀ MARK READ
     li.addEventListener('click', function () {
-        if (n.type === 'ORDER' && n.refId) {
-            window.location.href = '/order/order-detail.html?id=' + n.refId;
-        } else if (n.type === 'PRODUCT' && n.refId) {
-            window.location.href = '/product/product-detail.html?id=' + n.refId;
-        } else if (n.type === 'SITE' && n.url) {
-            window.location.href = n.url;
+        // Gọi API Mark Read
+        if (n.id) {
+            fetch('/api/notifications/markRead/' + n.id, { method: 'POST' }).catch(()=>{});
         }
-        // mark read
-        if (n.id) fetch('/api/notifications/markRead/' + n.id, { method: 'POST' }).catch(()=>{});
-        li.classList.remove('fw-bold');
+
+        // Cập nhật trạng thái đọc trên UI ngay lập tức
+        li.classList.remove('unread');
+        li.classList.add('is-read');
+
+        // *** ĐIỀU HƯỚNG CHÍNH XÁC ***
+        if (targetUrl) {
+            window.location.href = targetUrl; // Chuyển đến trang chi tiết (Product/Order/Promotion)
+        } else {
+            // Nếu không có link chi tiết, nhảy đến trang List tổng hợp (như nút "Xem tất cả" muốn)
+            window.location.href = '/notifications.html';
+        }
     });
 
     return li;
+}
+
+function getNotificationUrl(n) {
+    if (n.type === 'ORDER' && n.refId) {
+        return '/order-detail.html?orderCode=' + n.refId;
+    }
+    if (n.type === 'PRODUCT' && n.refId) {
+        return '/product-detail.html?id=' + n.refId;
+    }
+    if (n.type === 'PROMOTION' && n.refId) {
+        return '/promotions.html';
+    }
+    if (n.url) {
+        return n.url;
+    }
+    return null;
+}
+
+// Mark All Read Logic
+async function markAllNotifications() {
+    const listEl = document.getElementById('notif-list') || document.getElementById('notification-list');
+    const items = listEl ? Array.from(listEl.querySelectorAll('.notification-item.unread')) : [];
+
+    if (items.length === 0) return;
+
+    const idsToMark = items.map(li => li.dataset.id).filter(Boolean);
+
+    try {
+        await Promise.all(idsToMark.map(id =>
+            fetch('/api/notifications/markRead/' + id, { method: 'POST' }).catch(console.warn)
+        ));
+
+        items.forEach(li => {
+            li.classList.remove('unread');
+            li.classList.add('is-read');
+        });
+
+        updateBellCount(0);
+        showAlert('Đã đánh dấu tất cả thông báo là đã đọc', 'success');
+    } catch (e) {
+        showAlert('Lỗi khi đánh dấu đã đọc', 'error');
+    }
+}
+window.markAllNotifications = markAllNotifications;
+
+
+// ... (Các hàm helper khác không đổi: updateBellCount, getNotificationIcon, formatTimestamp, escapeHtml)
+function getNotificationIcon(type) {
+    switch ((type || '').toUpperCase()) {
+        case 'PRODUCT':
+            return 'bi bi-box-seam';
+        case 'PROMOTION':
+            return 'bi bi-tag';
+        case 'ORDER':
+            return 'bi bi-cart-check';
+        case 'SITE':
+            return 'bi bi-megaphone';
+        default:
+            return 'bi bi-info-circle';
+    }
 }
 
 function updateBellCount(count) {
@@ -249,7 +341,7 @@ function updateBellCount(count) {
         countEl.innerText = count;
         countEl.style.display = 'inline-block';
     } else {
-        countEl.innerText = '';
+        countEl.innerText = '0';
         countEl.style.display = 'none';
     }
 }
@@ -258,10 +350,17 @@ function formatTimestamp(ts) {
     if (!ts) return '';
     try {
         const d = new Date(ts);
-        return d.toLocaleString();
+        return d.toLocaleString('vi-VN');
     } catch (e) { return ts; }
 }
 
-function escapeHtml(s) {
-    return String(s || '').replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; });
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
 }
