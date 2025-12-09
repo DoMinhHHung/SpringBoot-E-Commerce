@@ -19,6 +19,7 @@ public class ProductRequest {
     private Integer stock;
     private MultipartFile mainImage;
     private List<MultipartFile> images;
+    private List<String> imagesToDelete;
     private String productType;
     private Long promotionId;
     private List<SpecRequest> specifications;

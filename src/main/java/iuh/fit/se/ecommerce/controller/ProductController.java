@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/api/products")
@@ -30,7 +32,20 @@ public class ProductController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id,
-                                                         @ModelAttribute ProductRequest request) {
+                                                         @ModelAttribute ProductRequest request,
+                                                         @RequestParam(required = false) String imagesToDelete) {
+        // Parse imagesToDelete từ JSON string trong FormData
+        if (imagesToDelete != null && !imagesToDelete.isEmpty()) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                List<String> imagesToDeleteList = mapper.readValue(imagesToDelete, 
+                    new TypeReference<List<String>>() {});
+                request.setImagesToDelete(imagesToDeleteList);
+            } catch (Exception e) {
+                // Log error nhưng không throw để không block update
+                System.err.println("Error parsing imagesToDelete: " + e.getMessage());
+            }
+        }
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 
