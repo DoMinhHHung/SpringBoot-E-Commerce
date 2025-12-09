@@ -620,15 +620,31 @@ public class ProductServiceImpl implements ProductService {
                 throw new AppException(ErrorCode.BAD_REQUEST, "Loai sản phẩm không hợp lệ");
             }
         }
+        
+        // Ảnh chính: replace nếu có upload mới
         if (request.getMainImage() != null) {
             product.setMainImage(uploadFile(request.getMainImage()));
         }
+        
+        // Ảnh khác: xóa các ảnh được đánh dấu xóa, sau đó thêm ảnh mới vào danh sách hiện có
+        List<String> currentImages = product.getImages() != null 
+            ? new ArrayList<>(product.getImages()) 
+            : new ArrayList<>();
+        
+        // Xóa các ảnh trong danh sách imagesToDelete (chỉ xóa trong DB, không xóa trên Cloudinary)
+        if (request.getImagesToDelete() != null && !request.getImagesToDelete().isEmpty()) {
+            currentImages.removeAll(request.getImagesToDelete());
+        }
+        
+        // Thêm ảnh mới vào danh sách hiện có (không replace toàn bộ)
         if (request.getImages() != null && !request.getImages().isEmpty()) {
-            List<String> urls = request.getImages().stream()
+            List<String> newImageUrls = request.getImages().stream()
                     .map(this::uploadFile)
                     .collect(Collectors.toList());
-            product.setImages(urls);
+            currentImages.addAll(newImageUrls);
         }
+        
+        product.setImages(currentImages);
 
         if (request.getPromotionId() != null) {
             Promotion promo = promotionRepository.findById(request.getPromotionId())

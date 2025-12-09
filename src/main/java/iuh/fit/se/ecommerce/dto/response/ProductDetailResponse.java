@@ -23,4 +23,5 @@ public class ProductDetailResponse {
     private List<String> images;
     private String productType;
     private List<Map<String, String>> specifications;
+    private Long promotionId;
 }

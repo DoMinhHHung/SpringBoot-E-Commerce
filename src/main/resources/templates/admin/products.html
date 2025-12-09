@@ -181,10 +181,14 @@
                             <div class="mb-3">
                                 <label class="form-label">Ảnh chính</label>
                                 <input id="product-main-image" type="file" class="form-control" accept="image/*">
+                                <div id="main-image-preview" class="mt-2"></div>
+                                <div id="current-main-image" class="mt-2"></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Ảnh khác (multiple)</label>
                                 <input id="product-images" type="file" class="form-control" accept="image/*" multiple>
+                                <div id="images-preview" class="mt-2 d-flex flex-wrap gap-2"></div>
+                                <div id="current-images" class="mt-2"></div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Khuyến mãi</label>
@@ -222,6 +226,9 @@
             document.getElementById('btn-add-spec').addEventListener('click', () => addSpecRow());
 
             let productsCache = [];
+            let imagesToDelete = []; // Danh sách ảnh cần xóa
+
+            await loadProducts();
 
             // Specs helper functions
             function addSpecRow(key = '', value = '') {
@@ -334,12 +341,69 @@
                 document.getElementById('productModalTitle').textContent = 'Thêm sản phẩm';
                 setSpecsInUI([]);
                 populatePromotionOptions();
+
+                document.getElementById('product-main-image').value = '';
+                document.getElementById('product-images').value = '';
+                document.getElementById('main-image-preview').innerHTML = '';
+                document.getElementById('current-main-image').innerHTML = '';
+                document.getElementById('images-preview').innerHTML = '';
+                document.getElementById('current-images').innerHTML = '';
+                imagesToDelete = [];
+                
+                // Setup preview cho ảnh chính
+                const mainImageInput = document.getElementById('product-main-image');
+                mainImageInput.onchange = function(e) {
+                    const preview = document.getElementById('main-image-preview');
+                    preview.innerHTML = '';
+                    if (e.target.files && e.target.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.innerHTML = `
+                                <div class="position-relative d-inline-block">
+                                    <img src="${e.target.result}" alt="Preview" 
+                                         style="max-width: 200px; max-height: 200px; object-fit: cover;" 
+                                         class="img-thumbnail">
+                                    <span class="badge bg-success position-absolute top-0 start-0">Ảnh mới</span>
+                                </div>
+                            `;
+                        };
+                        reader.readAsDataURL(e.target.files[0]);
+                    }
+                };
+                
+                // Setup preview cho ảnh khác
+                const imagesInput = document.getElementById('product-images');
+                imagesInput.onchange = function(e) {
+                    const preview = document.getElementById('images-preview');
+                    preview.innerHTML = '';
+                    if (e.target.files && e.target.files.length > 0) {
+                        Array.from(e.target.files).forEach((file, index) => {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const imgDiv = document.createElement('div');
+                                imgDiv.className = 'position-relative d-inline-block me-2 mb-2';
+                                imgDiv.innerHTML = `
+                                    <img src="${e.target.result}" alt="Preview ${index + 1}" 
+                                         style="max-width: 150px; max-height: 150px; object-fit: cover;" 
+                                         class="img-thumbnail">
+                                    <span class="badge bg-success position-absolute top-0 start-0">Mới</span>
+                                `;
+                                preview.appendChild(imgDiv);
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                    }
+                };
+                
                 modal.show();
             }
 
             async function openEditProductModal(id, modal) {
                 try {
                     const detail = await apiClient.getProductById(id);
+                    
+                    document.getElementById('product-main-image').value = '';
+                    document.getElementById('product-images').value = '';
                     document.getElementById('product-id').value = detail.id || '';
                     document.getElementById('product-name').value = detail.name || '';
                     document.getElementById('product-brand').value = detail.brand || '';
@@ -347,27 +411,147 @@
                     document.getElementById('product-stock').value = detail.stock || '';
                     document.getElementById('product-description').value = detail.description || '';
                     if (detail.productType) document.getElementById('product-type').value = detail.productType;
-                    // populate specs if available
-                    if (detail.specs) {
-                        let specs = detail.specs;
-                        // handle JSON string from backend
-                        if (typeof specs === 'string') {
-                            try { specs = JSON.parse(specs); } catch (e) { /* ignore */ }
-                        }
-                        // if specs is an object map convert to array
-                        if (specs && !Array.isArray(specs) && typeof specs === 'object') {
-                            specs = Object.keys(specs).map(k => ({ key: k, value: specs[k] }));
-                        }
+                    
+                    // Populate specs: API trả về specifications (List<Map<String, String>>)
+                    if (detail.specifications && detail.specifications.length > 0) {
+                        // Convert từ List<Map<String, String>> sang [{key, value}]
+                        const specs = detail.specifications.map(specMap => {
+                            const entries = Object.entries(specMap);
+                            if (entries.length > 0) {
+                                return { key: entries[0][0], value: entries[0][1] };
+                            }
+                            return null;
+                        }).filter(s => s !== null);
                         setSpecsInUI(specs);
                     } else {
                         setSpecsInUI([]);
                     }
-                    await populatePromotionOptions(detail.promotion ? detail.promotion.id : null);
+                    
+                    // Hiển thị ảnh chính hiện có
+                    const currentMainImageDiv = document.getElementById('current-main-image');
+                    if (detail.mainImage) {
+                        currentMainImageDiv.innerHTML = `
+                            <div class="position-relative d-inline-block">
+                                <img src="${detail.mainImage}" alt="Main image" 
+                                     style="max-width: 200px; max-height: 200px; object-fit: cover;" 
+                                     class="img-thumbnail">
+                                <span class="badge bg-primary position-absolute top-0 start-0">Ảnh chính hiện tại</span>
+                            </div>
+                        `;
+                    } else {
+                        currentMainImageDiv.innerHTML = '';
+                    }
+                    
+                    // Hiển thị ảnh khác hiện có
+                    const currentImagesDiv = document.getElementById('current-images');
+                    imagesToDelete = []; // Reset danh sách xóa
+                    if (detail.images && detail.images.length > 0) {
+                        const headerDiv = document.createElement('div');
+                        headerDiv.className = 'mb-2';
+                        headerDiv.innerHTML = '<strong>Ảnh hiện có:</strong>';
+                        currentImagesDiv.innerHTML = '';
+                        currentImagesDiv.appendChild(headerDiv);
+                        
+                        detail.images.forEach((imgUrl, index) => {
+                            const imgWrapper = document.createElement('div');
+                            imgWrapper.className = 'position-relative d-inline-block me-2 mb-2';
+                            
+                            const img = document.createElement('img');
+                            img.src = imgUrl;
+                            img.alt = `Image ${index + 1}`;
+                            img.style.cssText = 'max-width: 150px; max-height: 150px; object-fit: cover;';
+                            img.className = 'img-thumbnail';
+                            
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.type = 'button';
+                            deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-0';
+                            deleteBtn.style.cssText = 'transform: translate(50%, -50%);';
+                            deleteBtn.innerHTML = '<i class="bi bi-x"></i>';
+                            
+                            deleteBtn.addEventListener('click', function() {
+                                markImageForDeletion(imgUrl, this);
+                            });
+                            
+                            imgWrapper.appendChild(img);
+                            imgWrapper.appendChild(deleteBtn);
+                            currentImagesDiv.appendChild(imgWrapper);
+                        });
+                    } else {
+                        currentImagesDiv.innerHTML = '';
+                    }
+                    
+                    // Reset previews
+                    document.getElementById('main-image-preview').innerHTML = '';
+                    document.getElementById('images-preview').innerHTML = '';
+                    
+                    // Preview khi chọn file mới cho ảnh chính
+                    const mainImageInput = document.getElementById('product-main-image');
+                    mainImageInput.onchange = function(e) {
+                        const preview = document.getElementById('main-image-preview');
+                        preview.innerHTML = '';
+                        if (e.target.files && e.target.files[0]) {
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                preview.innerHTML = `
+                                    <div class="position-relative d-inline-block">
+                                        <img src="${e.target.result}" alt="Preview" 
+                                             style="max-width: 200px; max-height: 200px; object-fit: cover;" 
+                                             class="img-thumbnail">
+                                        <span class="badge bg-success position-absolute top-0 start-0">Ảnh mới</span>
+                                    </div>
+                                `;
+                            };
+                            reader.readAsDataURL(e.target.files[0]);
+                        }
+                    };
+                    
+                    // Preview khi chọn file mới cho ảnh khác
+                    const imagesInput = document.getElementById('product-images');
+                    imagesInput.onchange = function(e) {
+                        const preview = document.getElementById('images-preview');
+                        preview.innerHTML = '';
+                        if (e.target.files && e.target.files.length > 0) {
+                            Array.from(e.target.files).forEach((file, index) => {
+                                const reader = new FileReader();
+                                reader.onload = function(e) {
+                                    const imgDiv = document.createElement('div');
+                                    imgDiv.className = 'position-relative d-inline-block me-2 mb-2';
+                                    imgDiv.innerHTML = `
+                                        <img src="${e.target.result}" alt="Preview ${index + 1}" 
+                                             style="max-width: 150px; max-height: 150px; object-fit: cover;" 
+                                             class="img-thumbnail">
+                                        <span class="badge bg-success position-absolute top-0 start-0">Mới</span>
+                                    `;
+                                    preview.appendChild(imgDiv);
+                                };
+                                reader.readAsDataURL(file);
+                            });
+                        }
+                    };
+                    
+                    await populatePromotionOptions(detail.promotionId || null);
                     document.getElementById('productModalTitle').textContent = 'Chỉnh sửa sản phẩm';
                     modal.show();
                 } catch (err) {
                     console.error(err);
                     showAlert('Lỗi tải chi tiết sản phẩm', 'error');
+                }
+            }
+
+            // Hàm đánh dấu ảnh để xóa
+            function markImageForDeletion(imageUrl, button) {
+                if (!imagesToDelete.includes(imageUrl)) {
+                    imagesToDelete.push(imageUrl);
+                    button.closest('.position-relative').style.opacity = '0.5';
+                    button.classList.remove('btn-danger');
+                    button.classList.add('btn-warning');
+                    button.innerHTML = '<i class="bi bi-check"></i>';
+                } else {
+                    imagesToDelete = imagesToDelete.filter(url => url !== imageUrl);
+                    button.closest('.position-relative').style.opacity = '1';
+                    button.classList.remove('btn-warning');
+                    button.classList.add('btn-danger');
+                    button.innerHTML = '<i class="bi bi-x"></i>';
                 }
             }
 
@@ -420,6 +604,12 @@
                         formData.append('images', imagesInput.files[i]);
                     }
                 }
+                
+                // Gửi danh sách ảnh cần xóa (chỉ khi edit)
+                if (id && imagesToDelete.length > 0) {
+                    formData.append('imagesToDelete', JSON.stringify(imagesToDelete));
+                }
+                
                 // include promotion id if selected
                 try {
                     const promoSel = document.getElementById('product-promotion');

@@ -20,6 +20,14 @@ let productModal = null;
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Load header and footer
+    if (typeof loadHeader === 'function') {
+        loadHeader();
+    }
+    if (typeof loadFooter === 'function') {
+        loadFooter();
+    }
+    
     //Modal
     const modalEl = document.getElementById('productModal');
     if (modalEl) {

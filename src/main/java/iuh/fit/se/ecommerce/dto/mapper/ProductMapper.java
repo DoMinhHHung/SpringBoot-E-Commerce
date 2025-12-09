@@ -43,6 +43,7 @@ public interface ProductMapper {
                 .images(product.getImages() != null ? product.getImages() : Collections.emptyList())
                 .productType(product.getProductType() != null ? product.getProductType().name() : null)
                 .specifications(specs)
+                .promotionId(product.getPromotion() != null ? product.getPromotion().getId() : null)
                 .build();
     }
 
