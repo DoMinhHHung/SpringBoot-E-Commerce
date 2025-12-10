@@ -74,11 +74,30 @@ public class AuthServiceImpl implements AuthService {
                 .build();
         tokenRepository.save(vToken);
 
-        String verifyUrl = "https://gigatech-umxz.onrender.com/api/auth/verify?token=" + token;
+        // Encode token to avoid special chars causing attribute parsing issues in some email providers
+        String encodedToken = java.net.URLEncoder.encode(token, java.nio.charset.StandardCharsets.UTF_8);
+        String verifyUrl = "https://gigatech-umxz.onrender.com/api/auth/verify?token=" + encodedToken;
         String subject = "Xác thực tài khoản E-Commerce";
-        String body = "Chào " + user.getFullName() + ",\n\n"
-                + "Click vào link dưới đây để kích hoạt tài khoản của bạn:\n"
-                + verifyUrl + "\n\nLink có hiệu lực trong 15 phút.";
+
+        // Build email body using a button-like anchor and escape injected values
+        String safeName = escapeHtmlForEmail(user.getFullName());
+        // verifyUrl is server-generated and token is URL-encoded, safe to insert into href
+
+        String body =
+                "<html>" +
+                        "<body style=\"font-family: Arial, sans-serif\">" +
+                        "<p>Chào " + safeName + ",</p>" +
+                        "<p>Nhấn vào nút bên dưới để kích hoạt tài khoản của bạn:</p>" +
+                        "<p>" +
+                        "<a href=\"" + verifyUrl + "\" target=\"_blank\" rel=\"noopener noreferrer\" " +
+                        "style=\"display:inline-block;padding:12px 24px;background-color:#4CAF50;color:#ffffff;text-decoration:none;border-radius:5px;font-weight:bold;\">" +
+                        "Kích hoạt tài khoản" +
+                        "</a>" +
+                        "</p>" +
+                        "<p style=\"margin-top:20px;\">Link có hiệu lực trong 15 phút.</p>" +
+                        "</body>" +
+                        "</html>";
+
         emailService.sendEmail(user.getEmail(), subject, body);
 
         return userMapper.toResponse(user);
@@ -136,8 +155,8 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(ErrorCode.INVALID_TOKEN);
 
         String email = jwtTokenProvider.getEmailFromToken(refreshToken);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        // Ensure user exists; don't keep unused local variable
+        userRepository.findByEmail(email).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
         String newAccess = jwtTokenProvider.generateAccessToken(
                 new UsernamePasswordAuthenticationToken(email, null)
@@ -203,5 +222,15 @@ public class AuthServiceImpl implements AuthService {
 
         otp.setUsed(true);
         otpRepository.save(otp);
+    }
+
+    // Minimal HTML escaping for values inserted into email templates
+    private String escapeHtmlForEmail(String input) {
+        if (input == null) return "";
+        return input.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#x27;");
     }
 }

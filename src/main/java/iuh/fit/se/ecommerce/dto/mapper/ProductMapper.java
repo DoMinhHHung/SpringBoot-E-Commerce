@@ -7,6 +7,7 @@ import iuh.fit.se.ecommerce.entity.Product;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,9 +26,15 @@ public interface ProductMapper {
     }
 
     static ProductDetailResponse toProductDetailResponse(Product product) {
-        List<Map<String, String>> specs = product.getSpecifications() != null
+        List<Map<String, Object>> specs = product.getSpecifications() != null
                 ? product.getSpecifications().stream()
-                .map(s -> Map.of(s.getSpecName(), s.getSpecValue()))
+                .map(s -> {
+                    Map<String, Object> specMap = new HashMap<>();
+                    specMap.put("id", s.getId());
+                    specMap.put("specName", s.getSpecName());
+                    specMap.put("specValue", s.getSpecValue());
+                    return specMap;
+                })
                 .collect(Collectors.toList())
                 : Collections.emptyList();
 

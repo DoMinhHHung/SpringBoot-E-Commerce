@@ -67,5 +67,51 @@ public interface RevenueAuditRepository extends JpaRepository<RevenueAudit, Long
             ORDER BY timeLabel
             """, nativeQuery = true)
     List<Object[]> sumRevenueByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+
+    // // Query theo giờ - PostgreSQL
+    // @Query(value = """
+    //         SELECT to_char(date_trunc('hour', recorded_at), 'YYYY-MM-DD HH24:00:00') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COALESCE(SUM(amount), 0) as revenue
+    //         FROM revenue_audit
+    //         WHERE status = 'CONFIRMED'
+    //           AND recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY date_trunc('hour', recorded_at)
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> sumRevenueByHour(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    
+    // // Query theo ngày - PostgreSQL
+    // @Query(value = """
+    //         SELECT to_char(date_trunc('day', recorded_at), 'YYYY-MM-DD') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COALESCE(SUM(amount), 0) as revenue
+    //         FROM revenue_audit
+    //         WHERE status = 'CONFIRMED'
+    //           AND recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY date_trunc('day', recorded_at)
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> sumRevenueByDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    
+    // // Query theo tháng - PostgreSQL
+    // @Query(value = """
+    //         SELECT to_char(date_trunc('month', recorded_at), 'YYYY-MM') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COALESCE(SUM(amount), 0) as revenue
+    //         FROM revenue_audit
+    //         WHERE status = 'CONFIRMED'
+    //           AND recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY date_trunc('month', recorded_at)
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> sumRevenueByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }
 

@@ -64,5 +64,48 @@ public interface BuyerAuditRepository extends JpaRepository<BuyerAudit, Long> {
             ORDER BY timeLabel
             """, nativeQuery = true)
     List<Object[]> countBuyersByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+
+    // // Query theo giờ - PostgreSQL
+    // @Query(value = """
+    //         SELECT to_char(date_trunc('hour', recorded_at), 'YYYY-MM-DD HH24:00:00') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COUNT(DISTINCT user_id) as buyerCount
+    //         FROM buyer_audit
+    //         WHERE recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY date_trunc('hour', recorded_at)
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> countBuyersByHour(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    
+    // // Query theo ngày - PostgreSQL
+    // @Query(value = """
+    //         SELECT to_char(date_trunc('day', recorded_at), 'YYYY-MM-DD') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COUNT(DISTINCT user_id) as buyerCount
+    //         FROM buyer_audit
+    //         WHERE recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY date_trunc('day', recorded_at)
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> countBuyersByDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    
+    // // Query theo tháng - PostgreSQL
+    // @Query(value = """
+    //         SELECT to_char(date_trunc('month', recorded_at), 'YYYY-MM') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COUNT(DISTINCT user_id) as buyerCount
+    //         FROM buyer_audit
+    //         WHERE recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY date_trunc('month', recorded_at)
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> countBuyersByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }
 
