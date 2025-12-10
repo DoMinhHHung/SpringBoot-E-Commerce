@@ -35,7 +35,7 @@ public class Product {
     @Enumerated(EnumType.STRING)
     private ProductType productType;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Specification> specifications;
 
     @ManyToOne

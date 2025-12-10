@@ -79,7 +79,11 @@ public class AuthServiceImpl implements AuthService {
         String body = "Chào " + user.getFullName() + ",\n\n"
                 + "Click vào link dưới đây để kích hoạt tài khoản của bạn:\n"
                 + verifyUrl + "\n\nLink có hiệu lực trong 15 phút.";
-        emailService.sendEmail(user.getEmail(), subject, body);
+        try {
+            emailService.sendEmail(user.getEmail(), subject, body);
+        } catch (Exception ex) {
+            System.err.println("Failed to send verification email: " + ex.getMessage());
+        }
 
         return userMapper.toResponse(user);
     }

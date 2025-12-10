@@ -230,17 +230,43 @@
 
             await loadProducts();
 
-            // Specs helper functions
-            function addSpecRow(key = '', value = '') {
+            function addSpecRow(key = '', value = '', specId = null) {
                 const tbody = document.getElementById('specs-tbody');
                 const tr = document.createElement('tr');
+                if (specId) {
+                    tr.dataset.specId = specId;
+                }
+                
+                let deleteButton = '';
+                if (specId) {
+                    deleteButton = `<button type="button" class="btn btn-sm btn-danger btn-remove-spec" data-spec-id="${specId}">Xóa</button>`;
+                } else {
+                    deleteButton = `<button type="button" class="btn btn-sm btn-danger btn-remove-spec">Xóa</button>`;
+                }
+                
                 tr.innerHTML = `
                     <td><input type="text" class="form-control spec-key" value="${escapeHtml(key)}" placeholder="Ví dụ: CPU"></td>
                     <td><input type="text" class="form-control spec-value" value="${escapeHtml(value)}" placeholder="Ví dụ: Intel i7"></td>
-                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remove-spec">Xóa</button></td>
+                    <td class="text-center">${deleteButton}</td>
                 `;
                 tbody.appendChild(tr);
-                tr.querySelector('.btn-remove-spec').addEventListener('click', () => tr.remove());
+                
+                const deleteBtn = tr.querySelector('.btn-remove-spec');
+                deleteBtn.addEventListener('click', async function() {
+                    const id = this.dataset.specId;
+                    if (id) {
+                        try {
+                            await apiClient.deleteSpecification(id);
+                            tr.remove();
+                            showAlert('Xóa thông số kỹ thuật thành công', 'success');
+                        } catch (err) {
+                            console.error(err);
+                            showAlert('Lỗi xóa thông số kỹ thuật: ' + (err.message || err), 'error');
+                        }
+                    } else {
+                        tr.remove();
+                    }
+                });
             }
 
             function getSpecsFromUI() {
@@ -260,24 +286,22 @@
                 const tbody = document.getElementById('specs-tbody');
                 tbody.innerHTML = '';
                 if (!specs || specs.length === 0) {
-                    // start with one empty row
                     addSpecRow('', '');
                     return;
                 }
                 specs.forEach(s => {
                     if (typeof s === 'string') {
-                        // if server returned simple string, try parse JSON
-                        try { s = JSON.parse(s); } catch (e) { s = { key: '', value: '' }; }
+                        try { s = JSON.parse(s); } catch (e) { s = { key: '', value: '', id: null }; }
                     }
                     if (s && (s.key !== undefined || s.name !== undefined)) {
+                        const id = s.id || null;
                         const key = s.key !== undefined ? s.key : (s.name || '');
                         const value = s.value !== undefined ? s.value : (s.val || '');
-                        addSpecRow(key, value);
+                        addSpecRow(key, value, id);
                     }
                 });
             }
 
-            // basic escape for inserted values into inputs
             function escapeHtml(str) {
                 if (!str && str !== 0) return '';
                 return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -350,7 +374,6 @@
                 document.getElementById('current-images').innerHTML = '';
                 imagesToDelete = [];
                 
-                // Setup preview cho ảnh chính
                 const mainImageInput = document.getElementById('product-main-image');
                 mainImageInput.onchange = function(e) {
                     const preview = document.getElementById('main-image-preview');
@@ -371,7 +394,6 @@
                     }
                 };
                 
-                // Setup preview cho ảnh khác
                 const imagesInput = document.getElementById('product-images');
                 imagesInput.onchange = function(e) {
                     const preview = document.getElementById('images-preview');
@@ -400,8 +422,10 @@
 
             async function openEditProductModal(id, modal) {
                 try {
-                    const detail = await apiClient.getProductById(id);
+                    document.getElementById('specs-tbody').innerHTML = '';
                     
+                    const detail = await apiClient.getProductById(id);
+
                     document.getElementById('product-main-image').value = '';
                     document.getElementById('product-images').value = '';
                     document.getElementById('product-id').value = detail.id || '';
@@ -412,22 +436,19 @@
                     document.getElementById('product-description').value = detail.description || '';
                     if (detail.productType) document.getElementById('product-type').value = detail.productType;
                     
-                    // Populate specs: API trả về specifications (List<Map<String, String>>)
                     if (detail.specifications && detail.specifications.length > 0) {
-                        // Convert từ List<Map<String, String>> sang [{key, value}]
                         const specs = detail.specifications.map(specMap => {
-                            const entries = Object.entries(specMap);
-                            if (entries.length > 0) {
-                                return { key: entries[0][0], value: entries[0][1] };
-                            }
-                            return null;
-                        }).filter(s => s !== null);
+                            return { 
+                                id: specMap.id || null, 
+                                key: specMap.specName || '', 
+                                value: specMap.specValue || '' 
+                            };
+                        });
                         setSpecsInUI(specs);
                     } else {
                         setSpecsInUI([]);
                     }
                     
-                    // Hiển thị ảnh chính hiện có
                     const currentMainImageDiv = document.getElementById('current-main-image');
                     if (detail.mainImage) {
                         currentMainImageDiv.innerHTML = `
@@ -442,9 +463,8 @@
                         currentMainImageDiv.innerHTML = '';
                     }
                     
-                    // Hiển thị ảnh khác hiện có
                     const currentImagesDiv = document.getElementById('current-images');
-                    imagesToDelete = []; // Reset danh sách xóa
+                    imagesToDelete = [];
                     if (detail.images && detail.images.length > 0) {
                         const headerDiv = document.createElement('div');
                         headerDiv.className = 'mb-2';
@@ -589,11 +609,13 @@
                 if (stock) formData.append('stock', stock);
                 if (productType) formData.append('productType', productType);
                 if (description) formData.append('description', description);
-                // append specs as JSON string if present
                 try {
                     const specs = getSpecsFromUI();
                     if (specs && specs.length > 0) {
-                        formData.append('specs', JSON.stringify(specs));
+                        specs.forEach((spec, index) => {
+                            formData.append(`specifications[${index}].specName`, spec.key || '');
+                            formData.append(`specifications[${index}].specValue`, spec.value || '');
+                        });
                     }
                 } catch (e) { console.warn('Could not read specs', e); }
                 if (mainImageInput && mainImageInput.files && mainImageInput.files[0]) {

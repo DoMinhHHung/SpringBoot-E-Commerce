@@ -24,8 +24,54 @@ public interface RevenueAuditRepository extends JpaRepository<RevenueAudit, Long
                                              @Param("end") LocalDateTime end);
     
     // Query theo giờ
+    // @Query(value = """
+    //         SELECT DATE_FORMAT(recorded_at, '%Y-%m-%d %H:00:00') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COALESCE(SUM(amount), 0) as revenue
+    //         FROM revenue_audit
+    //         WHERE status = 'CONFIRMED'
+    //           AND recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY DATE_FORMAT(recorded_at, '%Y-%m-%d %H:00:00')
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> sumRevenueByHour(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    
+    // // Query theo ngày
+    // @Query(value = """
+    //         SELECT DATE_FORMAT(recorded_at, '%Y-%m-%d') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COALESCE(SUM(amount), 0) as revenue
+    //         FROM revenue_audit
+    //         WHERE status = 'CONFIRMED'
+    //           AND recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY DATE_FORMAT(recorded_at, '%Y-%m-%d')
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> sumRevenueByDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+    
+    // // Query theo tháng
+    // @Query(value = """
+    //         SELECT DATE_FORMAT(recorded_at, '%Y-%m') as timeLabel,
+    //                MIN(recorded_at) as startTime,
+    //                MAX(recorded_at) as endTime,
+    //                COALESCE(SUM(amount), 0) as revenue
+    //         FROM revenue_audit
+    //         WHERE status = 'CONFIRMED'
+    //           AND recorded_at >= :start
+    //           AND recorded_at < :end
+    //         GROUP BY DATE_FORMAT(recorded_at, '%Y-%m')
+    //         ORDER BY timeLabel
+    //         """, nativeQuery = true)
+    // List<Object[]> sumRevenueByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+
+    // Query theo giờ - PostgreSQL
     @Query(value = """
-            SELECT DATE_FORMAT(recorded_at, '%Y-%m-%d %H:00:00') as timeLabel,
+            SELECT to_char(date_trunc('hour', recorded_at), 'YYYY-MM-DD HH24:00:00') as timeLabel,
                    MIN(recorded_at) as startTime,
                    MAX(recorded_at) as endTime,
                    COALESCE(SUM(amount), 0) as revenue
@@ -33,14 +79,14 @@ public interface RevenueAuditRepository extends JpaRepository<RevenueAudit, Long
             WHERE status = 'CONFIRMED'
               AND recorded_at >= :start
               AND recorded_at < :end
-            GROUP BY DATE_FORMAT(recorded_at, '%Y-%m-%d %H:00:00')
+            GROUP BY date_trunc('hour', recorded_at)
             ORDER BY timeLabel
             """, nativeQuery = true)
     List<Object[]> sumRevenueByHour(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
-    // Query theo ngày
+    // Query theo ngày - PostgreSQL
     @Query(value = """
-            SELECT DATE_FORMAT(recorded_at, '%Y-%m-%d') as timeLabel,
+            SELECT to_char(date_trunc('day', recorded_at), 'YYYY-MM-DD') as timeLabel,
                    MIN(recorded_at) as startTime,
                    MAX(recorded_at) as endTime,
                    COALESCE(SUM(amount), 0) as revenue
@@ -48,14 +94,14 @@ public interface RevenueAuditRepository extends JpaRepository<RevenueAudit, Long
             WHERE status = 'CONFIRMED'
               AND recorded_at >= :start
               AND recorded_at < :end
-            GROUP BY DATE_FORMAT(recorded_at, '%Y-%m-%d')
+            GROUP BY date_trunc('day', recorded_at)
             ORDER BY timeLabel
             """, nativeQuery = true)
     List<Object[]> sumRevenueByDay(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
     
-    // Query theo tháng
+    // Query theo tháng - PostgreSQL
     @Query(value = """
-            SELECT DATE_FORMAT(recorded_at, '%Y-%m') as timeLabel,
+            SELECT to_char(date_trunc('month', recorded_at), 'YYYY-MM') as timeLabel,
                    MIN(recorded_at) as startTime,
                    MAX(recorded_at) as endTime,
                    COALESCE(SUM(amount), 0) as revenue
@@ -63,7 +109,7 @@ public interface RevenueAuditRepository extends JpaRepository<RevenueAudit, Long
             WHERE status = 'CONFIRMED'
               AND recorded_at >= :start
               AND recorded_at < :end
-            GROUP BY DATE_FORMAT(recorded_at, '%Y-%m')
+            GROUP BY date_trunc('month', recorded_at)
             ORDER BY timeLabel
             """, nativeQuery = true)
     List<Object[]> sumRevenueByMonth(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);

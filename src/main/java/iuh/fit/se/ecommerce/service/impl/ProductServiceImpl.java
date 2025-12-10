@@ -15,6 +15,7 @@ import iuh.fit.se.ecommerce.exception.ErrorCode;
 import iuh.fit.se.ecommerce.repository.ProductRepository;
 import iuh.fit.se.ecommerce.dto.request.ProductSearchCriteria;
 import iuh.fit.se.ecommerce.repository.PromotionRepository;
+import iuh.fit.se.ecommerce.repository.SpecificationRepository;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import iuh.fit.se.ecommerce.service.impl.SiteNotificationService;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final PromotionRepository promotionRepository;
+    private final SpecificationRepository specificationRepository;
     private final Cloudinary cloudinary;
     private final SiteNotificationService siteNotificationService;
 
@@ -653,14 +655,64 @@ public class ProductServiceImpl implements ProductService {
         }
 
         if (request.getSpecifications() != null) {
-            List<Specification> specs = request.getSpecifications().stream().map(specReq -> {
-                Specification spec = new Specification();
-                spec.setSpecName(specReq.getSpecName());
-                spec.setSpecValue(specReq.getSpecValue());
-                spec.setProduct(product);
-                return spec;
-            }).collect(Collectors.toList());
-            product.setSpecifications(specs);
+            // Lấy specs cũ từ DB
+            List<Specification> existingSpecs = product.getSpecifications() != null 
+                ? new ArrayList<>(product.getSpecifications()) 
+                : new ArrayList<>();
+            
+            // Tạo Map từ specs mới để dễ lookup (key = specName, value = specValue)
+            Map<String, String> newSpecsMap = request.getSpecifications().stream()
+                .collect(Collectors.toMap(
+                    ProductRequest.SpecRequest::getSpecName,
+                    ProductRequest.SpecRequest::getSpecValue,
+                    (v1, v2) -> v2 // Nếu duplicate specName, lấy giá trị sau
+                ));
+            
+            // Tạo Map từ specs cũ để dễ lookup (key = specName, value = Specification entity)
+            Map<String, Specification> existingSpecsMap = existingSpecs.stream()
+                .collect(Collectors.toMap(
+                    Specification::getSpecName,
+                    spec -> spec,
+                    (v1, v2) -> v2
+                ));
+            
+            // 1. Xóa những specs không còn trong list mới
+            List<Specification> specsToDelete = existingSpecs.stream()
+                .filter(spec -> !newSpecsMap.containsKey(spec.getSpecName()))
+                .collect(Collectors.toList());
+            
+            if (!specsToDelete.isEmpty()) {
+                specificationRepository.deleteAll(specsToDelete);
+                existingSpecs.removeAll(specsToDelete);
+            }
+            
+            // 2. Update hoặc Insert specs
+            List<Specification> finalSpecs = new ArrayList<>();
+            
+            for (ProductRequest.SpecRequest specReq : request.getSpecifications()) {
+                String specName = specReq.getSpecName();
+                String specValue = specReq.getSpecValue();
+                
+                if (existingSpecsMap.containsKey(specName)) {
+                    // Spec đã tồn tại: Update nếu giá trị thay đổi
+                    Specification existingSpec = existingSpecsMap.get(specName);
+                    String existingValue = existingSpec.getSpecValue() != null ? existingSpec.getSpecValue() : "";
+                    String newValue = specValue != null ? specValue : "";
+                    if (!existingValue.equals(newValue)) {
+                        existingSpec.setSpecValue(specValue);
+                    }
+                    finalSpecs.add(existingSpec);
+                } else {
+                    // Spec mới: Tạo mới
+                    Specification newSpec = new Specification();
+                    newSpec.setSpecName(specName);
+                    newSpec.setSpecValue(specValue);
+                    newSpec.setProduct(product);
+                    finalSpecs.add(newSpec);
+                }
+            }
+            
+            product.setSpecifications(finalSpecs);
         }
     }
 
