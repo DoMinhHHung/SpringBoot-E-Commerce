@@ -47,14 +47,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     );
 
     // Lấy tất cả transactions với filters (cho admin)
-      @Query(value = """
-            SELECT * FROM transactions t WHERE 
-            (:type IS NULL OR t.type = CAST(:type AS VARCHAR)) AND 
-            (:status IS NULL OR t.status = CAST(:status AS VARCHAR)) AND 
-            (:startDate IS NULL OR t.created_at >= CAST(:startDate AS TIMESTAMP)) AND 
-            (:endDate IS NULL OR t.created_at <= CAST(:endDate AS TIMESTAMP))
-            ORDER BY t.created_at DESC
-            """, nativeQuery = true)
+    @Query("SELECT t FROM Transaction t WHERE " +
+            "(:type IS NULL OR t.type = :type) AND " +
+            "(:status IS NULL OR t.status = :status) AND " +
+            "(:startDate IS NULL OR t.createdAt >= :startDate) AND " +
+            "(:endDate IS NULL OR t.createdAt <= :endDate)")
     Page<Transaction> findAllWithFilters(
             @Param("type") TransactionType type,
             @Param("status") TransactionStatus status,
