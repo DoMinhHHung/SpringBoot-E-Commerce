@@ -6,6 +6,7 @@ import iuh.fit.se.ecommerce.dto.response.ProductResponse;
 import iuh.fit.se.ecommerce.entity.Product;
 import iuh.fit.se.ecommerce.entity.enums.ProductType;
 import iuh.fit.se.ecommerce.repository.ProductRepository;
+import iuh.fit.se.ecommerce.repository.SpecificationRepository;
 import iuh.fit.se.ecommerce.service.interfaces.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ public class ProductController {
     private final ProductService productService;
     @Autowired
     private ProductRepository productRepository;
+    private final SpecificationRepository specificationRepository;
     @PostMapping
     public ResponseEntity<ProductResponse> createProduct(@ModelAttribute ProductRequest request) {
         return ResponseEntity.ok(productService.createProduct(request));
@@ -117,5 +119,11 @@ public class ProductController {
     @GetMapping("/components/accessory/{specName}")
     public List<Product> getAccessoryComponents(@PathVariable String specName) {
         return productRepository.findComponentsBySpecAndType(ProductType.ACCESSORY, specName);
+    }
+
+    @DeleteMapping("/specifications/{specId}")
+    public ResponseEntity<Map<String, String>> deleteSpecification(@PathVariable Long specId) {
+        specificationRepository.deleteById(specId);
+        return ResponseEntity.ok(Map.of("message", "Specification deleted successfully"));
     }
 }

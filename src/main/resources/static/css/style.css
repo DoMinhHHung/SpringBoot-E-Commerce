@@ -13,18 +13,18 @@ body {
 }
 
 .logo-img {
-    height: 80px;
-    width: auto;
+    position: absolute;
+    height: auto;
+    width: 200px;
     object-fit: contain;
     background: transparent;
 }
 
 .navbar-brand {
-    font-weight: bold;
+    position: relative;
     font-size: 1.5rem;
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
 .header-top {
@@ -48,6 +48,10 @@ body {
     background-color: #fff;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 15px 0;
+}
+
+.navbar-nav {
+    margin-left: 170px;
 }
 
 .navbar-nav .nav-link {

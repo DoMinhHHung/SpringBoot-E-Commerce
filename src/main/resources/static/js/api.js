@@ -262,6 +262,12 @@ class ApiClient {
         return this.handleResponse(response);
     }
 
+    async deleteSpecification(specId) {
+        return this.request(`/products/specifications/${specId}`, {
+            method: 'DELETE'
+        });
+    }
+
     // Promotion APIs
     async getActivePromotions() {
         return this.request('/promotions/active', {
