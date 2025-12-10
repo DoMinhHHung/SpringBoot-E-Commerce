@@ -352,6 +352,28 @@
                 });
             }
 
+                        async function deleteProduct(id) {
+                if (!id) return;
+                if (!confirm('Bạn có chắc muốn xóa sản phẩm #' + id + '?')) return;
+
+                const deleteButtons = Array.from(document.querySelectorAll(`button[data-action="delete"][data-id="${id}"]`));
+                try {
+                    deleteButtons.forEach(b => b.disabled = true);
+
+                    await apiClient.request(`/products/${id}`, { method: 'DELETE' });
+
+                    showAlert('Đã xóa sản phẩm', 'success');
+
+                    // Reload products
+                    await loadProducts();
+                } catch (err) {
+                    console.error('deleteProduct error', err);
+                    showAlert('Lỗi xóa sản phẩm: ' + (err.message || err), 'error');
+                } finally {
+                    deleteButtons.forEach(b => b.disabled = false);
+                }
+            }
+            
             function renderFiltered(term) {
                 const q = (term || '').toLowerCase().trim();
                 if (!q) return renderProducts(productsCache);

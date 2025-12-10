@@ -119,6 +119,8 @@
     <script src="/js/admin-common.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
+            
+            const escapeHtml = window.escapeHtml || function(str) { return str == null ? '' : String(str); };
 
             const promoModalEl = document.getElementById('promoModal');
             // create modal element dynamically when needed

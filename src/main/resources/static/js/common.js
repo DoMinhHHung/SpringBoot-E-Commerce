@@ -1,4 +1,15 @@
 // Common functions to load header and footer
+if (typeof window !== 'undefined' && !window.escapeHtml) {
+  window.escapeHtml = function (str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+}
 function loadHeader() {
   fetch("/fragments/header.html")
     .then((response) => response.text())

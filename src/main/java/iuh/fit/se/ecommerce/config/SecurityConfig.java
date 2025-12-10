@@ -79,7 +79,10 @@ public class SecurityConfig {
                                 "/v3/api-docs/swagger-config",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/ws/**")
+                                "/ws/**",
+                                "/build-pc.html",
+                                "/buildPC/build-pc.html"
+                        )
                         .permitAll()
                         
                         // PayOS webhook callback (public)
