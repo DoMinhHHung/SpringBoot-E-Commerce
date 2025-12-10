@@ -18,6 +18,7 @@ import com.sendgrid.helpers.mail.objects.Email;
 @Slf4j
 public class EmailServiceImpl implements EmailService {
 
+    // CHÚ Ý: Đổi tên biến và @Value sang dùng key của SendGrid
     @Value("${sendgrid.api.key}")
     private String sendGridApiKey;
 
@@ -55,11 +56,13 @@ public class EmailServiceImpl implements EmailService {
         }
     }
 
-
-    // 1. Triển khai phương thức gửi email cơ bản (body là text đơn thuần)
+    
     @Override
     public void sendEmail(String to, String subject, String body) {
-        Content content = new Content("text/plain", body);
+        if (body == null) body = "";
+        String lower = body.toLowerCase();
+        boolean looksLikeHtml = lower.contains("<html") || lower.contains("<body") || lower.contains("<a ") || lower.contains("<p") || lower.contains("<div") || lower.contains("<br") || lower.contains("<table") || lower.contains("<span");
+        Content content = new Content(looksLikeHtml ? "text/html" : "text/plain", body);
         sendMailViaSendGrid(to, subject, content);
     }
 
