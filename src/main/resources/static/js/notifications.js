@@ -159,11 +159,19 @@ function fetchNotifications(userId) {
 
 function fetchUnreadCount(userId) {
     fetch('/api/notifications/' + userId + '/unreadCount')
-        .then(res => {
+        .then(async res => {
             if (!res.ok) throw new Error('Network response was not ok');
-            return res.json();
+            const ct = res.headers.get('content-type') || '';
+            if (ct.includes('application/json')) {
+                const data = await res.json();
+                const count = (typeof data === 'number') ? data : (data.unreadCount ?? 0);
+                updateBellCount(Number(count) || 0);
+            } else {
+                const text = await res.text();
+                const num = Number(text);
+                updateBellCount(Number.isFinite(num) ? num : 0);
+            }
         })
-        .then(count => updateBellCount(count.unreadCount || 0))
         .catch(err => console.error('Failed to load unread count', err));
 }
 
@@ -261,6 +269,11 @@ function buildNotificationItem(n) {
         // Cập nhật trạng thái đọc trên UI ngay lập tức
         li.classList.remove('unread');
         li.classList.add('is-read');
+
+        // Giảm badge hiện tại nếu đang > 0
+        const countEl = document.getElementById('notif-count') || document.getElementById('notification-badge');
+        const current = parseInt((countEl && countEl.innerText) || '0') || 0;
+        if (current > 0) updateBellCount(current - 1);
 
         // *** ĐIỀU HƯỚNG CHÍNH XÁC ***
         if (targetUrl) {

@@ -63,6 +63,13 @@ public class NotificationController {
         return service.countUnread(userId);
     }
 
+    // Optional JSON variant to keep API consistent with /me/unreadCount
+    @GetMapping("/{userId}/unreadCountJson")
+    public ResponseEntity<?> getUnreadCountJson(@PathVariable Long userId) {
+        long c = service.countUnread(userId);
+        return ResponseEntity.ok(Map.of("unreadCount", c));
+    }
+
     @PostMapping("/markRead/{id}")
     public void markRead(@PathVariable Long id) {
         service.markRead(id);
