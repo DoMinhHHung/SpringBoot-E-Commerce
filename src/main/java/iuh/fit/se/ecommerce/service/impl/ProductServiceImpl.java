@@ -266,6 +266,12 @@ public class ProductServiceImpl implements ProductService {
             // handle promotion label via text fallback (productRepository.search will look
             // at promotion indirectly)
             criteria.setText(q);
+        } else if (qLower.startsWith("discount:")) { // <-- ADDED LOGIC
+            String discountStr = q.substring("discount:".length()).trim();
+            try {
+                criteria.setMinDiscountPercent(Integer.parseInt(discountStr));
+            } catch (NumberFormatException ignored) {
+            }
         } else {
             // Natural-language parsing heuristics (brand words, types, price phrases,
             // specs)
@@ -387,7 +393,9 @@ public class ProductServiceImpl implements ProductService {
             // if no structured filters detected, set text for free-text search
             if (criteria.getBrand() == null && criteria.getProductType() == null && criteria.getMinPrice() == null
                     && criteria.getMaxPrice() == null
-                    && (criteria.getSpecTerms() == null || criteria.getSpecTerms().isEmpty())) {
+                    && (criteria.getSpecTerms() == null || criteria.getSpecTerms().isEmpty())
+                    // IMPORTANT: check minDiscountPercent too
+                    && criteria.getMinDiscountPercent() == null) {
                 criteria.setText(q);
             }
         }
@@ -463,6 +471,11 @@ public class ProductServiceImpl implements ProductService {
             if (!term.isEmpty()) criteria.setSpecTerms(List.of(term));
         } else if (qLower.startsWith("promotion:")) {
             criteria.setText(q);
+        } else if (qLower.startsWith("discount:")) { // <-- ADDED LOGIC
+            String discountStr = q.substring("discount:".length()).trim();
+            try {
+                criteria.setMinDiscountPercent(Integer.parseInt(discountStr));
+            } catch (NumberFormatException ignored) {}
         } else {
             // Natural-language parsing heuristics
             String[] knownBrands = new String[]{"dell","hp","asus","acer","lenovo","apple","msi","lg"};
@@ -550,7 +563,10 @@ public class ProductServiceImpl implements ProductService {
             if (!specTerms.isEmpty()) criteria.setSpecTerms(specTerms);
 
             // if no structured filters detected, set text for free-text search
-            if (criteria.getBrand() == null && criteria.getProductType() == null && criteria.getMinPrice() == null && criteria.getMaxPrice() == null && (criteria.getSpecTerms() == null || criteria.getSpecTerms().isEmpty())) {
+            if (criteria.getBrand() == null && criteria.getProductType() == null && criteria.getMinPrice() == null 
+                && criteria.getMaxPrice() == null 
+                && criteria.getMinDiscountPercent() == null // <-- ADDED CHECK
+                && (criteria.getSpecTerms() == null || criteria.getSpecTerms().isEmpty())) {
                 criteria.setText(q);
             }
         }
