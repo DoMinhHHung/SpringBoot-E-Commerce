@@ -2,6 +2,7 @@ package iuh.fit.se.ecommerce.repository;
 
 import iuh.fit.se.ecommerce.dto.request.ProductSearchCriteria;
 import iuh.fit.se.ecommerce.entity.Product;
+import iuh.fit.se.ecommerce.entity.Promotion;
 import iuh.fit.se.ecommerce.entity.Specification;
 import iuh.fit.se.ecommerce.entity.enums.ProductType;
 import jakarta.persistence.EntityManager;
@@ -77,6 +78,18 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
             ));
         }
 
+        // START: LOGIC MỚI CHO DISCOUNT PERCENT
+        if (criteria.getMinDiscountPercent() != null && criteria.getMinDiscountPercent() > 0) {
+            // INNER JOIN Promotion: Bắt buộc Product phải có Promotion đang active
+            Join<Product, Promotion> promotionJoin = root.join("promotion", JoinType.INNER); 
+            
+            // Điều kiện: discountPercent >= minDiscountPercent yêu cầu
+            predicates.add(cb.greaterThanOrEqualTo(
+                    promotionJoin.get("discountPercent"), criteria.getMinDiscountPercent()
+            ));
+        }
+        // END: LOGIC MỚI CHO DISCOUNT PERCENT
+        
         if (!predicates.isEmpty()) {
             cq.where(cb.and(predicates.toArray(new Predicate[0])));
         }
@@ -136,6 +149,18 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                         cb.like(cb.lower(specJoinCount2.get("specValue")), like)
                 ));
             }
+
+            // START: LOGIC MỚI CHO DISCOUNT PERCENT (COUNT)
+            if (criteria.getMinDiscountPercent() != null && criteria.getMinDiscountPercent() > 0) {
+                // INNER JOIN Promotion cho Count Query
+                Join<Product, Promotion> promotionJoin = countRoot.join("promotion", JoinType.INNER); 
+                
+                // Điều kiện: discountPercent >= minDiscountPercent yêu cầu
+                countPreds.add(cb.greaterThanOrEqualTo(
+                        promotionJoin.get("discountPercent"), criteria.getMinDiscountPercent()
+                ));
+            }
+            // END: LOGIC MỚI CHO DISCOUNT PERCENT (COUNT)
 
             countCq.where(cb.and(countPreds.toArray(new Predicate[0])));
         }
@@ -230,6 +255,18 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                     cb.like(cb.lower(specJoin2.get("specValue")), like)
             ));
         }
+        
+        // START: THÊM LOGIC LỌC THEO PHẦN TRĂM GIẢM GIÁ
+        if (criteria.getMinDiscountPercent() != null && criteria.getMinDiscountPercent() > 0) {
+            // INNER JOIN Promotion: Đảm bảo chỉ tìm kiếm các sản phẩm có khuyến mãi
+            Join<Product, Promotion> promotionJoin = root.join("promotion", JoinType.INNER); 
+            
+            // Điều kiện: discountPercent >= minDiscountPercent
+            predicates.add(cb.greaterThanOrEqualTo(
+                    promotionJoin.get("discountPercent"), criteria.getMinDiscountPercent()
+            ));
+        }
+        // END: THÊM LOGIC LỌC THEO PHẦN TRĂM GIẢM GIÁ
 
         return predicates;
     }
@@ -263,7 +300,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 specPreds.add(cb.or(
                         cb.like(cb.lower(specJoinCount.get("specName")), like),
                         cb.like(cb.lower(specJoinCount.get("specValue")), like)
-                ));
+                    ));
             }
             countPreds.add(cb.or(specPreds.toArray(new Predicate[0])));
         }
@@ -279,7 +316,16 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                     cb.like(cb.lower(specJoinCount2.get("specValue")), like)
             ));
         }
-
+        
+        if (criteria.getMinDiscountPercent() != null && criteria.getMinDiscountPercent() > 0) {
+            // INNER JOIN Promotion cho Count Query
+            Join<Product, Promotion> promotionJoin = countRoot.join("promotion", JoinType.INNER); 
+            
+            // Điều kiện: discountPercent >= minDiscountPercent
+            countPreds.add(cb.greaterThanOrEqualTo(
+                    promotionJoin.get("discountPercent"), criteria.getMinDiscountPercent()
+            ));
+        }
         return countPreds;
     }
 
