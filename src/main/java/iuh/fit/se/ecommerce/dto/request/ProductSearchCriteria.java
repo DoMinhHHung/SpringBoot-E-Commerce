@@ -16,6 +16,6 @@ public class ProductSearchCriteria {
     private BigDecimal maxPrice;
     private List<String> specTerms;
     private String text;
-
+    private Integer minDiscountPercent;
 }
 
