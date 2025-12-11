@@ -61,7 +61,6 @@ public class PromotionController {
     }
 
     @GetMapping("/{id}/products")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ProductResponse>> getProductsByActivePromotion(@PathVariable Long id) {
         return ResponseEntity.ok(promotionService.getProductsByActivePromotion(id));
     }

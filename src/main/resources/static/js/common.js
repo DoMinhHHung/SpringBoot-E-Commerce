@@ -1013,8 +1013,12 @@ function extractFilterValue(itemName, filterType) {
 
 function navigateToCategory(type, filterValue = null, filterType = 'brand') {
   closeCategoryMenu();
-  let url = `/products.html?type=${type}`;
-  
+  let targetType = type;
+  if (type === 'PC' && filterType === 'type') {
+    targetType = 'ACCESSORY';
+  }
+
+  let url = `/products.html?type=${targetType}`;
   if (filterValue) {
     // Map filterType from categorySubMenu to API parameter name
     const apiParamName = filterTypeMap[filterType] || filterType;
@@ -1108,16 +1112,16 @@ const categorySubMenus = {
       },
       {
         title: "Linh kiện máy tính",
-        type: "components",
+        type: "type",
         items: [
           { name: "CPU", icon: "bi-cpu" },
-          { name: "Main", icon: "bi-cpu" },
-          { name: "RAM", icon: "bi-cpu" },
-          { name: "Ổ cứng", icon: "bi-hdd" },
-          { name: "Nguồn", icon: "bi-lightning-charge" },
-          { name: "VGA", icon: "bi-cpu" },
-          { name: "Tản nhiệt", icon: "bi-snow" },
-          { name: "Case", icon: "bi-box" },
+          { name: "MAINBOARD", icon: "bi-motherboard" },
+          { name: "RAM", icon: "bi-memory" },
+          { name: "VGA", icon: "bi-gpu-card" },
+          { name: "STORAGE", icon: "bi-device-hdd" },
+          { name: "PSU", icon: "bi-plug" },
+          { name: "COOLING", icon: "bi-fan" },
+          { name: "CASE", icon: "bi-pc-display" },
         ],
       },
       {
